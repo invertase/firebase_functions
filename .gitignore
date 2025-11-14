@@ -164,8 +164,10 @@ doc/api/
 # Snapshot test artifacts (regenerate locally)
 example/nodejs_reference/nodejs_manifest.json
 
-# Package manager locks (keep package.json, ignore locks for examples)
-example/*/package-lock.json
+# Package manager locks
+# Keep nodejs_reference/package-lock.json for CI NPM caching
+# Ignore other example package-lock.json files
+example/basic/package-lock.json
 
 # Build artifacts from CI
 artifacts/
