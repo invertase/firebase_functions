@@ -1,0 +1,171 @@
+# Dart & Flutter
+# https://dart.dev/guides/libraries/private-files
+
+# Files and directories created by pub
+.dart_tool/
+.packages
+build/
+pubspec.lock  # Uncomment if you're writing an application
+# Keep pubspec.lock for packages, ignore for applications
+
+# Conventional directory for build output
+dist/
+
+# Test coverage
+coverage/
+*.lcov
+
+# Build runner generated files
+*.g.dart
+*.freezed.dart
+*.gr.dart
+*.config.dart
+
+# Firebase Functions specific
+# Keep functions.yaml for snapshot testing reference
+# .dart_tool/firebase/functions.yaml
+
+# Node.js (for nodejs_reference example)
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm
+.yarn
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+functions/node_modules/
+
+# IDEs and Editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+.project
+.classpath
+.settings/
+
+# IntelliJ
+*.iml
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Android Studio
+local.properties
+.gradle/
+gradle/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Logs
+*.log
+logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+.nyc_output/
+lib-cov/
+coverage/
+*.lcov
+.grunt/
+test/tmp/
+test/version/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*~.nib
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Misc
+.cache/
+.temp/
+.tmp/
+
+# Generated documentation
+doc/api/
+
+# Emulator artifacts
+/tmp/
+*.log
+
+# Snapshot test artifacts (regenerate locally)
+example/nodejs_reference/nodejs_manifest.json
+
+# Package manager locks (keep package.json, ignore locks for examples)
+example/*/package-lock.json
+
+# Build artifacts from CI
+artifacts/

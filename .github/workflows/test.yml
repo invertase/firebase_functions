@@ -1,0 +1,234 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  # Dart package analysis and unit tests
+  dart-tests:
+    name: Dart Tests (${{ matrix.sdk }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: [stable, beta]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+
+      - name: Print Dart version
+        run: dart --version
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+        if: matrix.sdk == 'stable'
+
+      - name: Analyze project
+        run: dart analyze --fatal-infos
+
+      - name: Run unit tests
+        run: dart test --exclude-tags=snapshot,integration
+
+  # Builder tests - generate and verify functions.yaml
+  builder-tests:
+    name: Builder Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies (root)
+        run: dart pub get
+
+      - name: Install dependencies (example)
+        working-directory: example/basic
+        run: dart pub get
+
+      - name: Run build_runner
+        working-directory: example/basic
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Verify functions.yaml was generated
+        run: |
+          if [ ! -f "example/basic/.dart_tool/firebase/functions.yaml" ]; then
+            echo "Error: functions.yaml was not generated"
+            exit 1
+          fi
+          echo "✓ functions.yaml generated successfully"
+
+      - name: Display generated manifest
+        run: |
+          echo "Generated Dart manifest:"
+          cat example/basic/.dart_tool/firebase/functions.yaml
+
+      - name: Validate YAML syntax
+        run: |
+          dart pub global activate yaml_tools
+          dart pub global run yaml_tools:validate example/basic/.dart_tool/firebase/functions.yaml || true
+
+      - name: Upload generated manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-manifest
+          path: example/basic/.dart_tool/firebase/functions.yaml
+          retention-days: 7
+
+  # Snapshot tests - compare Dart manifest with Node.js reference
+  snapshot-tests:
+    name: Snapshot Tests
+    runs-on: ubuntu-latest
+    needs: builder-tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: example/nodejs_reference/package-lock.json
+
+      - name: Install Dart dependencies
+        run: dart pub get
+
+      - name: Install example dependencies
+        working-directory: example/basic
+        run: dart pub get
+
+      - name: Generate Dart manifest
+        working-directory: example/basic
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Install Node.js dependencies
+        working-directory: example/nodejs_reference
+        run: npm ci
+
+      - name: Generate Node.js manifest
+        working-directory: example/nodejs_reference
+        run: |
+          echo "Starting firebase-functions server..."
+          GCLOUD_PROJECT="test-project" \
+          PORT="8080" \
+          FUNCTIONS_CONTROL_API="true" \
+          npx firebase-functions > /tmp/ff.log 2>&1 &
+
+          FF_PID=$!
+          echo "Server PID: $FF_PID"
+
+          # Wait for server to be ready
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/__/functions.yaml > /dev/null 2>&1; then
+              echo "✓ Server is ready"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Error: Server failed to start"
+              cat /tmp/ff.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # Fetch manifest
+          echo "Fetching manifest..."
+          curl -s http://localhost:8080/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
+
+          # Stop server
+          kill $FF_PID 2>/dev/null || true
+
+          echo "Node.js manifest generated:"
+          cat nodejs_manifest.json
+
+      - name: Display both manifests
+        run: |
+          echo "========== DART MANIFEST =========="
+          cat example/basic/.dart_tool/firebase/functions.yaml
+          echo ""
+          echo "========== NODE.JS MANIFEST =========="
+          cat example/nodejs_reference/nodejs_manifest.json
+
+      - name: Run snapshot comparison tests
+        run: dart test test/snapshots/manifest_snapshot_test.dart --reporter=expanded
+
+      - name: Upload manifests on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifests-comparison
+          path: |
+            example/basic/.dart_tool/firebase/functions.yaml
+            example/nodejs_reference/nodejs_manifest.json
+          retention-days: 30
+
+  # Integration tests (future)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: false # Disabled until integration tests are implemented
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Run integration tests
+        run: dart test --tags=integration
+
+  # Test result summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [dart-tests, builder-tests, snapshot-tests]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.dart-tests.result }}" != "success" ]; then
+            echo "❌ Dart tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.builder-tests.result }}" != "success" ]; then
+            echo "❌ Builder tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.snapshot-tests.result }}" != "success" ]; then
+            echo "❌ Snapshot tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed!"
