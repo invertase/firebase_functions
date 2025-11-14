@@ -81,11 +81,6 @@ jobs:
           echo "Generated Dart manifest:"
           cat example/basic/.dart_tool/firebase/functions.yaml
 
-      - name: Validate YAML syntax
-        run: |
-          dart pub global activate yaml_tools
-          dart pub global run yaml_tools:validate example/basic/.dart_tool/firebase/functions.yaml || true
-
       - name: Upload generated manifest
         uses: actions/upload-artifact@v4
         with:
