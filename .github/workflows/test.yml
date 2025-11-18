@@ -237,7 +237,7 @@ jobs:
           echo "✓ functions.yaml exists"
 
       - name: Run E2E tests
-        run: dart test --tags=e2e --reporter=expanded
+        run: dart test test/e2e/e2e_test.dart --reporter=expanded
         timeout-minutes: 5
 
       - name: Upload test logs on failure
