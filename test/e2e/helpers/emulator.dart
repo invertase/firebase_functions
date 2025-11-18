@@ -17,6 +17,9 @@ class EmulatorHelper {
   final int pubsubPort;
   final Duration startupTimeout;
 
+  // Completer to signal when emulator is ready
+  Completer<void>? _readyCompleter;
+
   /// Starts the Firebase emulator and waits for it to be ready.
   Future<void> start() async {
     print('Starting Firebase emulator...');
@@ -54,12 +57,23 @@ class EmulatorHelper {
       },
     );
 
-    // Capture output for debugging
+    // Create completer to signal readiness
+    _readyCompleter = Completer<void>();
+
+    // Capture output for debugging and detect readiness
     _process!.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
       print('[EMULATOR] $line');
+
+      // Detect when emulator is ready
+      if (line.contains('All emulators ready!') ||
+          line.contains('All emulators started')) {
+        if (!_readyCompleter!.isCompleted) {
+          _readyCompleter!.complete();
+        }
+      }
     });
 
     _process!.stderr
@@ -96,34 +110,25 @@ class EmulatorHelper {
     print('✓ Emulator stopped');
   }
 
-  /// Waits for the emulator to be ready by polling the health endpoint.
+  /// Waits for the emulator to be ready by monitoring stdout for readiness message.
   Future<void> _waitForReady() async {
-    final client = HttpClient();
-    final deadline = DateTime.now().add(startupTimeout);
-
-    while (DateTime.now().isBefore(deadline)) {
-      try {
-        // Try to connect to the functions emulator
-        final request = await client.getUrl(
-          Uri.parse('http://localhost:$functionsPort'),
-        );
-        final response = await request.close();
-        await response.drain<List<int>>();
-
-        // If we get a response, emulator is ready
-        print('Emulator responding on port $functionsPort');
-        client.close();
-        return;
-      } catch (e) {
-        // Not ready yet, wait and retry
-        await Future<void>.delayed(const Duration(milliseconds: 500));
+    try {
+      await _readyCompleter!.future.timeout(
+        startupTimeout,
+        onTimeout: () {
+          throw TimeoutException(
+            'Emulator did not start within ${startupTimeout.inSeconds} seconds',
+          );
+        },
+      );
+    } catch (e) {
+      if (e is TimeoutException) {
+        rethrow;
       }
+      throw TimeoutException(
+        'Error waiting for emulator: $e',
+      );
     }
-
-    client.close();
-    throw TimeoutException(
-      'Emulator did not start within ${startupTimeout.inSeconds} seconds',
-    );
   }
 
   /// Finds the Firebase CLI executable.

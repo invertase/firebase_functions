@@ -2,6 +2,7 @@
 ///
 /// This test ensures that the Dart builder generates manifests compatible
 /// with the Node.js Firebase Functions SDK.
+library;
 import 'dart:convert';
 import 'dart:io';
 
@@ -203,7 +204,7 @@ void _printDifferences(
   }
 
   // Check for null vs omitted fields
-  int nodejsNullCount = 0;
+  var nodejsNullCount = 0;
   for (final entry in nodejsSample.entries) {
     if (entry.value == null) nodejsNullCount++;
   }

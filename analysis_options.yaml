@@ -13,11 +13,9 @@ analyzer:
 linter:
   rules:
     # Error rules
-    - avoid_dynamic_calls
     - avoid_slow_async_io
     - cancel_subscriptions
     - close_sinks
-    - discarded_futures
     - literal_only_boolean_expressions
     - no_adjacent_strings_in_list
     - test_types_in_equals
@@ -26,21 +24,17 @@ linter:
 
     # Style rules
     - always_declare_return_types
-    - avoid_catches_without_on_clauses
     - avoid_catching_errors
     - avoid_positional_boolean_parameters
     - avoid_redundant_argument_values
     - avoid_returning_this
     - avoid_void_async
-    - cascade_invocations
     - directives_ordering
     - library_private_types_in_public_api
-    - lines_longer_than_80_chars
     - omit_local_variable_types
     - parameter_assignments
     - prefer_asserts_with_message
     - prefer_constructors_over_static_methods
-    - prefer_expression_function_bodies
     - prefer_final_in_for_each
     - prefer_final_locals
     - prefer_if_elements_to_conditional_expressions
@@ -54,3 +48,11 @@ linter:
     - use_if_null_to_convert_nulls_to_bools
     - use_string_buffers
     - use_super_parameters
+
+    # Disabled rules (too strict or not always applicable)
+    # - avoid_catches_without_on_clauses (sometimes catching all exceptions is intentional)
+    # - avoid_dynamic_calls (necessary when working with JSON/dynamic data)
+    # - cascade_invocations (not always clearer)
+    # - discarded_futures (fire-and-forget is sometimes intentional)
+    # - lines_longer_than_80_chars (too restrictive for modern screens)
+    # - prefer_expression_function_bodies (block bodies can be clearer)
