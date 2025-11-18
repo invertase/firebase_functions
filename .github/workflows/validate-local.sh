@@ -73,7 +73,7 @@ echo "2. Running Unit Tests"
 echo "========================================="
 echo ""
 
-if dart test --exclude-tags=snapshot,integration; then
+if dart test --exclude-tags=snapshot,integration,e2e; then
     echo -e "${GREEN}✓${NC} Unit tests passed"
 else
     echo -e "${RED}✗${NC} Unit tests failed"
@@ -178,16 +178,50 @@ fi
 
 echo ""
 
+# 5. E2E Tests
+echo "========================================="
+echo "5. Running E2E Tests (Emulator)"
+echo "========================================="
+echo ""
+
+echo "Checking for Firebase CLI..."
+if ! command -v firebase &> /dev/null; then
+    echo -e "${YELLOW}⚠${NC} Firebase CLI not found"
+    echo "Skipping E2E tests. To run them, link the custom firebase-tools:"
+    echo "  cd ../../firebase-tools"
+    echo "  npm i && npm link"
+    echo ""
+else
+    echo -e "${GREEN}✓${NC} Firebase CLI found: $(firebase --version)"
+
+    echo "Running E2E tests with emulator..."
+    if dart test --tags=e2e --reporter=expanded; then
+        echo -e "${GREEN}✓${NC} E2E tests passed"
+    else
+        echo -e "${RED}✗${NC} E2E tests failed"
+        echo ""
+        echo "Check logs for details"
+        exit 1
+    fi
+fi
+
+echo ""
+
 # Summary
 echo "========================================="
 echo "✅ All Checks Passed!"
 echo "========================================="
 echo ""
 echo "Your changes are ready to push:"
-echo "  1. Format:  ✓"
-echo "  2. Analyze: ✓"
-echo "  3. Tests:   ✓"
-echo "  4. Builder: ✓"
+echo "  1. Format:    ✓"
+echo "  2. Analyze:   ✓"
+echo "  3. Tests:     ✓"
+echo "  4. Builder:   ✓"
 echo "  5. Snapshots: ✓"
+if command -v firebase &> /dev/null; then
+    echo "  6. E2E Tests: ✓"
+else
+    echo "  6. E2E Tests: ⚠ (skipped - Firebase CLI not installed)"
+fi
 echo ""
 echo "GitHub Actions should pass! 🚀"

@@ -41,7 +41,7 @@ jobs:
         run: dart analyze --fatal-infos
 
       - name: Run unit tests
-        run: dart test --exclude-tags=snapshot,integration
+        run: dart test --exclude-tags=snapshot,integration,e2e
 
   # Builder tests - generate and verify functions.yaml
   builder-tests:
@@ -183,32 +183,78 @@ jobs:
             example/nodejs_reference/nodejs_manifest.json
           retention-days: 30
 
-  # Integration tests (future)
-  integration-tests:
-    name: Integration Tests
+  # E2E tests with Firebase Emulator
+  e2e-tests:
+    name: E2E Tests (Emulator)
     runs-on: ubuntu-latest
-    if: false # Disabled until integration tests are implemented
+    needs: builder-tests
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Checkout custom firebase-tools
+        uses: actions/checkout@v4
+        with:
+          repository: invertase/firebase-functions
+          ref: '@invertase/dart'
+          path: custom-firebase-tools
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
 
-      - name: Install dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Link custom firebase-tools
+        working-directory: custom-firebase-tools
+        run: npm i && npm link
+
+      - name: Verify Firebase CLI
+        run: firebase --version
+
+      - name: Install dependencies (root)
         run: dart pub get
 
-      - name: Run integration tests
-        run: dart test --tags=integration
+      - name: Install dependencies (example)
+        working-directory: example/basic
+        run: dart pub get
+
+      - name: Build functions
+        working-directory: example/basic
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Verify functions.yaml exists
+        run: |
+          if [ ! -f "example/basic/.dart_tool/firebase/functions.yaml" ]; then
+            echo "Error: functions.yaml was not generated"
+            exit 1
+          fi
+          echo "✓ functions.yaml exists"
+
+      - name: Run E2E tests
+        run: dart test --tags=e2e --reporter=expanded
+        timeout-minutes: 5
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-logs
+          path: |
+            example/basic/.dart_tool/firebase/functions.yaml
+            example/basic/firebase-debug.log
+          retention-days: 7
 
   # Test result summary
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [dart-tests, builder-tests, snapshot-tests]
+    needs: [dart-tests, builder-tests, snapshot-tests, e2e-tests]
     if: always()
 
     steps:
@@ -224,6 +270,10 @@ jobs:
           fi
           if [ "${{ needs.snapshot-tests.result }}" != "success" ]; then
             echo "❌ Snapshot tests failed"
+            exit 1
+          fi
+          if [ "${{ needs.e2e-tests.result }}" != "success" ]; then
+            echo "❌ E2E tests failed"
             exit 1
           fi
           echo "✅ All tests passed!"
