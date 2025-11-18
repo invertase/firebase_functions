@@ -4,7 +4,6 @@ import 'dart:convert';
 ///
 /// Matches the structure from the Node.js SDK and CloudEvents specification.
 class PubsubMessage {
-
   const PubsubMessage({
     required this.data,
     required this.attributes,
@@ -41,6 +40,7 @@ class PubsubMessage {
       orderingKey: message['orderingKey'] as String?,
     );
   }
+
   /// The binary data in the message (base64-encoded in CloudEvents).
   final String data;
 

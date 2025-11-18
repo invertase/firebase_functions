@@ -12,7 +12,6 @@ typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
 
 /// Firebase emulator environment detection and configuration.
 class EmulatorEnvironment {
-
   EmulatorEnvironment(this.environment);
   final Map<String, String> environment;
 
@@ -88,37 +87,40 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
     port,
   );
 
-  print('Firebase Functions serving at http://${server.address.host}:${server.port}');
+  print(
+    'Firebase Functions serving at http://${server.address.host}:${server.port}',
+  );
 }
 
 /// CORS middleware for emulator mode.
-Middleware _corsMiddleware(EmulatorEnvironment env) => (innerHandler) => (request) {
-      // Handle preflight OPTIONS requests
-      if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
-        return Response.ok(
-          '',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': '*',
-            'Access-Control-Allow-Headers': '*',
-          },
-        );
-      }
+Middleware _corsMiddleware(EmulatorEnvironment env) =>
+    (innerHandler) => (request) {
+          // Handle preflight OPTIONS requests
+          if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
+            return Response.ok(
+              '',
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            );
+          }
 
-      return Future.sync(() => innerHandler(request)).then((response) {
-        // Add CORS headers to all responses if enabled
-        if (env.enableCors) {
-          return response.change(
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': '*',
-              'Access-Control-Allow-Headers': '*',
-            },
-          );
-        }
-        return response;
-      });
-    };
+          return Future.sync(() => innerHandler(request)).then((response) {
+            // Add CORS headers to all responses if enabled
+            if (env.enableCors) {
+              return response.change(
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': '*',
+                  'Access-Control-Allow-Headers': '*',
+                },
+              );
+            }
+            return response;
+          });
+        };
 
 /// Routes incoming requests to the appropriate function handler.
 FutureOr<Response> _routeRequest(

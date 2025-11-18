@@ -43,8 +43,8 @@ enum FunctionsErrorCode {
 /// );
 /// ```
 class HttpsError implements Exception {
-
   HttpsError(this.code, this.message, [this.details]);
+
   /// The error code.
   final FunctionsErrorCode code;
 
@@ -71,39 +71,40 @@ class HttpsError implements Exception {
 
   /// Maps error codes to their string representations.
   static String _errorCodeToStatus(FunctionsErrorCode code) => switch (code) {
-      FunctionsErrorCode.ok => 'OK',
-      FunctionsErrorCode.cancelled => 'CANCELLED',
-      FunctionsErrorCode.unknown => 'UNKNOWN',
-      FunctionsErrorCode.invalidArgument => 'INVALID_ARGUMENT',
-      FunctionsErrorCode.deadlineExceeded => 'DEADLINE_EXCEEDED',
-      FunctionsErrorCode.notFound => 'NOT_FOUND',
-      FunctionsErrorCode.alreadyExists => 'ALREADY_EXISTS',
-      FunctionsErrorCode.permissionDenied => 'PERMISSION_DENIED',
-      FunctionsErrorCode.resourceExhausted => 'RESOURCE_EXHAUSTED',
-      FunctionsErrorCode.failedPrecondition => 'FAILED_PRECONDITION',
-      FunctionsErrorCode.aborted => 'ABORTED',
-      FunctionsErrorCode.outOfRange => 'OUT_OF_RANGE',
-      FunctionsErrorCode.unimplemented => 'UNIMPLEMENTED',
-      FunctionsErrorCode.internal => 'INTERNAL',
-      FunctionsErrorCode.unavailable => 'UNAVAILABLE',
-      FunctionsErrorCode.dataLoss => 'DATA_LOSS',
-      FunctionsErrorCode.unauthenticated => 'UNAUTHENTICATED',
-    };
+        FunctionsErrorCode.ok => 'OK',
+        FunctionsErrorCode.cancelled => 'CANCELLED',
+        FunctionsErrorCode.unknown => 'UNKNOWN',
+        FunctionsErrorCode.invalidArgument => 'INVALID_ARGUMENT',
+        FunctionsErrorCode.deadlineExceeded => 'DEADLINE_EXCEEDED',
+        FunctionsErrorCode.notFound => 'NOT_FOUND',
+        FunctionsErrorCode.alreadyExists => 'ALREADY_EXISTS',
+        FunctionsErrorCode.permissionDenied => 'PERMISSION_DENIED',
+        FunctionsErrorCode.resourceExhausted => 'RESOURCE_EXHAUSTED',
+        FunctionsErrorCode.failedPrecondition => 'FAILED_PRECONDITION',
+        FunctionsErrorCode.aborted => 'ABORTED',
+        FunctionsErrorCode.outOfRange => 'OUT_OF_RANGE',
+        FunctionsErrorCode.unimplemented => 'UNIMPLEMENTED',
+        FunctionsErrorCode.internal => 'INTERNAL',
+        FunctionsErrorCode.unavailable => 'UNAVAILABLE',
+        FunctionsErrorCode.dataLoss => 'DATA_LOSS',
+        FunctionsErrorCode.unauthenticated => 'UNAUTHENTICATED',
+      };
 
   /// Maps HTTP status codes to error codes (for parsing).
-  static FunctionsErrorCode statusToErrorCode(int statusCode) => switch (statusCode) {
-      200 => FunctionsErrorCode.ok,
-      400 => FunctionsErrorCode.invalidArgument,
-      401 => FunctionsErrorCode.unauthenticated,
-      403 => FunctionsErrorCode.permissionDenied,
-      404 => FunctionsErrorCode.notFound,
-      409 => FunctionsErrorCode.alreadyExists,
-      429 => FunctionsErrorCode.resourceExhausted,
-      499 => FunctionsErrorCode.cancelled,
-      500 => FunctionsErrorCode.internal,
-      501 => FunctionsErrorCode.unimplemented,
-      503 => FunctionsErrorCode.unavailable,
-      504 => FunctionsErrorCode.deadlineExceeded,
-      _ => FunctionsErrorCode.unknown,
-    };
+  static FunctionsErrorCode statusToErrorCode(int statusCode) =>
+      switch (statusCode) {
+        200 => FunctionsErrorCode.ok,
+        400 => FunctionsErrorCode.invalidArgument,
+        401 => FunctionsErrorCode.unauthenticated,
+        403 => FunctionsErrorCode.permissionDenied,
+        404 => FunctionsErrorCode.notFound,
+        409 => FunctionsErrorCode.alreadyExists,
+        429 => FunctionsErrorCode.resourceExhausted,
+        499 => FunctionsErrorCode.cancelled,
+        500 => FunctionsErrorCode.internal,
+        501 => FunctionsErrorCode.unimplemented,
+        503 => FunctionsErrorCode.unavailable,
+        504 => FunctionsErrorCode.deadlineExceeded,
+        _ => FunctionsErrorCode.unknown,
+      };
 }

@@ -3,6 +3,7 @@
 /// This test ensures that the Dart builder generates manifests compatible
 /// with the Node.js Firebase Functions SDK.
 library;
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -30,7 +31,10 @@ void main() {
     });
 
     test('should have same specVersion', () {
-      expect(dartManifest['specVersion'], equals(nodejsManifest['specVersion']));
+      expect(
+        dartManifest['specVersion'],
+        equals(nodejsManifest['specVersion']),
+      );
       expect(dartManifest['specVersion'], equals('v1alpha1'));
     });
 
@@ -89,8 +93,10 @@ void main() {
     });
 
     test('should use eventFilters format for Pub/Sub', () {
-      final dartFunc = _getEndpoint(dartManifest, 'onMessagePublished_my_topic')!;
-      final nodejsFunc = _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic')!;
+      final dartFunc =
+          _getEndpoint(dartManifest, 'onMessagePublished_my_topic')!;
+      final nodejsFunc =
+          _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic')!;
 
       final dartTrigger = dartFunc['eventTrigger'] as Map;
       final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
@@ -137,12 +143,16 @@ void main() {
       print('\n========== MANIFEST COMPARISON REPORT ==========\n');
 
       print('Dart Manifest:');
-      print('  - Endpoints: ${(dartManifest['endpoints'] as Map).keys.join(', ')}');
+      print(
+        '  - Endpoints: ${(dartManifest['endpoints'] as Map).keys.join(', ')}',
+      );
       print('  - Spec Version: ${dartManifest['specVersion']}');
       print('  - Required APIs: ${dartManifest['requiredAPIs']}\n');
 
       print('Node.js Manifest:');
-      print('  - Endpoints: ${(nodejsManifest['endpoints'] as Map).keys.join(', ')}');
+      print(
+        '  - Endpoints: ${(nodejsManifest['endpoints'] as Map).keys.join(', ')}',
+      );
       print('  - Spec Version: ${nodejsManifest['specVersion']}');
       print('  - Required APIs: ${nodejsManifest['requiredAPIs']}\n');
 
@@ -197,10 +207,14 @@ void _printDifferences(
   final onlyInNodejsEndpoint = nodejsEndpointKeys.difference(dartEndpointKeys);
 
   if (onlyInDartEndpoint.isNotEmpty) {
-    print('  ✓ Fields only in Dart endpoints: ${onlyInDartEndpoint.join(', ')}');
+    print(
+      '  ✓ Fields only in Dart endpoints: ${onlyInDartEndpoint.join(', ')}',
+    );
   }
   if (onlyInNodejsEndpoint.isNotEmpty) {
-    print('  ℹ Fields only in Node.js endpoints: ${onlyInNodejsEndpoint.join(', ')}');
+    print(
+      '  ℹ Fields only in Node.js endpoints: ${onlyInNodejsEndpoint.join(', ')}',
+    );
   }
 
   // Check for null vs omitted fields
@@ -209,5 +223,7 @@ void _printDifferences(
     if (entry.value == null) nodejsNullCount++;
   }
 
-  print('\n  ℹ Node.js includes $nodejsNullCount null fields (Dart omits them)');
+  print(
+    '\n  ℹ Node.js includes $nodejsNullCount null fields (Dart omits them)',
+  );
 }

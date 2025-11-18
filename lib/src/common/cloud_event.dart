@@ -7,7 +7,6 @@ import 'dart:convert';
 ///
 /// See: https://cloudevents.io/
 class CloudEvent<T extends Object> {
-
   const CloudEvent({
     required this.data,
     required this.id,
@@ -25,15 +24,17 @@ class CloudEvent<T extends Object> {
   factory CloudEvent.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) dataDecoder,
-  ) => CloudEvent<T>(
-      data: dataDecoder(json['data'] as Map<String, dynamic>),
-      id: json['id'] as String,
-      source: json['source'] as String,
-      specversion: json['specversion'] as String,
-      subject: json['subject'] as String?,
-      time: DateTime.parse(json['time'] as String),
-      type: json['type'] as String,
-    );
+  ) =>
+      CloudEvent<T>(
+        data: dataDecoder(json['data'] as Map<String, dynamic>),
+        id: json['id'] as String,
+        source: json['source'] as String,
+        specversion: json['specversion'] as String,
+        subject: json['subject'] as String?,
+        time: DateTime.parse(json['time'] as String),
+        type: json['type'] as String,
+      );
+
   /// The event data. Type depends on the event source.
   final T data;
 
@@ -56,15 +57,16 @@ class CloudEvent<T extends Object> {
   final String type;
 
   /// Converts this CloudEvent to JSON.
-  Map<String, dynamic> toJson(Map<String, dynamic> Function(T) dataEncoder) => <String, dynamic>{
-      'specversion': specversion,
-      'id': id,
-      'source': source,
-      'type': type,
-      'time': time.toIso8601String(),
-      if (subject != null) 'subject': subject,
-      'data': dataEncoder(data),
-    };
+  Map<String, dynamic> toJson(Map<String, dynamic> Function(T) dataEncoder) =>
+      <String, dynamic>{
+        'specversion': specversion,
+        'id': id,
+        'source': source,
+        'type': type,
+        'time': time.toIso8601String(),
+        if (subject != null) 'subject': subject,
+        'data': dataEncoder(data),
+      };
 }
 
 /// Parses a raw CloudEvent JSON string into a Map.

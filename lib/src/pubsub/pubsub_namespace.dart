@@ -98,5 +98,6 @@ class PubSubNamespace extends FunctionsNamespace {
   }
 
   /// Checks if the CloudEvent type is a Pub/Sub message event.
-  bool _isPubSubEvent(String type) => type == 'google.cloud.pubsub.topic.v1.messagePublished';
+  bool _isPubSubEvent(String type) =>
+      type == 'google.cloud.pubsub.topic.v1.messagePublished';
 }

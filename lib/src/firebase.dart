@@ -62,12 +62,12 @@ typedef FirebaseFunctionHandler = FutureOr<Response> Function(Request request);
 
 /// Declaration of a registered Firebase Function.
 final class FirebaseFunctionDeclaration {
-
   FirebaseFunctionDeclaration({
     required this.name,
     required this.handler,
     required this.external,
   }) : path = name;
+
   /// Function name (used for routing and identification).
   final String name;
 
@@ -86,7 +86,6 @@ final class FirebaseFunctionDeclaration {
 
 /// Base class for function namespaces.
 abstract class FunctionsNamespace {
-
   const FunctionsNamespace(this.firebase);
   final Firebase firebase;
 }

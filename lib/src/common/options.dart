@@ -5,7 +5,6 @@ import 'params.dart';
 ///
 /// Matches the GlobalOptions interface from the Node.js SDK.
 class GlobalOptions {
-
   const GlobalOptions({
     this.concurrency,
     this.cpu,
@@ -85,7 +84,6 @@ final class OptionReset<T extends Object> extends DeployOption<T> {
 
 /// Option with a literal value.
 final class OptionLiteral<T extends Object> extends DeployOption<T> {
-
   const OptionLiteral(this.literal) : super._();
   final T literal;
 
@@ -95,7 +93,6 @@ final class OptionLiteral<T extends Object> extends DeployOption<T> {
 
 /// Option with an expression value.
 final class OptionExpression<T extends Object> extends DeployOption<T> {
-
   const OptionExpression(this.expression) : super._();
   final Expression<T> expression;
 
@@ -105,7 +102,6 @@ final class OptionExpression<T extends Object> extends DeployOption<T> {
 
 /// Option with a parameter value.
 final class OptionParam<T extends Object> extends DeployOption<T> {
-
   const OptionParam(this.param) : super._();
   final Param<T> param;
 

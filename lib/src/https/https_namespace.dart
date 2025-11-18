@@ -158,9 +158,9 @@ class HttpsNamespace extends FunctionsNamespace {
           handler,
           (result) => result,
           (result) => Response.ok(
-              jsonEncode({'result': result}),
-              headers: {'Content-Type': 'application/json'},
-            ),
+            jsonEncode({'result': result}),
+            headers: {'Content-Type': 'application/json'},
+          ),
         );
       },
     );
@@ -170,10 +170,8 @@ class HttpsNamespace extends FunctionsNamespace {
   ///
   /// Handles both streaming and non-streaming responses, error handling,
   /// and request validation.
-  Future<Response> _handleCallable<
-      Req extends Object?,
-      StreamType extends Object,
-      Res extends Object>(
+  Future<Response> _handleCallable<Req extends Object?,
+      StreamType extends Object, Res extends Object>(
     Request request,
     CallableRequest<Req> callableRequest,
     Map<String, dynamic>? body,

@@ -90,7 +90,6 @@ class _SpecBuilder implements Builder {
 
 /// AST visitor that discovers Firebase Functions declarations.
 class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
-
   _FirebaseFunctionsVisitor(this.resolver);
   final Resolver resolver;
   final Map<String, _ParamSpec> params = {};
@@ -150,12 +149,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Checks if this is a parameter definition function.
-  bool _isParamDefinition(String name) => name == 'defineString' ||
-        name == 'defineInt' ||
-        name == 'defineDouble' ||
-        name == 'defineBoolean' ||
-        name == 'defineList' ||
-        name == 'defineSecret';
+  bool _isParamDefinition(String name) =>
+      name == 'defineString' ||
+      name == 'defineInt' ||
+      name == 'defineDouble' ||
+      name == 'defineBoolean' ||
+      name == 'defineList' ||
+      name == 'defineSecret';
 
   /// Extracts an HTTPS function declaration.
   void _extractHttpsFunction(MethodInvocation node, String methodName) {
@@ -233,11 +233,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Finds a named argument in a method invocation.
-  Expression? _findNamedArg(MethodInvocation node, String name) => node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == name)
-        .map((e) => e.expression)
-        .firstOrNull;
+  Expression? _findNamedArg(MethodInvocation node, String name) =>
+      node.argumentList.arguments
+          .whereType<NamedExpression>()
+          .where((e) => e.name.label.name == name)
+          .map((e) => e.expression)
+          .firstOrNull;
 
   /// Extracts a string literal value.
   String? _extractStringLiteral(Expression expression) {
@@ -249,20 +250,21 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Gets the parameter type name for YAML.
   String _getParamType(String functionName) => switch (functionName) {
-      'defineString' || 'defineSecret' => 'string',
-      'defineInt' => 'int',
-      'defineDouble' => 'float',
-      'defineBoolean' => 'boolean',
-      'defineList' => 'list',
-      _ => 'string',
-    };
+        'defineString' || 'defineSecret' => 'string',
+        'defineInt' => 'int',
+        'defineDouble' => 'float',
+        'defineBoolean' => 'boolean',
+        'defineList' => 'list',
+        _ => 'string',
+      };
 
   /// Extracts ParamOptions from an InstanceCreationExpression.
-  _ParamOptions? _extractParamOptions(InstanceCreationExpression node) => _ParamOptions(
-      defaultValue: _extractDefaultValue(node),
-      label: _extractStringField(node, 'label'),
-      description: _extractStringField(node, 'description'),
-    );
+  _ParamOptions? _extractParamOptions(InstanceCreationExpression node) =>
+      _ParamOptions(
+        defaultValue: _extractDefaultValue(node),
+        label: _extractStringField(node, 'label'),
+        description: _extractStringField(node, 'description'),
+      );
 
   /// Extracts the defaultValue field.
   dynamic _extractDefaultValue(InstanceCreationExpression node) {
@@ -278,13 +280,17 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Extracts a string field from options.
-  String? _extractStringField(InstanceCreationExpression node, String fieldName) => node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == fieldName)
-        .map((e) => e.expression)
-        .whereType<StringLiteral>()
-        .map((e) => e.stringValue!)
-        .firstOrNull;
+  String? _extractStringField(
+    InstanceCreationExpression node,
+    String fieldName,
+  ) =>
+      node.argumentList.arguments
+          .whereType<NamedExpression>()
+          .where((e) => e.name.label.name == fieldName)
+          .map((e) => e.expression)
+          .whereType<StringLiteral>()
+          .map((e) => e.stringValue!)
+          .firstOrNull;
 
   /// Extracts a constant value from an expression.
   dynamic _extractConstValue(Expression expression) {
@@ -309,7 +315,6 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
 /// Specification for a parameter.
 class _ParamSpec {
-
   _ParamSpec({required this.name, required this.type, this.options});
   final String name;
   final String type;
@@ -318,7 +323,6 @@ class _ParamSpec {
 
 /// Options for a parameter.
 class _ParamOptions {
-
   _ParamOptions({this.defaultValue, this.label, this.description});
   final dynamic defaultValue;
   final String? label;
@@ -327,7 +331,6 @@ class _ParamOptions {
 
 /// Specification for an endpoint (function).
 class _EndpointSpec {
-
   _EndpointSpec({
     required this.name,
     required this.type,
@@ -469,17 +472,17 @@ class _EndpointSpec {
 
   /// Converts MemoryOption enum to integer value.
   int? _memoryOptionToInt(String optionName) => switch (optionName) {
-      'mb128' => 128,
-      'mb256' => 256,
-      'mb512' => 512,
-      'gb1' => 1024,
-      'gb2' => 2048,
-      'gb4' => 4096,
-      'gb8' => 8192,
-      'gb16' => 16384,
-      'gb32' => 32768,
-      _ => null,
-    };
+        'mb128' => 128,
+        'mb256' => 256,
+        'mb512' => 512,
+        'gb1' => 1024,
+        'gb2' => 2048,
+        'gb4' => 4096,
+        'gb8' => 8192,
+        'gb16' => 16384,
+        'gb32' => 32768,
+        _ => null,
+      };
 
   /// Extracts CPU option value.
   dynamic _extractCpu(Expression expression) {
@@ -571,7 +574,8 @@ class _EndpointSpec {
   }
 
   /// Extracts timeout seconds.
-  dynamic _extractTimeoutSeconds(Expression expression) => _extractInt(expression);
+  dynamic _extractTimeoutSeconds(Expression expression) =>
+      _extractInt(expression);
 
   /// Extracts integer option value.
   dynamic _extractInt(Expression expression) {
@@ -862,7 +866,8 @@ String _generateYaml(
 
       // Add memory if specified
       if (options.containsKey('availableMemoryMb')) {
-        buffer.writeln('    availableMemoryMb: ${options['availableMemoryMb']}');
+        buffer
+            .writeln('    availableMemoryMb: ${options['availableMemoryMb']}');
       }
 
       // Add CPU if specified

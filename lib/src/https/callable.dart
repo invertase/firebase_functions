@@ -11,24 +11,22 @@ typedef JsonDecoder<T extends Object?> = T Function(Map<String, dynamic>);
 ///
 /// Wraps the return value from a callable function handler.
 class CallableResult<T extends Object> {
-
   CallableResult(this.data);
   final T data;
 
   /// Converts this result to a Shelf Response.
   Response toResponse() => Response.ok(
-      jsonEncode({'result': data}),
-      headers: {
-        HttpHeaders.contentTypeHeader: 'application/json',
-      },
-    );
+        jsonEncode({'result': data}),
+        headers: {
+          HttpHeaders.contentTypeHeader: 'application/json',
+        },
+      );
 }
 
 /// Request context for a callable function.
 ///
 /// Provides access to request data, authentication context, and headers.
 class CallableRequest<T extends Object?> {
-
   CallableRequest(this._delegate, this._body, this._jsonDecoder);
   final Request _delegate;
   final Object? _body;
@@ -54,7 +52,8 @@ class CallableRequest<T extends Object?> {
   }
 
   /// Whether the client accepts streaming (SSE) responses.
-  bool get acceptsStreaming => _delegate.headers['accept'] == 'text/event-stream';
+  bool get acceptsStreaming =>
+      _delegate.headers['accept'] == 'text/event-stream';
 
   /// Firebase App Check context.
   ///
@@ -67,7 +66,8 @@ class CallableRequest<T extends Object?> {
   Object? get auth => null;
 
   /// Firebase Instance ID token.
-  String? get instanceIdToken => _delegate.headers['Firebase-Instance-ID-Token'];
+  String? get instanceIdToken =>
+      _delegate.headers['Firebase-Instance-ID-Token'];
 
   /// The raw Shelf request.
   Request get rawRequest => _delegate;
@@ -77,7 +77,6 @@ class CallableRequest<T extends Object?> {
 ///
 /// Provides streaming support via Server-Sent Events (SSE).
 class CallableResponse<T extends Object> {
-
   CallableResponse({required this.acceptsStreaming, this.heartbeatSeconds});
   final bool acceptsStreaming;
   final int? heartbeatSeconds;
@@ -304,7 +303,8 @@ extension RequestValidation on Request {
       return false;
     }
 
-    final extraKeys = requestBody.keys.where((field) => field != 'data').toList();
+    final extraKeys =
+        requestBody.keys.where((field) => field != 'data').toList();
     if (extraKeys.isNotEmpty) {
       return false;
     }

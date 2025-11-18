@@ -4,7 +4,6 @@ import 'dart:io';
 
 /// Helper for managing Firebase Functions Emulator lifecycle in tests.
 class EmulatorHelper {
-
   EmulatorHelper({
     required this.projectPath,
     this.functionsPort = 5001,
@@ -143,7 +142,9 @@ class EmulatorHelper {
           [customFirebasePath, '--version'],
         );
         if (result.exitCode == 0) {
-          print('Using custom firebase-tools with Dart support: $customFirebasePath');
+          print(
+            'Using custom firebase-tools with Dart support: $customFirebasePath',
+          );
           return 'node $customFirebasePath';
         }
       } catch (e) {
@@ -156,7 +157,10 @@ class EmulatorHelper {
       'firebase', // In PATH
       'npx firebase', // Via npx
       '/usr/local/bin/firebase',
-      if (Platform.environment['HOME'] != null) '${Platform.environment['HOME']}/.npm-global/bin/firebase' else null,
+      if (Platform.environment['HOME'] != null)
+        '${Platform.environment['HOME']}/.npm-global/bin/firebase'
+      else
+        null,
     ].where((c) => c != null).cast<String>();
 
     for (final cmd in candidates) {
@@ -184,15 +188,17 @@ class EmulatorHelper {
     // Start from current directory and traverse up looking for firebase-tools
     var dir = Directory.current;
 
-    for (var i = 0; i < 5; i++) {  // Only check up to 5 levels
-      final firebaseToolsPath = '${dir.path}/firebase-tools/lib/bin/firebase.js';
+    for (var i = 0; i < 5; i++) {
+      // Only check up to 5 levels
+      final firebaseToolsPath =
+          '${dir.path}/firebase-tools/lib/bin/firebase.js';
       if (File(firebaseToolsPath).existsSync()) {
         return firebaseToolsPath;
       }
 
       final parentDir = dir.parent;
       if (parentDir.path == dir.path) {
-        break;  // Reached root
+        break; // Reached root
       }
       dir = parentDir;
     }

@@ -2,7 +2,6 @@ import '../common/options.dart';
 
 /// Options for HTTPS functions (onRequest).
 class HttpsOptions extends GlobalOptions {
-
   const HttpsOptions({
     super.concurrency,
     super.cpu,
@@ -22,13 +21,13 @@ class HttpsOptions extends GlobalOptions {
     super.vpcConnectorEgressSettings,
     this.cors,
   });
+
   /// CORS configuration for the function.
   final Cors? cors;
 }
 
 /// Options for callable functions (onCall).
 class CallableOptions extends HttpsOptions {
-
   const CallableOptions({
     super.concurrency,
     super.cpu,
@@ -51,6 +50,7 @@ class CallableOptions extends HttpsOptions {
     this.enforceAppCheck,
     this.heartBeatIntervalSeconds,
   });
+
   /// Whether to consume the App Check token.
   final ConsumeAppCheckToken? consumeAppCheckToken;
 

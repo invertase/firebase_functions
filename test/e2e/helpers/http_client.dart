@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 
 /// Helper for making HTTP requests to Firebase Functions in the emulator.
 class FunctionsHttpClient {
-
   FunctionsHttpClient(this.baseUrl) : _client = http.Client();
   final String baseUrl;
   final http.Client _client;

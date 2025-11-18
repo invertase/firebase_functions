@@ -1,5 +1,6 @@
 /// Main entry point for E2E tests.
 /// Sets up a single emulator instance and runs all E2E test groups.
+@Tags(['e2e'])
 library;
 
 import 'dart:io';
@@ -12,7 +13,6 @@ import 'tests/https_onrequest_tests.dart';
 import 'tests/integration_tests.dart';
 import 'tests/pubsub_tests.dart';
 
-@Tags(['e2e'])
 void main() {
   late EmulatorHelper emulator;
   late FunctionsHttpClient client;
