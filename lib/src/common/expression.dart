@@ -4,6 +4,8 @@
 /// using CEL (Common Expression Language) or at runtime using environment
 /// variables and parameters.
 abstract class Expression<T extends Object> {
+
+  const Expression();
   /// Gets the runtime value of this expression.
   ///
   /// For parameters, this reads from environment variables.
@@ -24,8 +26,6 @@ abstract class Expression<T extends Object> {
 
   /// Helper method to convert any value to CEL format.
   static String valueToCEL(Object value) => '{{ ${value.toString()} }}';
-
-  const Expression();
 
   /// Creates a conditional expression (ternary operator).
   ///
@@ -63,11 +63,11 @@ abstract class Expression<T extends Object> {
 ///
 /// Evaluates [test] and returns [then] if true, [otherwise] if false.
 final class If<T extends Object> extends Expression<T> {
+
+  const If(this.test, {required this.then, required this.otherwise});
   final ComparableExpression<Object> test;
   final Expression<T> then;
   final Expression<T> otherwise;
-
-  const If(this.test, {required this.then, required this.otherwise});
 
   @override
   T runtimeValue() =>
@@ -80,10 +80,10 @@ final class If<T extends Object> extends Expression<T> {
 
 /// Base class for comparison expressions that return boolean values.
 sealed class ComparableExpression<T extends Object> extends Expression<bool> {
-  final Expression<T> lhs;
-  final Expression<T> rhs;
 
   const ComparableExpression(this.lhs, this.rhs);
+  final Expression<T> lhs;
+  final Expression<T> rhs;
 
   /// Helper method to compare two lists for equality.
   bool _arrayEquals(List<T> left, List<T> right) {
@@ -178,9 +178,9 @@ final class LessThanOrEqualTo extends ComparableExpression<num> {
 
 /// A literal expression that wraps a constant value.
 final class LiteralExpression<T extends Object> extends Expression<T> {
-  final T literal;
 
   const LiteralExpression(this.literal);
+  final T literal;
 
   @override
   T runtimeValue() => literal;

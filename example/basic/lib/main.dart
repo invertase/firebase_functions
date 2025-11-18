@@ -5,9 +5,7 @@ void main(List<String> args) {
     // HTTPS onRequest example
     firebase.https.onRequest(
       name: 'helloWorld',
-      (request) async {
-        return Response.ok('Hello from Dart Functions!');
-      },
+      (request) async => Response.ok('Hello from Dart Functions!'),
     );
 
     // HTTPS onCall example (untyped)

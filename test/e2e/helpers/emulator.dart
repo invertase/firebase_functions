@@ -4,11 +4,6 @@ import 'dart:io';
 
 /// Helper for managing Firebase Functions Emulator lifecycle in tests.
 class EmulatorHelper {
-  Process? _process;
-  final String projectPath;
-  final int functionsPort;
-  final int pubsubPort;
-  final Duration startupTimeout;
 
   EmulatorHelper({
     required this.projectPath,
@@ -16,6 +11,11 @@ class EmulatorHelper {
     this.pubsubPort = 8085,
     this.startupTimeout = const Duration(seconds: 30),
   });
+  Process? _process;
+  final String projectPath;
+  final int functionsPort;
+  final int pubsubPort;
+  final Duration startupTimeout;
 
   /// Starts the Firebase emulator and waits for it to be ready.
   Future<void> start() async {
@@ -82,10 +82,10 @@ class EmulatorHelper {
     print('Stopping Firebase emulator...');
 
     // Try graceful shutdown first
-    _process!.kill(ProcessSignal.sigterm);
+    _process!.kill();
 
     // Wait a bit for graceful shutdown
-    await Future.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 2));
 
     // Force kill if still running
     if (!_process!.kill(ProcessSignal.sigkill)) {
@@ -108,7 +108,7 @@ class EmulatorHelper {
           Uri.parse('http://localhost:$functionsPort'),
         );
         final response = await request.close();
-        await response.drain();
+        await response.drain<List<int>>();
 
         // If we get a response, emulator is ready
         print('Emulator responding on port $functionsPort');
@@ -116,7 +116,7 @@ class EmulatorHelper {
         return;
       } catch (e) {
         // Not ready yet, wait and retry
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
       }
     }
 
@@ -151,9 +151,7 @@ class EmulatorHelper {
       'firebase', // In PATH
       'npx firebase', // Via npx
       '/usr/local/bin/firebase',
-      Platform.environment['HOME'] != null
-          ? '${Platform.environment['HOME']}/.npm-global/bin/firebase'
-          : null,
+      if (Platform.environment['HOME'] != null) '${Platform.environment['HOME']}/.npm-global/bin/firebase' else null,
     ].where((c) => c != null).cast<String>();
 
     for (final cmd in candidates) {

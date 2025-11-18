@@ -11,30 +11,28 @@ typedef JsonDecoder<T extends Object?> = T Function(Map<String, dynamic>);
 ///
 /// Wraps the return value from a callable function handler.
 class CallableResult<T extends Object> {
-  final T data;
 
   CallableResult(this.data);
+  final T data;
 
   /// Converts this result to a Shelf Response.
-  Response toResponse() {
-    return Response.ok(
+  Response toResponse() => Response.ok(
       jsonEncode({'result': data}),
       headers: {
         HttpHeaders.contentTypeHeader: 'application/json',
       },
     );
-  }
 }
 
 /// Request context for a callable function.
 ///
 /// Provides access to request data, authentication context, and headers.
 class CallableRequest<T extends Object?> {
+
+  CallableRequest(this._delegate, this._body, this._jsonDecoder);
   final Request _delegate;
   final Object? _body;
   final JsonDecoder<T>? _jsonDecoder;
-
-  CallableRequest(this._delegate, this._body, this._jsonDecoder);
 
   /// The request data (from the 'data' field in the request body).
   T get data {
@@ -56,9 +54,7 @@ class CallableRequest<T extends Object?> {
   }
 
   /// Whether the client accepts streaming (SSE) responses.
-  bool get acceptsStreaming {
-    return _delegate.headers['accept'] == 'text/event-stream';
-  }
+  bool get acceptsStreaming => _delegate.headers['accept'] == 'text/event-stream';
 
   /// Firebase App Check context.
   ///
@@ -71,9 +67,7 @@ class CallableRequest<T extends Object?> {
   Object? get auth => null;
 
   /// Firebase Instance ID token.
-  String? get instanceIdToken {
-    return _delegate.headers['Firebase-Instance-ID-Token'];
-  }
+  String? get instanceIdToken => _delegate.headers['Firebase-Instance-ID-Token'];
 
   /// The raw Shelf request.
   Request get rawRequest => _delegate;
@@ -83,15 +77,15 @@ class CallableRequest<T extends Object?> {
 ///
 /// Provides streaming support via Server-Sent Events (SSE).
 class CallableResponse<T extends Object> {
+
+  CallableResponse({required this.acceptsStreaming, this.heartbeatSeconds});
   final bool acceptsStreaming;
   final int? heartbeatSeconds;
 
   StreamController<String>? _streamController;
   Response? _streamingResponse;
   Timer? _heartbeatTimer;
-  bool _aborted = false;
-
-  CallableResponse({required this.acceptsStreaming, this.heartbeatSeconds});
+  final bool _aborted = false;
 
   /// Initializes SSE streaming.
   void initializeStreaming() {

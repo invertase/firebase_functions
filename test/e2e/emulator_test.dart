@@ -55,7 +55,7 @@ void main() {
     client = FunctionsHttpClient(emulator.functionsUrl);
 
     // Give emulator a moment to fully initialize
-    await Future.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 2));
   });
 
   tearDownAll(() async {
@@ -96,7 +96,7 @@ void main() {
 
       final result = client.parseCallableResponse(response);
 
-      expect(result, isA<Map>());
+      expect(result, isA<Map<String, dynamic>>());
       expect(result['message'], equals('Hello Alice!'));
     });
 
@@ -119,9 +119,9 @@ void main() {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
 
       // Callable functions wrap result
-      expect(json, containsPair('result', isA<Map>()));
+      expect(json, containsPair('result', isA<Map<String, dynamic>>()));
 
-      final result = json['result'] as Map;
+      final result = json['result'] as Map<String, dynamic>;
       expect(result, containsPair('message', isA<String>()));
     });
   });
@@ -134,7 +134,7 @@ void main() {
 
       final result = client.parseCallableResponse(response);
 
-      expect(result, isA<Map>());
+      expect(result, isA<Map<String, dynamic>>());
       expect(result['message'], contains('streaming'));
     });
 

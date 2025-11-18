@@ -5,22 +5,6 @@ import 'params.dart';
 ///
 /// Matches the GlobalOptions interface from the Node.js SDK.
 class GlobalOptions {
-  final Concurrency? concurrency;
-  final Cpu? cpu;
-  final Ingress? ingressSettings;
-  final Invoker? invoker;
-  final Map<String, String>? labels;
-  final Instances? minInstances;
-  final Instances? maxInstances;
-  final Memory? memory;
-  final Omit? omit;
-  final PreserveExternalChanges? preserveExternalChanges;
-  final Region? region;
-  final List<SecretParam>? secrets;
-  final ServiceAccount? serviceAccount;
-  final TimeoutSeconds? timeoutSeconds;
-  final VpcConnector? vpcConnector;
-  final VpcConnectorEgressSettings? vpcConnectorEgressSettings;
 
   const GlobalOptions({
     this.concurrency,
@@ -40,6 +24,22 @@ class GlobalOptions {
     this.vpcConnector,
     this.vpcConnectorEgressSettings,
   });
+  final Concurrency? concurrency;
+  final Cpu? cpu;
+  final Ingress? ingressSettings;
+  final Invoker? invoker;
+  final Map<String, String>? labels;
+  final Instances? minInstances;
+  final Instances? maxInstances;
+  final Memory? memory;
+  final Omit? omit;
+  final PreserveExternalChanges? preserveExternalChanges;
+  final Region? region;
+  final List<SecretParam>? secrets;
+  final ServiceAccount? serviceAccount;
+  final TimeoutSeconds? timeoutSeconds;
+  final VpcConnector? vpcConnector;
+  final VpcConnectorEgressSettings? vpcConnectorEgressSettings;
 }
 
 /// Base class for all option types.
@@ -85,9 +85,9 @@ final class OptionReset<T extends Object> extends DeployOption<T> {
 
 /// Option with a literal value.
 final class OptionLiteral<T extends Object> extends DeployOption<T> {
-  final T literal;
 
   const OptionLiteral(this.literal) : super._();
+  final T literal;
 
   @override
   T runtimeValue() => literal;
@@ -95,9 +95,9 @@ final class OptionLiteral<T extends Object> extends DeployOption<T> {
 
 /// Option with an expression value.
 final class OptionExpression<T extends Object> extends DeployOption<T> {
-  final Expression<T> expression;
 
   const OptionExpression(this.expression) : super._();
+  final Expression<T> expression;
 
   @override
   T runtimeValue() => expression.runtimeValue();
@@ -105,9 +105,9 @@ final class OptionExpression<T extends Object> extends DeployOption<T> {
 
 /// Option with a parameter value.
 final class OptionParam<T extends Object> extends DeployOption<T> {
-  final Param<T> param;
 
   const OptionParam(this.param) : super._();
+  final Param<T> param;
 
   @override
   T runtimeValue() => param.runtimeValue();
@@ -138,6 +138,7 @@ sealed class Memory extends DeployOption<int> {
   const factory Memory.param(Param<int> param) = _MemoryParam;
   const factory Memory.reset() = _MemoryReset;
 
+  // ignore: unused_element
   const Memory._() : super._();
 }
 
@@ -164,7 +165,7 @@ final class _MemoryLiteral extends OptionLiteral<int> implements Memory {
         );
 
   _MemoryLiteral.fromOption(MemoryOption value) : super(value.value);
-  _MemoryLiteral.fromInt(int value) : super(value);
+  _MemoryLiteral.fromInt(super.value);
 }
 
 final class _MemoryExpression extends OptionExpression<int> implements Memory {
@@ -204,6 +205,7 @@ sealed class Cpu extends DeployOption<double> {
   const factory Cpu.reset() = _CpuReset;
   const factory Cpu.gcfGen1() = _CpuGcfGen1;
 
+  // ignore: unused_element
   const Cpu._() : super._();
 }
 
@@ -240,6 +242,7 @@ sealed class Invoker extends DeployOption<List<String>> {
   const factory Invoker.public() = _InvokerPublic;
   const factory Invoker.private() = _InvokerPrivate;
 
+  // ignore: unused_element
   const Invoker._() : super._();
 }
 

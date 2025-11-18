@@ -32,6 +32,13 @@ ListParam defineList(String name, [ParamOptions<List<String>>? options]) =>
 ///
 /// Matches the ParamOptions interface from the Node.js SDK.
 class ParamOptions<T extends Object> {
+
+  const ParamOptions({
+    this.defaultValue,
+    this.label,
+    this.description,
+    this.input,
+  });
   /// Default value if parameter is not provided.
   final T? defaultValue;
 
@@ -43,23 +50,10 @@ class ParamOptions<T extends Object> {
 
   /// Input specification for how to collect the parameter value.
   final ParamInput<T>? input;
-
-  const ParamOptions({
-    this.defaultValue,
-    this.label,
-    this.description,
-    this.input,
-  });
 }
 
 /// Wire representation of a parameter spec for the CLI.
 class WireParamSpec<T extends Object> {
-  final String name;
-  final T? defaultValue;
-  final String? label;
-  final String? description;
-  final String type;
-  final ParamInput<T>? input;
 
   const WireParamSpec({
     required this.name,
@@ -69,6 +63,12 @@ class WireParamSpec<T extends Object> {
     required this.type,
     this.input,
   });
+  final String name;
+  final T? defaultValue;
+  final String? label;
+  final String? description;
+  final String type;
+  final ParamInput<T>? input;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'name': name,
@@ -85,10 +85,10 @@ class WireParamSpec<T extends Object> {
 /// Parameters are configuration values that can be set at deploy time
 /// and accessed at runtime via environment variables.
 abstract class Param<T extends Object> extends Expression<T> {
-  final String name;
-  final ParamOptions<T>? options;
 
   const Param(this.name, this.options);
+  final String name;
+  final ParamOptions<T>? options;
 
   @override
   T runtimeValue();
@@ -97,8 +97,7 @@ abstract class Param<T extends Object> extends Expression<T> {
   String toString() => 'params.$name';
 
   /// Converts this parameter to its wire specification for deployment.
-  WireParamSpec<T> toSpec() {
-    return WireParamSpec<T>(
+  WireParamSpec<T> toSpec() => WireParamSpec<T>(
       name: name,
       label: options?.label,
       description: options?.description,
@@ -106,7 +105,6 @@ abstract class Param<T extends Object> extends Expression<T> {
       input: options?.input,
       defaultValue: options?.defaultValue,
     );
-  }
 
   String _getTypeName() {
     final typeName = runtimeType.toString().replaceAll('Param', '');
@@ -136,12 +134,10 @@ class StringParam extends Param<String> {
   const StringParam(super.name, super.options);
 
   @override
-  String runtimeValue() {
-    return String.fromEnvironment(
+  String runtimeValue() => String.fromEnvironment(
       name,
       defaultValue: options?.defaultValue ?? '',
     );
-  }
 }
 
 /// An integer parameter.
@@ -149,12 +145,10 @@ class IntParam extends Param<int> {
   const IntParam(super.name, super.options);
 
   @override
-  int runtimeValue() {
-    return int.fromEnvironment(
+  int runtimeValue() => int.fromEnvironment(
       name,
       defaultValue: options?.defaultValue ?? 0,
     );
-  }
 }
 
 /// A double parameter.
@@ -177,12 +171,10 @@ class BooleanParam extends Param<bool> {
   const BooleanParam(super.name, super.options);
 
   @override
-  bool runtimeValue() {
-    return bool.fromEnvironment(
+  bool runtimeValue() => bool.fromEnvironment(
       name,
       defaultValue: options?.defaultValue ?? false,
     );
-  }
 }
 
 /// A string list parameter.
@@ -218,9 +210,9 @@ class ListParam extends Param<List<String>> {
 /// These are special expressions that read from Firebase environment
 /// variables and are always available without being defined by the user.
 class InternalExpression extends Param<String> {
-  final String Function(Map<String, String>) getter;
 
   const InternalExpression._(String name, this.getter) : super(name, null);
+  final String Function(Map<String, String>) getter;
 
   @override
   String runtimeValue() => getter(Platform.environment);
@@ -302,80 +294,72 @@ sealed class ParamInput<T extends Object> {
   // Factory methods for creating input types
 
   /// Creates a multi-select input from a list of values.
-  static MultiSelectParamInput multiSelect(List<String> options) {
-    return MultiSelectParamInput(
+  static MultiSelectParamInput multiSelect(List<String> options) => MultiSelectParamInput(
       options: options.map((opt) => SelectOption(value: opt)).toList(),
     );
-  }
 
   /// Creates a multi-select input from a map of labels to values.
   static MultiSelectParamInput multiSelectWithLabels(
     Map<String, String> optionsWithLabels,
-  ) {
-    return MultiSelectParamInput(
+  ) => MultiSelectParamInput(
       options: optionsWithLabels.entries
           .map((entry) => SelectOption(value: entry.value, label: entry.key))
           .toList(),
     );
-  }
 
   /// Creates a single-select input from a list of values.
-  static SelectParamInput<T> select<T extends Object>(List<T> options) {
-    return SelectParamInput<T>(
+  static SelectParamInput<T> select<T extends Object>(List<T> options) => SelectParamInput<T>(
       options: options.map((opt) => SelectOption(value: opt)).toList(),
     );
-  }
 
   /// Creates a single-select input from a map of labels to values.
   static SelectParamInput<T> selectWithLabels<T extends Object>(
     Map<String, T> optionsWithLabels,
-  ) {
-    return SelectParamInput<T>(
+  ) => SelectParamInput<T>(
       options: optionsWithLabels.entries
           .map((entry) => SelectOption(value: entry.value, label: entry.key))
           .toList(),
     );
-  }
 }
 
 /// Text input with optional validation.
 class TextParamInput<T extends Object> extends ParamInput<T> {
-  final String? example;
-  final RegExp? validationRegex;
-  final String? validationErrorMessage;
 
   const TextParamInput({
     this.example,
     this.validationRegex,
     this.validationErrorMessage,
   });
+  final String? example;
+  final RegExp? validationRegex;
+  final String? validationErrorMessage;
 }
 
 /// Resource picker input (e.g., for selecting a Cloud Storage bucket).
 class ResourceInput extends ParamInput<String> {
-  final String resourceType;
 
   const ResourceInput._({required this.resourceType});
+  final String resourceType;
 }
 
 /// Single-select input from a list of options.
 class SelectParamInput<T extends Object> extends ParamInput<T> {
-  final List<SelectOption<T>> options;
 
   const SelectParamInput({required this.options});
+  final List<SelectOption<T>> options;
 }
 
 /// Multi-select input from a list of options.
 class MultiSelectParamInput extends ParamInput<List<String>> {
-  final List<SelectOption<String>> options;
 
   const MultiSelectParamInput({required this.options});
+  final List<SelectOption<String>> options;
 }
 
 /// An option in a select or multi-select input.
 class SelectOption<T extends Object> {
-  final T value;
-  final String? label;
 
   const SelectOption({required this.value, this.label});
+  final T value;
+  final String? label;
 }

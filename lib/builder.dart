@@ -15,7 +15,7 @@ import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
 // Import types for TypeChecker
-import 'package:firebase_functions/firebase_functions.dart' as ff;
+import 'firebase_functions.dart' as ff;
 
 /// Builder factory function (called by build_runner).
 Builder specBuilder(BuilderOptions options) => _SpecBuilder();
@@ -24,22 +24,6 @@ Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 class _TypeCheckers {
   static final httpsNamespace = TypeChecker.fromRuntime(ff.HttpsNamespace);
   static final pubsubNamespace = TypeChecker.fromRuntime(ff.PubSubNamespace);
-  static final httpsOptions = TypeChecker.fromRuntime(ff.HttpsOptions);
-  static final callableOptions = TypeChecker.fromRuntime(ff.CallableOptions);
-  static final pubsubOptions = TypeChecker.fromRuntime(ff.PubSubOptions);
-
-  // Option type checkers
-  static final memory = TypeChecker.fromRuntime(ff.Memory);
-  static final memoryOption = TypeChecker.fromRuntime(ff.MemoryOption);
-  static final cpu = TypeChecker.fromRuntime(ff.Cpu);
-  static final region = TypeChecker.fromRuntime(ff.Region);
-  static final supportedRegion = TypeChecker.fromRuntime(ff.SupportedRegion);
-  static final ingress = TypeChecker.fromRuntime(ff.Ingress);
-  static final ingressSetting = TypeChecker.fromRuntime(ff.IngressSetting);
-  static final vpcEgressSetting = TypeChecker.fromRuntime(ff.VpcEgressSetting);
-  static final invoker = TypeChecker.fromRuntime(ff.Invoker);
-  static final secretParam = TypeChecker.fromRuntime(ff.SecretParam);
-  static final param = TypeChecker.fromRuntime(ff.Param);
 }
 
 /// The main builder that generates functions.yaml.
@@ -106,11 +90,11 @@ class _SpecBuilder implements Builder {
 
 /// AST visitor that discovers Firebase Functions declarations.
 class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
+
+  _FirebaseFunctionsVisitor(this.resolver);
   final Resolver resolver;
   final Map<String, _ParamSpec> params = {};
   final Map<String, _EndpointSpec> endpoints = {};
-
-  _FirebaseFunctionsVisitor(this.resolver);
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
@@ -166,14 +150,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Checks if this is a parameter definition function.
-  bool _isParamDefinition(String name) {
-    return name == 'defineString' ||
+  bool _isParamDefinition(String name) => name == 'defineString' ||
         name == 'defineInt' ||
         name == 'defineDouble' ||
         name == 'defineBoolean' ||
         name == 'defineList' ||
         name == 'defineSecret';
-  }
 
   /// Extracts an HTTPS function declaration.
   void _extractHttpsFunction(MethodInvocation node, String methodName) {
@@ -251,13 +233,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Finds a named argument in a method invocation.
-  Expression? _findNamedArg(MethodInvocation node, String name) {
-    return node.argumentList.arguments
+  Expression? _findNamedArg(MethodInvocation node, String name) => node.argumentList.arguments
         .whereType<NamedExpression>()
         .where((e) => e.name.label.name == name)
         .map((e) => e.expression)
         .firstOrNull;
-  }
 
   /// Extracts a string literal value.
   String? _extractStringLiteral(Expression expression) {
@@ -268,8 +248,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Gets the parameter type name for YAML.
-  String _getParamType(String functionName) {
-    return switch (functionName) {
+  String _getParamType(String functionName) => switch (functionName) {
       'defineString' || 'defineSecret' => 'string',
       'defineInt' => 'int',
       'defineDouble' => 'float',
@@ -277,16 +256,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       'defineList' => 'list',
       _ => 'string',
     };
-  }
 
   /// Extracts ParamOptions from an InstanceCreationExpression.
-  _ParamOptions? _extractParamOptions(InstanceCreationExpression node) {
-    return _ParamOptions(
+  _ParamOptions? _extractParamOptions(InstanceCreationExpression node) => _ParamOptions(
       defaultValue: _extractDefaultValue(node),
       label: _extractStringField(node, 'label'),
       description: _extractStringField(node, 'description'),
     );
-  }
 
   /// Extracts the defaultValue field.
   dynamic _extractDefaultValue(InstanceCreationExpression node) {
@@ -302,15 +278,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Extracts a string field from options.
-  String? _extractStringField(InstanceCreationExpression node, String fieldName) {
-    return node.argumentList.arguments
+  String? _extractStringField(InstanceCreationExpression node, String fieldName) => node.argumentList.arguments
         .whereType<NamedExpression>()
         .where((e) => e.name.label.name == fieldName)
         .map((e) => e.expression)
         .whereType<StringLiteral>()
         .map((e) => e.stringValue!)
         .firstOrNull;
-  }
 
   /// Extracts a constant value from an expression.
   dynamic _extractConstValue(Expression expression) {
@@ -335,28 +309,24 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
 /// Specification for a parameter.
 class _ParamSpec {
+
+  _ParamSpec({required this.name, required this.type, this.options});
   final String name;
   final String type;
   final _ParamOptions? options;
-
-  _ParamSpec({required this.name, required this.type, this.options});
 }
 
 /// Options for a parameter.
 class _ParamOptions {
+
+  _ParamOptions({this.defaultValue, this.label, this.description});
   final dynamic defaultValue;
   final String? label;
   final String? description;
-
-  _ParamOptions({this.defaultValue, this.label, this.description});
 }
 
 /// Specification for an endpoint (function).
 class _EndpointSpec {
-  final String name;
-  final String type; // 'https', 'callable', 'pubsub'
-  final String? topic; // For Pub/Sub functions
-  final InstanceCreationExpression? options;
 
   _EndpointSpec({
     required this.name,
@@ -364,6 +334,10 @@ class _EndpointSpec {
     this.topic,
     this.options,
   });
+  final String name;
+  final String type; // 'https', 'callable', 'pubsub'
+  final String? topic; // For Pub/Sub functions
+  final InstanceCreationExpression? options;
 
   /// Extracts options configuration from the AST.
   Map<String, dynamic> extractOptions() {
@@ -494,8 +468,7 @@ class _EndpointSpec {
   }
 
   /// Converts MemoryOption enum to integer value.
-  int? _memoryOptionToInt(String optionName) {
-    return switch (optionName) {
+  int? _memoryOptionToInt(String optionName) => switch (optionName) {
       'mb128' => 128,
       'mb256' => 256,
       'mb512' => 512,
@@ -507,7 +480,6 @@ class _EndpointSpec {
       'gb32' => 32768,
       _ => null,
     };
-  }
 
   /// Extracts CPU option value.
   dynamic _extractCpu(Expression expression) {
@@ -599,9 +571,7 @@ class _EndpointSpec {
   }
 
   /// Extracts timeout seconds.
-  dynamic _extractTimeoutSeconds(Expression expression) {
-    return _extractInt(expression);
-  }
+  dynamic _extractTimeoutSeconds(Expression expression) => _extractInt(expression);
 
   /// Extracts integer option value.
   dynamic _extractInt(Expression expression) {

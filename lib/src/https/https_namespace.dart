@@ -30,7 +30,9 @@ class HttpsNamespace extends FunctionsNamespace {
   /// ```
   void onRequest(
     Future<Response> Function(Request request) handler, {
+    // ignore: experimental_member_use
     @mustBeConst required String name,
+    // ignore: experimental_member_use
     @mustBeConst HttpsOptions? options = const HttpsOptions(),
   }) {
     firebase.registerFunction(
@@ -81,7 +83,9 @@ class HttpsNamespace extends FunctionsNamespace {
       CallableRequest<Object?> request,
       CallableResponse<T> response,
     ) handler, {
+    // ignore: experimental_member_use
     @mustBeConst required String name,
+    // ignore: experimental_member_use
     @mustBeConst CallableOptions? options = const CallableOptions(),
   }) {
     firebase.registerFunction(
@@ -131,7 +135,9 @@ class HttpsNamespace extends FunctionsNamespace {
       CallableResponse<Output> response,
     ) handler, {
     required Input Function(Map<String, dynamic>) fromJson,
+    // ignore: experimental_member_use
     @mustBeConst required String name,
+    // ignore: experimental_member_use
     @mustBeConst CallableOptions? options = const CallableOptions(),
   }) {
     firebase.registerFunction(
@@ -151,12 +157,10 @@ class HttpsNamespace extends FunctionsNamespace {
           options,
           handler,
           (result) => result,
-          (result) {
-            return Response.ok(
+          (result) => Response.ok(
               jsonEncode({'result': result}),
               headers: {'Content-Type': 'application/json'},
-            );
-          },
+            ),
         );
       },
     );

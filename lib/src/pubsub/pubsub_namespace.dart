@@ -31,7 +31,9 @@ class PubSubNamespace extends FunctionsNamespace {
   /// ```
   void onMessagePublished(
     Future<void> Function(CloudEvent<PubsubMessage> event) handler, {
+    // ignore: experimental_member_use
     @mustBeConst required String topic,
+    // ignore: experimental_member_use
     @mustBeConst PubSubOptions? options = const PubSubOptions(),
   }) {
     // Generate function name from topic
@@ -79,7 +81,6 @@ class PubSubNamespace extends FunctionsNamespace {
           );
         }
       },
-      external: false, // Pub/Sub events are internal (POST only)
     );
   }
 
@@ -97,7 +98,5 @@ class PubSubNamespace extends FunctionsNamespace {
   }
 
   /// Checks if the CloudEvent type is a Pub/Sub message event.
-  bool _isPubSubEvent(String type) {
-    return type == 'google.cloud.pubsub.topic.v1.messagePublished';
-  }
+  bool _isPubSubEvent(String type) => type == 'google.cloud.pubsub.topic.v1.messagePublished';
 }

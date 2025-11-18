@@ -4,20 +4,6 @@ import 'dart:convert';
 ///
 /// Matches the structure from the Node.js SDK and CloudEvents specification.
 class PubsubMessage {
-  /// The binary data in the message (base64-encoded in CloudEvents).
-  final String data;
-
-  /// Attributes for this message (key-value pairs).
-  final Map<String, String> attributes;
-
-  /// ID of the message (assigned by Pub/Sub).
-  final String messageId;
-
-  /// The time the message was published.
-  final DateTime publishTime;
-
-  /// Ordering key for this message (if applicable).
-  final String? orderingKey;
 
   const PubsubMessage({
     required this.data,
@@ -55,6 +41,20 @@ class PubsubMessage {
       orderingKey: message['orderingKey'] as String?,
     );
   }
+  /// The binary data in the message (base64-encoded in CloudEvents).
+  final String data;
+
+  /// Attributes for this message (key-value pairs).
+  final Map<String, String> attributes;
+
+  /// ID of the message (assigned by Pub/Sub).
+  final String messageId;
+
+  /// The time the message was published.
+  final DateTime publishTime;
+
+  /// Ordering key for this message (if applicable).
+  final String? orderingKey;
 
   /// Converts this message to JSON.
   Map<String, dynamic> toJson() => <String, dynamic>{

@@ -12,9 +12,9 @@ typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
 
 /// Firebase emulator environment detection and configuration.
 class EmulatorEnvironment {
-  final Map<String, String> environment;
 
   EmulatorEnvironment(this.environment);
+  final Map<String, String> environment;
 
   /// Whether running in the Firebase emulator.
   bool get isEmulator => environment['FUNCTIONS_EMULATOR'] == 'true';
@@ -92,9 +92,7 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 }
 
 /// CORS middleware for emulator mode.
-Middleware _corsMiddleware(EmulatorEnvironment env) {
-  return (innerHandler) {
-    return (request) {
+Middleware _corsMiddleware(EmulatorEnvironment env) => (innerHandler) => (request) {
       // Handle preflight OPTIONS requests
       if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
         return Response.ok(
@@ -121,8 +119,6 @@ Middleware _corsMiddleware(EmulatorEnvironment env) {
         return response;
       });
     };
-  };
-}
 
 /// Routes incoming requests to the appropriate function handler.
 FutureOr<Response> _routeRequest(

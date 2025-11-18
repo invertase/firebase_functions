@@ -43,6 +43,8 @@ enum FunctionsErrorCode {
 /// );
 /// ```
 class HttpsError implements Exception {
+
+  HttpsError(this.code, this.message, [this.details]);
   /// The error code.
   final FunctionsErrorCode code;
 
@@ -51,8 +53,6 @@ class HttpsError implements Exception {
 
   /// Additional error details (must be JSON-serializable).
   final dynamic details;
-
-  HttpsError(this.code, this.message, [this.details]);
 
   /// Converts this error to JSON for wire transmission.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -70,8 +70,7 @@ class HttpsError implements Exception {
   String toString() => 'HttpsError($code): $message';
 
   /// Maps error codes to their string representations.
-  static String _errorCodeToStatus(FunctionsErrorCode code) {
-    return switch (code) {
+  static String _errorCodeToStatus(FunctionsErrorCode code) => switch (code) {
       FunctionsErrorCode.ok => 'OK',
       FunctionsErrorCode.cancelled => 'CANCELLED',
       FunctionsErrorCode.unknown => 'UNKNOWN',
@@ -90,11 +89,9 @@ class HttpsError implements Exception {
       FunctionsErrorCode.dataLoss => 'DATA_LOSS',
       FunctionsErrorCode.unauthenticated => 'UNAUTHENTICATED',
     };
-  }
 
   /// Maps HTTP status codes to error codes (for parsing).
-  static FunctionsErrorCode statusToErrorCode(int statusCode) {
-    return switch (statusCode) {
+  static FunctionsErrorCode statusToErrorCode(int statusCode) => switch (statusCode) {
       200 => FunctionsErrorCode.ok,
       400 => FunctionsErrorCode.invalidArgument,
       401 => FunctionsErrorCode.unauthenticated,
@@ -109,5 +106,4 @@ class HttpsError implements Exception {
       504 => FunctionsErrorCode.deadlineExceeded,
       _ => FunctionsErrorCode.unknown,
     };
-  }
 }

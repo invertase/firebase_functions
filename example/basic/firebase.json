@@ -3,7 +3,7 @@
     {
       "source": ".",
       "codebase": "default",
-      "runtime": "dart"
+      "runtime": "dart3"
     }
   ],
   "emulators": {
