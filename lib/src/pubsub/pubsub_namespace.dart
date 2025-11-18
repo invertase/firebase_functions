@@ -87,14 +87,17 @@ class PubSubNamespace extends FunctionsNamespace {
   /// Converts a topic name to a function name.
   ///
   /// Examples:
-  /// - 'my-topic' -> 'onMessagePublished_my-topic'
-  /// - 'projects/my-project/topics/my-topic' -> 'onMessagePublished_my-topic'
+  /// - 'my-topic' -> 'onMessagePublished_mytopic'
+  /// - 'projects/my-project/topics/my-topic' -> 'onMessagePublished_mytopic'
   String _topicToFunctionName(String topic) {
     // Extract just the topic name (last segment)
     final segments = topic.split('/');
     final topicName = segments.last;
 
-    return 'onMessagePublished_$topicName';
+    // Remove hyphens to match Node.js behavior
+    final sanitizedTopic = topicName.replaceAll('-', '');
+
+    return 'onMessagePublished_$sanitizedTopic';
   }
 
   /// Checks if the CloudEvent type is a Pub/Sub message event.

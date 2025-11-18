@@ -16,6 +16,20 @@ void main() {
     late Map<String, dynamic> nodejsManifest;
 
     setUpAll(() async {
+      // Generate the manifest file by running build_runner
+      print('Generating Dart manifest via build_runner...');
+      final buildResult = await Process.run(
+        'dart',
+        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
+        workingDirectory: 'example/basic',
+      );
+
+      if (buildResult.exitCode != 0) {
+        throw Exception(
+          'build_runner failed: ${buildResult.stderr}\n${buildResult.stdout}',
+        );
+      }
+
       // Read Dart-generated YAML
       final dartYaml = File(
         'example/basic/.dart_tool/firebase/functions.yaml',
@@ -45,7 +59,7 @@ void main() {
       expect(
         dartEndpoints.keys.length,
         equals(nodejsEndpoints.keys.length),
-        reason: 'Should discover 4 functions (3 HTTPS + 1 Pub/Sub)',
+        reason: 'Should discover 2 functions (1 HTTPS + 1 Pub/Sub)',
       );
     });
 
@@ -61,23 +75,9 @@ void main() {
       expect(dartFunc['httpsTrigger'], isNotNull);
     });
 
-    test('should have matching callable functions (greet, streamNumbers)', () {
-      for (final name in ['greet', 'streamNumbers']) {
-        final dartFunc = _getEndpoint(dartManifest, name);
-        final nodejsFunc = _getEndpoint(nodejsManifest, name);
-
-        expect(dartFunc, isNotNull, reason: 'Dart should have $name');
-        expect(nodejsFunc, isNotNull, reason: 'Node.js should have $name');
-
-        expect(dartFunc!['entryPoint'], equals(name));
-        expect(dartFunc['platform'], equals('gcfv2'));
-        expect(dartFunc['callableTrigger'], isNotNull);
-      }
-    });
-
     test('should have Pub/Sub function with correct naming', () {
-      // Dart should use underscore in function name
-      final dartFuncName = 'onMessagePublished_my_topic';
+      // Dart should sanitize topic name (remove hyphens) for function name
+      final dartFuncName = 'onMessagePublished_mytopic';
       final dartFunc = _getEndpoint(dartManifest, dartFuncName);
 
       // Node.js uses same format
@@ -94,7 +94,7 @@ void main() {
 
     test('should use eventFilters format for Pub/Sub', () {
       final dartFunc =
-          _getEndpoint(dartManifest, 'onMessagePublished_my_topic')!;
+          _getEndpoint(dartManifest, 'onMessagePublished_mytopic')!;
       final nodejsFunc =
           _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic')!;
 

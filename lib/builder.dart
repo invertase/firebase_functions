@@ -188,8 +188,8 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final topicName = _extractStringLiteral(topicArg);
     if (topicName == null) return;
 
-    // Generate function name from topic (replace hyphens with underscores)
-    final sanitizedTopic = topicName.replaceAll('-', '_');
+    // Generate function name from topic (remove hyphens to match Node.js behavior)
+    final sanitizedTopic = topicName.replaceAll('-', '');
     final functionName = 'onMessagePublished_$sanitizedTopic';
 
     // Extract options if present
