@@ -4,25 +4,12 @@
  * generates compatible functions.yaml output.
  */
 
-const { onRequest, onCall } = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
 
 // HTTPS onRequest example
 exports.helloWorld = onRequest((request, response) => {
   response.send("Hello from Dart Functions!");
-});
-
-// HTTPS onCall example (untyped)
-exports.greet = onCall((request) => {
-  const name = request.data?.name || "World";
-  return { message: `Hello ${name}!` };
-});
-
-// HTTPS onCall with streaming example
-exports.streamNumbers = onCall((request) => {
-  // Note: Streaming in Node.js SDK works differently than our Dart implementation
-  // This is just the basic callable version for comparison
-  return { message: "Done streaming" };
 });
 
 // Pub/Sub trigger example
