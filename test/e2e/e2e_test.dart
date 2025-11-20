@@ -65,7 +65,7 @@ void main() {
   });
 
   // Run all test groups (pass closures to defer value access)
-  runHttpsOnRequestTests(() => client);
+  runHttpsOnRequestTests(() => client, () => emulator);
   runIntegrationTests(() => examplePath);
   runPubSubTests(() => examplePath);
 }

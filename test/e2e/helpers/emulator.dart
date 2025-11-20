@@ -19,6 +19,10 @@ class EmulatorHelper {
   // Completer to signal when emulator is ready
   Completer<void>? _readyCompleter;
 
+  // Buffer to store emulator output for verification
+  final List<String> _outputLines = [];
+  final List<String> _errorLines = [];
+
   /// Starts the Firebase emulator and waits for it to be ready.
   Future<void> start() async {
     print('Starting Firebase emulator...');
@@ -38,12 +42,13 @@ class EmulatorHelper {
     final executable = cmdParts.first;
     final baseArgs = cmdParts.skip(1).toList();
 
-    // Start the emulator
+    // Start the emulator with debug logging
     _process = await Process.start(
       executable,
       [
         ...baseArgs,
         'emulators:start',
+        '--debug',
         '--only',
         'functions,pubsub',
         '--project',
@@ -65,6 +70,7 @@ class EmulatorHelper {
         .transform(const LineSplitter())
         .listen((line) {
       print('[EMULATOR] $line');
+      _outputLines.add(line);
 
       // Detect when emulator is ready
       if (line.contains('All emulators ready!') ||
@@ -80,6 +86,7 @@ class EmulatorHelper {
         .transform(const LineSplitter())
         .listen((line) {
       print('[EMULATOR ERROR] $line');
+      _errorLines.add(line);
     });
 
     // Wait for emulator to be ready
@@ -212,4 +219,45 @@ class EmulatorHelper {
 
   /// Gets the base URL for the Pub/Sub emulator.
   String get pubsubUrl => 'http://localhost:$pubsubPort';
+
+  /// Verifies that a function was executed in the emulator logs.
+  /// Returns true if we find both "Beginning execution" and "Finished" messages.
+  bool verifyFunctionExecution(String functionName) {
+    final executionStart = _outputLines.any(
+      (line) => line.contains('Beginning execution of "$functionName"'),
+    );
+    final executionEnd = _outputLines.any(
+      (line) => line.contains('Finished "$functionName"'),
+    );
+
+    return executionStart && executionEnd;
+  }
+
+  /// Verifies that the Dart runtime actually processed a request.
+  /// Looks for the Shelf server request logs (timestamp + method + status + path).
+  bool verifyDartRuntimeRequest(String method, int statusCode, String path) {
+    // Look for logs like: "2025-11-20T08:19:30.853342  0:00:00.000395 GET     [200] /helloWorld"
+    final pattern = RegExp(
+      r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+\s+\d+:\d+:\d+\.\d+\s+' +
+          RegExp.escape(method) +
+          r'\s+\[' +
+          statusCode.toString() +
+          r'\]\s+' +
+          RegExp.escape(path),
+    );
+
+    return _outputLines.any((line) => pattern.hasMatch(line));
+  }
+
+  /// Gets all output lines captured from the emulator.
+  List<String> get outputLines => List.unmodifiable(_outputLines);
+
+  /// Gets all error lines captured from the emulator.
+  List<String> get errorLines => List.unmodifiable(_errorLines);
+
+  /// Clears the output buffer (useful for testing specific requests).
+  void clearOutputBuffer() {
+    _outputLines.clear();
+    _errorLines.clear();
+  }
 }
