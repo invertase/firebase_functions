@@ -172,10 +172,11 @@ FutureOr<Response> _routeToTargetFunction(
   final functions = firebase.functions;
 
   // Find the function with matching name
-  final targetFunction = functions.cast<FirebaseFunctionDeclaration?>().firstWhere(
-        (f) => f?.name == functionTarget,
-        orElse: () => null,
-      );
+  final targetFunction =
+      functions.cast<FirebaseFunctionDeclaration?>().firstWhere(
+            (f) => f?.name == functionTarget,
+            orElse: () => null,
+          );
 
   if (targetFunction == null) {
     return Response.notFound(
@@ -224,15 +225,20 @@ FutureOr<Response> _routeByPath(
   List<FirebaseFunctionDeclaration> functions,
   String requestPath,
 ) {
-  // Try to find a matching function by path
+  // Extract the function name from the path
+  // Event triggers come as: /functions/projects/{project}/triggers/{functionName}
+  // HTTPS functions come as: /{functionName} (already stripped by firebase-tools)
+  final functionName = _extractFunctionName(requestPath);
+
+  // Try to find a matching function by name
   for (final function in functions) {
     // Internal functions (events) only accept POST requests
     if (!function.external && request.method.toUpperCase() != 'POST') {
       continue;
     }
 
-    // Match path
-    if (requestPath == function.path) {
+    // Match by function name
+    if (functionName == function.name) {
       return function.handler(request);
     }
   }
@@ -242,6 +248,45 @@ FutureOr<Response> _routeByPath(
     'Function not found: $requestPath\n'
     'Available functions: ${functions.map((f) => f.name).join(", ")}',
   );
+}
+
+/// Extracts the function name from a request path.
+///
+/// Handles different path formats:
+/// - Event triggers: /functions/projects/{project}/triggers/{functionName} -> {functionName}
+/// - HTTPS functions: /{functionName} -> {functionName}
+/// - HTTPS with project/region: /{project}/{region}/{functionName} -> {functionName}
+String _extractFunctionName(String requestPath) {
+  // Remove leading slash
+  var path = requestPath;
+  if (path.startsWith('/')) {
+    path = path.substring(1);
+  }
+
+  // Event trigger path: functions/projects/{project}/triggers/{functionName}
+  if (path.startsWith('functions/projects/')) {
+    final parts = path.split('/');
+    if (parts.length >= 5 && parts[3] == 'triggers') {
+      // Extract function name from: functions/projects/{project}/triggers/{functionName}
+      return parts[4];
+    }
+  }
+
+  // HTTPS path: {project}/{region}/{functionName} or just {functionName}
+  final parts = path.split('/');
+
+  // If path has 3 parts, assume {project}/{region}/{functionName}
+  if (parts.length == 3) {
+    return parts[2];
+  }
+
+  // If path has 1 part, it's just {functionName}
+  if (parts.length == 1) {
+    return parts[0];
+  }
+
+  // Return the last part as function name
+  return parts.isNotEmpty ? parts.last : path;
 }
 
 /// Handles the /__/quitquitquit graceful shutdown endpoint.
