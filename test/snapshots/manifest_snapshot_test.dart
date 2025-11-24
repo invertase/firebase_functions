@@ -202,8 +202,8 @@ void main() {
       final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsFull')!;
 
       // VPC should be nested object
-      expect(dartFunc['vpc'], isA<Map>());
-      expect(nodejsFunc['vpc'], isA<Map>());
+      expect(dartFunc['vpc'], isA<Map<dynamic, dynamic>>());
+      expect(nodejsFunc['vpc'], isA<Map<dynamic, dynamic>>());
 
       final dartVpc = dartFunc['vpc'] as Map;
       final nodejsVpc = nodejsFunc['vpc'] as Map;

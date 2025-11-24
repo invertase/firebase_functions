@@ -768,26 +768,6 @@ class _EndpointSpec {
     return labels.isEmpty ? null : labels;
   }
 
-  /// Extracts CORS configuration.
-  dynamic _extractCors(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    final args = expression.argumentList.arguments;
-    if (args.isEmpty) return null;
-
-    final firstArg = args.first;
-    if (firstArg is ListLiteral) {
-      final origins = firstArg.elements
-          .whereType<StringLiteral>()
-          .map((e) => e.stringValue)
-          .whereType<String>() // Filter out nulls
-          .toList();
-      return origins.isEmpty ? null : origins;
-    }
-
-    return null;
-  }
-
   /// Extracts parameter reference and generates CEL expression.
   String _extractParamReference(InstanceCreationExpression expression) {
     final args = expression.argumentList.arguments;
@@ -925,7 +905,8 @@ String _generateYaml(
         }
         if (options.containsKey('vpcConnectorEgressSettings')) {
           buffer.writeln(
-              '      egressSettings: "${options['vpcConnectorEgressSettings']}"');
+            '      egressSettings: "${options['vpcConnectorEgressSettings']}"',
+          );
         }
       }
 
