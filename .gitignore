@@ -22,8 +22,12 @@ coverage/
 *.config.dart
 
 # Firebase Functions specific
-# Keep functions.yaml for snapshot testing reference
-# .dart_tool/firebase/functions.yaml
+# Generated manifest files (build artifacts, not committed)
+example/nodejs_reference/functions.yaml
+example/with_options_nodejs/nodejs_manifest.json
+example/basic/.dart_tool/firebase/functions.yaml
+example/with_options/.dart_tool/firebase/functions.yaml
+**/functions.yaml
 
 # Node.js (for nodejs_reference example)
 node_modules/

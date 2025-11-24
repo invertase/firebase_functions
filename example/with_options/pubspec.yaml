@@ -1,0 +1,14 @@
+name: with_options_example
+description: Comprehensive example with all HTTP function options
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  firebase_functions:
+    path: ../../
+
+dev_dependencies:
+  build_runner: ^2.4.0

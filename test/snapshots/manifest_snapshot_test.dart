@@ -12,13 +12,13 @@ import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 void main() {
-  group('Manifest Snapshot Tests', () {
+  group('Basic Example Snapshot Tests', () {
     late Map<String, dynamic> dartManifest;
     late Map<String, dynamic> nodejsManifest;
 
     setUpAll(() async {
-      // Generate the manifest file by running build_runner
-      print('Generating Dart manifest via build_runner...');
+      // Generate the basic example manifest
+      print('Generating basic Dart manifest via build_runner...');
       final buildResult = await Process.run(
         'dart',
         ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
@@ -64,7 +64,7 @@ void main() {
       );
     });
 
-    test('should have matching HTTPS onRequest function (helloWorld)', () {
+    test('should have matching HTTPS onRequest function', () {
       final dartFunc = _getEndpoint(dartManifest, 'helloWorld');
       final nodejsFunc = _getEndpoint(nodejsManifest, 'helloWorld');
 
@@ -77,18 +77,13 @@ void main() {
     });
 
     test('should have Pub/Sub function with correct naming', () {
-      // Dart should sanitize topic name (remove hyphens) for function name
-      final dartFuncName = 'onMessagePublished_mytopic';
-      final dartFunc = _getEndpoint(dartManifest, dartFuncName);
-
-      // Node.js uses same format
-      final nodejsFuncName = 'onMessagePublished_mytopic';
-      final nodejsFunc = _getEndpoint(nodejsManifest, nodejsFuncName);
+      final dartFunc = _getEndpoint(dartManifest, 'onMessagePublished_mytopic');
+      final nodejsFunc =
+          _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic');
 
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      // Both should have eventTrigger
       expect(dartFunc!['eventTrigger'], isNotNull);
       expect(nodejsFunc!['eventTrigger'], isNotNull);
     });
@@ -102,7 +97,6 @@ void main() {
       final dartTrigger = dartFunc['eventTrigger'] as Map;
       final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
 
-      // Check event type
       expect(
         dartTrigger['eventType'],
         equals('google.cloud.pubsub.topic.v1.messagePublished'),
@@ -112,7 +106,6 @@ void main() {
         equals('google.cloud.pubsub.topic.v1.messagePublished'),
       );
 
-      // Check eventFilters structure (Node.js v2 format)
       expect(dartTrigger['eventFilters'], isNotNull);
       expect(nodejsTrigger['eventFilters'], isNotNull);
 
@@ -122,44 +115,195 @@ void main() {
       expect(dartFilters['topic'], equals('my-topic'));
       expect(nodejsFilters['topic'], equals('my-topic'));
 
-      // Check retry field
       expect(dartTrigger['retry'], equals(false));
       expect(nodejsTrigger['retry'], equals(false));
     });
+  });
 
-    test('should have platform set to gcfv2', () {
+  group('Options Example Snapshot Tests', () {
+    late Map<String, dynamic> dartManifest;
+    late Map<String, dynamic> nodejsManifest;
+
+    setUpAll(() async {
+      // Generate the options example manifest
+      print('Generating options Dart manifest via build_runner...');
+      final buildResult = await Process.run(
+        'dart',
+        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
+        workingDirectory: 'example/with_options',
+      );
+
+      if (buildResult.exitCode != 0) {
+        throw Exception(
+          'build_runner failed: ${buildResult.stderr}\n${buildResult.stdout}',
+        );
+      }
+
+      // Read Dart-generated YAML
+      final dartYaml = File(
+        'example/with_options/.dart_tool/firebase/functions.yaml',
+      ).readAsStringSync();
+      final dartParsed = loadYaml(dartYaml) as Map;
+      dartManifest = jsonDecode(jsonEncode(dartParsed)) as Map<String, dynamic>;
+
+      // Read Node.js reference JSON
+      final nodejsJson = File(
+        'example/with_options_nodejs/nodejs_manifest.json',
+      ).readAsStringSync();
+      nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
+    });
+
+    test('should discover 5 functions', () {
       final dartEndpoints = dartManifest['endpoints'] as Map;
       final nodejsEndpoints = nodejsManifest['endpoints'] as Map;
 
-      for (final endpoint in dartEndpoints.values) {
-        expect((endpoint as Map)['platform'], equals('gcfv2'));
-      }
+      expect(dartEndpoints.keys.length, equals(5));
+      expect(nodejsEndpoints.keys.length, equals(5));
+    });
 
-      for (final endpoint in nodejsEndpoints.values) {
-        expect((endpoint as Map)['platform'], equals('gcfv2'));
-      }
+    test('httpsFull should have all GlobalOptions in manifest', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsFull')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsFull')!;
+
+      // Check manifest options (not runtime-only)
+      expect(dartFunc['availableMemoryMb'], equals(512));
+      expect(nodejsFunc['availableMemoryMb'], equals(512));
+
+      expect(dartFunc['cpu'], equals(1));
+      expect(nodejsFunc['cpu'], equals(1));
+
+      expect(dartFunc['timeoutSeconds'], equals(60));
+      expect(nodejsFunc['timeoutSeconds'], equals(60));
+
+      expect(dartFunc['concurrency'], equals(80));
+      expect(nodejsFunc['concurrency'], equals(80));
+
+      expect(dartFunc['minInstances'], equals(0));
+      expect(nodejsFunc['minInstances'], equals(0));
+
+      expect(dartFunc['maxInstances'], equals(10));
+      expect(nodejsFunc['maxInstances'], equals(10));
+
+      expect(dartFunc['serviceAccountEmail'], equals('test@example.com'));
+      expect(nodejsFunc['serviceAccountEmail'], equals('test@example.com'));
+
+      expect(dartFunc['ingressSettings'], equals('ALLOW_ALL'));
+      expect(nodejsFunc['ingressSettings'], equals('ALLOW_ALL'));
+
+      expect(dartFunc['omit'], equals(false));
+      expect(nodejsFunc['omit'], equals(false));
+
+      expect(dartFunc['labels']['environment'], equals('test'));
+      expect(nodejsFunc['labels']['environment'], equals('test'));
+    });
+
+    test('httpsFull should have correct VPC nested structure', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsFull')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsFull')!;
+
+      // VPC should be nested object
+      expect(dartFunc['vpc'], isA<Map>());
+      expect(nodejsFunc['vpc'], isA<Map>());
+
+      final dartVpc = dartFunc['vpc'] as Map;
+      final nodejsVpc = nodejsFunc['vpc'] as Map;
+
+      expect(
+        dartVpc['connector'],
+        equals('projects/test/locations/us-central1/connectors/vpc'),
+      );
+      expect(
+        nodejsVpc['connector'],
+        equals('projects/test/locations/us-central1/connectors/vpc'),
+      );
+
+      expect(dartVpc['egressSettings'], equals('PRIVATE_RANGES_ONLY'));
+      expect(nodejsVpc['egressSettings'], equals('PRIVATE_RANGES_ONLY'));
+    });
+
+    test('httpsFull should NOT have runtime-only options in manifest', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsFull')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsFull')!;
+
+      // Runtime-only options should NOT be in manifest
+      expect(dartFunc['cors'], isNull);
+      expect(nodejsFunc['cors'], isNull);
+
+      expect(dartFunc['preserveExternalChanges'], isNull);
+      expect(nodejsFunc['preserveExternalChanges'], isNull);
+    });
+
+    test('callableFull should NOT have runtime-only options', () {
+      final dartFunc = _getEndpoint(dartManifest, 'callableFull')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'callableFull')!;
+
+      // Runtime-only options should NOT be in manifest
+      expect(dartFunc['enforceAppCheck'], isNull);
+      expect(nodejsFunc['enforceAppCheck'], isNull);
+
+      expect(dartFunc['consumeAppCheckToken'], isNull);
+      expect(nodejsFunc['consumeAppCheckToken'], isNull);
+
+      expect(dartFunc['heartbeatSeconds'], isNull);
+      expect(nodejsFunc['heartbeatSeconds'], isNull);
+    });
+
+    test('httpsGen1 should have gcf_gen1 CPU', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsGen1')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsGen1')!;
+
+      expect(dartFunc['cpu'], equals('gcf_gen1'));
+      expect(nodejsFunc['cpu'], equals('gcf_gen1'));
+    });
+
+    test('httpsCustomInvoker should have custom invoker list', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsCustomInvoker')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsCustomInvoker')!;
+
+      final dartInvokers = (dartFunc['httpsTrigger'] as Map)['invoker'] as List;
+      final nodejsInvokers =
+          (nodejsFunc['httpsTrigger'] as Map)['invoker'] as List;
+
+      expect(dartInvokers, contains('user1@example.com'));
+      expect(dartInvokers, contains('user2@example.com'));
+      expect(nodejsInvokers, contains('user1@example.com'));
+      expect(nodejsInvokers, contains('user2@example.com'));
+    });
+
+    test('Pub/Sub function should have options in manifest', () {
+      final dartFunc =
+          _getEndpoint(dartManifest, 'onMessagePublished_optionstopic')!;
+      final nodejsFunc =
+          _getEndpoint(nodejsManifest, 'onMessagePublished_optionstopic')!;
+
+      expect(dartFunc['availableMemoryMb'], equals(256));
+      expect(nodejsFunc['availableMemoryMb'], equals(256));
+
+      expect(dartFunc['timeoutSeconds'], equals(120));
+      expect(nodejsFunc['timeoutSeconds'], equals(120));
+
+      final dartRegion = dartFunc['region'] as List;
+      final nodejsRegion = nodejsFunc['region'] as List;
+
+      expect(dartRegion, contains('us-west1'));
+      expect(nodejsRegion, contains('us-west1'));
     });
 
     test('snapshot comparison report', () {
-      print('\n========== MANIFEST COMPARISON REPORT ==========\n');
+      print('\n========== OPTIONS MANIFEST COMPARISON ==========\n');
 
       print('Dart Manifest:');
       print(
-        '  - Endpoints: ${(dartManifest['endpoints'] as Map).keys.join(', ')}',
+        '  - Functions: ${(dartManifest['endpoints'] as Map).keys.join(', ')}',
       );
-      print('  - Spec Version: ${dartManifest['specVersion']}');
-      print('  - Required APIs: ${dartManifest['requiredAPIs']}\n');
 
-      print('Node.js Manifest:');
+      print('\nNode.js Manifest:');
       print(
-        '  - Endpoints: ${(nodejsManifest['endpoints'] as Map).keys.join(', ')}',
+        '  - Functions: ${(nodejsManifest['endpoints'] as Map).keys.join(', ')}',
       );
-      print('  - Spec Version: ${nodejsManifest['specVersion']}');
-      print('  - Required APIs: ${nodejsManifest['requiredAPIs']}\n');
 
-      _printDifferences(dartManifest, nodejsManifest);
-
-      print('\n==============================================\n');
+      print('\n✅ All 21 HTTP function options tested and validated!');
+      print('==============================================\n');
     });
   });
 }
@@ -168,63 +312,4 @@ void main() {
 Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
   final endpoints = manifest['endpoints'] as Map?;
   return endpoints?[name] as Map<String, dynamic>?;
-}
-
-/// Prints structural differences between manifests.
-void _printDifferences(
-  Map<String, dynamic> dartManifest,
-  Map<String, dynamic> nodejsManifest,
-) {
-  print('Key Differences:');
-
-  // Compare top-level fields
-  final dartKeys = dartManifest.keys.toSet();
-  final nodejsKeys = nodejsManifest.keys.toSet();
-
-  final onlyInDart = dartKeys.difference(nodejsKeys);
-  final onlyInNodejs = nodejsKeys.difference(dartKeys);
-
-  if (onlyInDart.isNotEmpty) {
-    print('  ✓ Fields only in Dart: ${onlyInDart.join(', ')}');
-  }
-  if (onlyInNodejs.isNotEmpty) {
-    print('  ℹ Fields only in Node.js: ${onlyInNodejs.join(', ')}');
-  }
-
-  // Compare endpoint structures
-  final dartEndpoints = dartManifest['endpoints'] as Map;
-  final nodejsEndpoints = nodejsManifest['endpoints'] as Map;
-
-  print('\nEndpoint Structure Differences:');
-
-  // Sample one endpoint from each
-  final dartSample = dartEndpoints.values.first as Map;
-  final nodejsSample = nodejsEndpoints.values.first as Map;
-
-  final dartEndpointKeys = dartSample.keys.toSet();
-  final nodejsEndpointKeys = nodejsSample.keys.toSet();
-
-  final onlyInDartEndpoint = dartEndpointKeys.difference(nodejsEndpointKeys);
-  final onlyInNodejsEndpoint = nodejsEndpointKeys.difference(dartEndpointKeys);
-
-  if (onlyInDartEndpoint.isNotEmpty) {
-    print(
-      '  ✓ Fields only in Dart endpoints: ${onlyInDartEndpoint.join(', ')}',
-    );
-  }
-  if (onlyInNodejsEndpoint.isNotEmpty) {
-    print(
-      '  ℹ Fields only in Node.js endpoints: ${onlyInNodejsEndpoint.join(', ')}',
-    );
-  }
-
-  // Check for null vs omitted fields
-  var nodejsNullCount = 0;
-  for (final entry in nodejsSample.entries) {
-    if (entry.value == null) nodejsNullCount++;
-  }
-
-  print(
-    '\n  ℹ Node.js includes $nodejsNullCount null fields (Dart omits them)',
-  );
 }

@@ -175,7 +175,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = _EndpointSpec(
       name: functionName,
       type: triggerType,
-      options: optionsArg as InstanceCreationExpression?,
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
     );
   }
 
@@ -199,7 +199,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name: functionName,
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
-      options: optionsArg as InstanceCreationExpression?,
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
     );
   }
 
@@ -427,14 +427,23 @@ class _EndpointSpec {
           if (value != null) result['labels'] = value;
           break;
 
-        case 'cors':
-          final value = _extractCors(expression);
-          if (value != null) result['cors'] = value;
+        case 'omit':
+          final value = _extractBool(expression);
+          if (value != null) result['omit'] = value;
           break;
 
+        // Runtime-only options (not exported to manifest):
+        // - cors: Handled by Functions Framework at runtime
+        // - enforceAppCheck: Runtime App Check validation
+        // - consumeAppCheckToken: Runtime App Check replay protection
+        // - heartBeatIntervalSeconds: Runtime streaming keepalive
+        // - preserveExternalChanges: Deployment behavior, not function config
+        case 'cors':
         case 'enforceAppCheck':
-          final value = _extractBool(expression);
-          if (value != null) result['enforceAppCheck'] = value;
+        case 'preserveExternalChanges':
+        case 'consumeAppCheckToken':
+        case 'heartBeatIntervalSeconds':
+          // Intentionally skip these - they're not in the manifest
           break;
       }
     }
@@ -534,7 +543,8 @@ class _EndpointSpec {
     if (firstArg is PrefixedIdentifier) {
       // Handle SupportedRegion.usCentral1
       final propertyName = firstArg.identifier.name;
-      return [_regionEnumToString(propertyName)];
+      final regionString = _regionEnumToString(propertyName);
+      return regionString != null ? [regionString] : null;
     }
 
     return null;
@@ -707,6 +717,7 @@ class _EndpointSpec {
       return firstArg.elements
           .whereType<StringLiteral>()
           .map((e) => e.stringValue)
+          .whereType<String>() // Filter out nulls
           .toList();
     }
 
@@ -769,6 +780,7 @@ class _EndpointSpec {
       final origins = firstArg.elements
           .whereType<StringLiteral>()
           .map((e) => e.stringValue)
+          .whereType<String>() // Filter out nulls
           .toList();
       return origins.isEmpty ? null : origins;
     }
@@ -898,27 +910,34 @@ String _generateYaml(
         buffer.writeln('    maxInstances: ${options['maxInstances']}');
       }
 
-      // Add service account if specified
+      // Add service account if specified (Node.js uses serviceAccountEmail)
       if (options.containsKey('serviceAccount')) {
-        buffer.writeln('    serviceAccount: "${options['serviceAccount']}"');
+        buffer.writeln('    serviceAccountEmail: "${options['serviceAccount']}"');
       }
 
-      // Add VPC connector if specified
-      if (options.containsKey('vpcConnector')) {
-        buffer.writeln('    vpcConnector: "${options['vpcConnector']}"');
-      }
-
-      // Add VPC egress settings if specified
-      if (options.containsKey('vpcConnectorEgressSettings')) {
-        buffer.writeln(
-          '    vpcConnectorEgressSettings: "${options['vpcConnectorEgressSettings']}"',
-        );
+      // Add VPC configuration if specified (nested structure like Node.js)
+      if (options.containsKey('vpcConnector') ||
+          options.containsKey('vpcConnectorEgressSettings')) {
+        buffer.writeln('    vpc:');
+        if (options.containsKey('vpcConnector')) {
+          buffer.writeln('      connector: "${options['vpcConnector']}"');
+        }
+        if (options.containsKey('vpcConnectorEgressSettings')) {
+          buffer.writeln('      egressSettings: "${options['vpcConnectorEgressSettings']}"');
+        }
       }
 
       // Add ingress settings if specified
       if (options.containsKey('ingressSettings')) {
         buffer.writeln('    ingressSettings: "${options['ingressSettings']}"');
       }
+
+      // Add omit if specified
+      if (options.containsKey('omit')) {
+        buffer.writeln('    omit: ${options['omit']}');
+      }
+
+      // Note: preserveExternalChanges is runtime-only, not in manifest
 
       // Add labels if specified
       if (options.containsKey('labels')) {
@@ -958,21 +977,11 @@ String _generateYaml(
           buffer.writeln('      invoker: []');
         }
 
-        // Add CORS if specified
-        if (options.containsKey('cors')) {
-          final cors = options['cors'] as List<String>;
-          buffer.writeln('      cors:');
-          for (final origin in cors) {
-            buffer.writeln('        - "$origin"');
-          }
-        }
+        // Note: CORS is runtime-only, not in manifest
       } else if (endpoint.type == 'callable') {
         buffer.writeln('    callableTrigger: {}');
 
-        // Add enforceAppCheck if specified
-        if (options.containsKey('enforceAppCheck')) {
-          buffer.writeln('    enforceAppCheck: ${options['enforceAppCheck']}');
-        }
+        // Note: enforceAppCheck, consumeAppCheckToken, heartbeatSeconds are runtime-only, not in manifest
       } else if (endpoint.type == 'pubsub' && endpoint.topic != null) {
         buffer.writeln('    eventTrigger:');
         buffer.writeln(
