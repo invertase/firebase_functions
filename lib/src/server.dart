@@ -151,8 +151,7 @@ FutureOr<Response> _routeRequest(
   //
   // This is a workaround until firebase-tools properly handles Dart paths.
   if (request.method.toUpperCase() == 'POST') {
-    final eventFunctions =
-        functions.where((f) => !f.external).toList();
+    final eventFunctions = functions.where((f) => !f.external).toList();
 
     if (eventFunctions.length == 1) {
       // Only one event function, route to it
