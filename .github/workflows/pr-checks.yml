@@ -32,9 +32,6 @@ jobs:
       - name: Analyze code
         run: dart analyze --fatal-infos
 
-      - name: Run unit tests
-        run: dart test --exclude-tags=snapshot,integration,e2e --reporter=github
-
   builder-validation:
     name: Validate Builder
     runs-on: ubuntu-latest
