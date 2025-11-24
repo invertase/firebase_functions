@@ -912,7 +912,8 @@ String _generateYaml(
 
       // Add service account if specified (Node.js uses serviceAccountEmail)
       if (options.containsKey('serviceAccount')) {
-        buffer.writeln('    serviceAccountEmail: "${options['serviceAccount']}"');
+        buffer
+            .writeln('    serviceAccountEmail: "${options['serviceAccount']}"');
       }
 
       // Add VPC configuration if specified (nested structure like Node.js)
@@ -923,7 +924,8 @@ String _generateYaml(
           buffer.writeln('      connector: "${options['vpcConnector']}"');
         }
         if (options.containsKey('vpcConnectorEgressSettings')) {
-          buffer.writeln('      egressSettings: "${options['vpcConnectorEgressSettings']}"');
+          buffer.writeln(
+              '      egressSettings: "${options['vpcConnectorEgressSettings']}"');
         }
       }
 
