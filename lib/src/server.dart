@@ -129,6 +129,7 @@ FutureOr<Response> _routeRequest(
   EmulatorEnvironment env,
 ) {
   final functions = firebase.functions;
+  final requestPath = request.url.path;
 
   // Try to find a matching function
   for (final function in functions) {
@@ -137,14 +138,34 @@ FutureOr<Response> _routeRequest(
       continue;
     }
 
-    // Match path
-    if (request.url.path == function.path) {
+    // Match path - try direct match first
+    if (requestPath == function.path) {
       return function.handler(request);
     }
   }
 
+  // For event triggers (Pub/Sub, Firestore, etc.), the Firebase emulator
+  // may not strip paths correctly, resulting in incomplete paths like
+  // /functions/projects/. In this case, if we have a single event function
+  // (non-external) and it's a POST request, route to that function.
+  //
+  // This is a workaround until firebase-tools properly handles Dart paths.
+  if (request.method.toUpperCase() == 'POST') {
+    final eventFunctions =
+        functions.where((f) => !f.external).toList();
+
+    if (eventFunctions.length == 1) {
+      // Only one event function, route to it
+      return eventFunctions.first.handler(request);
+    }
+
+    // Multiple event functions - try to parse CloudEvent to determine
+    // which function to call
+    // TODO: Implement CloudEvent-based routing for multiple event functions
+  }
+
   // No matching function found
   return Response.notFound(
-    'Function not found: ${request.url.path}',
+    'Function not found: $requestPath',
   );
 }

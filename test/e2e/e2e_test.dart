@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 
 import 'helpers/emulator.dart';
 import 'helpers/http_client.dart';
+import 'helpers/pubsub_client.dart';
 import 'tests/https_onrequest_tests.dart';
 import 'tests/integration_tests.dart';
 import 'tests/pubsub_tests.dart';
@@ -16,6 +17,7 @@ import 'tests/pubsub_tests.dart';
 void main() {
   late EmulatorHelper emulator;
   late FunctionsHttpClient client;
+  late PubSubClient pubsubClient;
 
   final examplePath =
       '${Directory.current.path}/example/basic'.replaceAll('/test/e2e', '');
@@ -49,6 +51,9 @@ void main() {
     // Create HTTP client
     client = FunctionsHttpClient(emulator.functionsUrl);
 
+    // Create Pub/Sub client
+    pubsubClient = PubSubClient(emulator.pubsubUrl, 'demo-test');
+
     // Give emulator a moment to fully initialize
     await Future<void>.delayed(const Duration(seconds: 2));
   });
@@ -61,11 +66,12 @@ void main() {
     print('');
 
     client.close();
+    pubsubClient.close();
     await emulator.stop();
   });
 
   // Run all test groups (pass closures to defer value access)
   runHttpsOnRequestTests(() => client, () => emulator);
   runIntegrationTests(() => examplePath);
-  runPubSubTests(() => examplePath);
+  runPubSubTests(() => examplePath, () => pubsubClient, () => emulator);
 }
