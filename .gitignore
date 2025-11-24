@@ -24,7 +24,6 @@ coverage/
 # Firebase Functions specific
 # Generated manifest files (build artifacts, not committed)
 example/nodejs_reference/functions.yaml
-example/with_options_nodejs/nodejs_manifest.json
 example/basic/.dart_tool/firebase/functions.yaml
 example/with_options/.dart_tool/firebase/functions.yaml
 **/functions.yaml
@@ -167,6 +166,7 @@ doc/api/
 
 # Snapshot test artifacts (regenerate locally)
 example/nodejs_reference/nodejs_manifest.json
+example/with_options_nodejs/nodejs_manifest.json
 
 # Package manager locks
 # Keep nodejs_reference/package-lock.json for CI NPM caching
