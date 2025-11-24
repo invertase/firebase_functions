@@ -131,40 +131,163 @@ FutureOr<Response> _routeRequest(
   final functions = firebase.functions;
   final requestPath = request.url.path;
 
-  // Try to find a matching function
+  // Handle special Node.js-compatible endpoints
+  if (requestPath == '__/quitquitquit') {
+    // Graceful shutdown endpoint (used by Cloud Run)
+    return _handleQuitQuitQuit(request);
+  }
+
+  if (requestPath == '__/functions.yaml' &&
+      env.environment['FUNCTIONS_CONTROL_API'] == 'true') {
+    // Manifest endpoint for function discovery
+    return _handleFunctionsManifest(request, firebase);
+  }
+
+  // FUNCTION_TARGET mode (production): Serve only the specified function
+  // This matches Node.js behavior where each Cloud Run service runs one function
+  final functionTarget = env.environment['FUNCTION_TARGET'];
+  if (functionTarget != null && functionTarget.isNotEmpty) {
+    return _routeToTargetFunction(
+      request,
+      firebase,
+      env,
+      functionTarget,
+    );
+  }
+
+  // Shared process mode (development): Route by path
+  return _routeByPath(request, functions, requestPath);
+}
+
+/// Routes request to the function specified by FUNCTION_TARGET.
+///
+/// This matches Node.js production behavior where FUNCTION_TARGET is set
+/// by Cloud Run to specify which function this process instance serves.
+FutureOr<Response> _routeToTargetFunction(
+  Request request,
+  Firebase firebase,
+  EmulatorEnvironment env,
+  String functionTarget,
+) {
+  final functions = firebase.functions;
+
+  // Find the function with matching name
+  final targetFunction = functions.cast<FirebaseFunctionDeclaration?>().firstWhere(
+        (f) => f?.name == functionTarget,
+        orElse: () => null,
+      );
+
+  if (targetFunction == null) {
+    return Response.notFound(
+      'Function "$functionTarget" not found. '
+      'Available functions: ${functions.map((f) => f.name).join(", ")}',
+    );
+  }
+
+  // Validate signature type if specified
+  final signatureType = env.environment['FUNCTION_SIGNATURE_TYPE'];
+  if (signatureType != null) {
+    final isHttpSignature = signatureType == 'http';
+    final isHttpFunction = targetFunction.external;
+
+    // Signature type mismatch
+    if (isHttpSignature && !isHttpFunction) {
+      return Response.internalServerError(
+        body:
+            'Function "$functionTarget" is an event function but FUNCTION_SIGNATURE_TYPE=http',
+      );
+    }
+    if (!isHttpSignature && isHttpFunction) {
+      return Response.internalServerError(
+        body:
+            'Function "$functionTarget" is an HTTP function but FUNCTION_SIGNATURE_TYPE=$signatureType',
+      );
+    }
+  }
+
+  // Validate HTTP method for event functions
+  if (!targetFunction.external && request.method.toUpperCase() != 'POST') {
+    return Response(
+      405,
+      body: 'Event function "$functionTarget" only accepts POST requests',
+      headers: {'Allow': 'POST'},
+    );
+  }
+
+  // Execute the target function (all requests go to this function)
+  return targetFunction.handler(request);
+}
+
+/// Routes request by path matching (development/shared process mode).
+FutureOr<Response> _routeByPath(
+  Request request,
+  List<FirebaseFunctionDeclaration> functions,
+  String requestPath,
+) {
+  // Try to find a matching function by path
   for (final function in functions) {
     // Internal functions (events) only accept POST requests
     if (!function.external && request.method.toUpperCase() != 'POST') {
       continue;
     }
 
-    // Match path - try direct match first
+    // Match path
     if (requestPath == function.path) {
       return function.handler(request);
     }
   }
 
-  // For event triggers (Pub/Sub, Firestore, etc.), the Firebase emulator
-  // may not strip paths correctly, resulting in incomplete paths like
-  // /functions/projects/. In this case, if we have a single event function
-  // (non-external) and it's a POST request, route to that function.
-  //
-  // This is a workaround until firebase-tools properly handles Dart paths.
-  if (request.method.toUpperCase() == 'POST') {
-    final eventFunctions = functions.where((f) => !f.external).toList();
-
-    if (eventFunctions.length == 1) {
-      // Only one event function, route to it
-      return eventFunctions.first.handler(request);
-    }
-
-    // Multiple event functions - try to parse CloudEvent to determine
-    // which function to call
-    // TODO: Implement CloudEvent-based routing for multiple event functions
-  }
-
   // No matching function found
   return Response.notFound(
-    'Function not found: $requestPath',
+    'Function not found: $requestPath\n'
+    'Available functions: ${functions.map((f) => f.name).join(", ")}',
+  );
+}
+
+/// Handles the /__/quitquitquit graceful shutdown endpoint.
+///
+/// This endpoint is used by Cloud Run to signal graceful shutdown.
+/// Matches Node.js implementation in firebase-functions.
+Response _handleQuitQuitQuit(Request request) {
+  // Accept both GET and POST like Node.js does
+  if (request.method != 'GET' && request.method != 'POST') {
+    return Response(405, headers: {'Allow': 'GET, POST'});
+  }
+
+  // In Node.js, this closes the HTTP server
+  // In Dart, we'll just acknowledge the request
+  // Actual shutdown would need to be handled by the server instance
+  print('Received shutdown signal via /__/quitquitquit');
+
+  return Response.ok('OK');
+}
+
+/// Handles the /__/functions.yaml manifest endpoint.
+///
+/// Returns the functions manifest when FUNCTIONS_CONTROL_API is enabled.
+/// This is used by firebase-tools for function discovery.
+FutureOr<Response> _handleFunctionsManifest(
+  Request request,
+  Firebase firebase,
+) {
+  if (request.method != 'GET') {
+    return Response(405, headers: {'Allow': 'GET'});
+  }
+
+  // Read the generated manifest file
+  final manifestPath = '.dart_tool/firebase/functions.yaml';
+  final manifestFile = File(manifestPath);
+
+  if (!manifestFile.existsSync()) {
+    return Response.notFound(
+      'functions.yaml not found at $manifestPath. '
+      'Run "dart run build_runner build" to generate it.',
+    );
+  }
+
+  final manifestContent = manifestFile.readAsStringSync();
+  return Response.ok(
+    manifestContent,
+    headers: {'Content-Type': 'text/yaml; charset=utf-8'},
   );
 }
