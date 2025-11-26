@@ -226,7 +226,7 @@ FutureOr<Response> _routeByPath(
   String requestPath,
 ) {
   // Extract the function name from the path
-  // Event triggers come as: /functions/projects/{project}/triggers/{functionName}
+  // Event triggers come as: /functions/projects/{project}/triggers/{triggerId}
   // HTTPS functions come as: /{functionName} (already stripped by firebase-tools)
   final functionName = _extractFunctionName(requestPath);
 
@@ -253,9 +253,12 @@ FutureOr<Response> _routeByPath(
 /// Extracts the function name from a request path.
 ///
 /// Handles different path formats:
-/// - Event triggers: /functions/projects/{project}/triggers/{functionName} -> {functionName}
+/// - Event triggers: /functions/projects/{project}/triggers/{triggerId} -> {entryPoint}
 /// - HTTPS functions: /{functionName} -> {functionName}
 /// - HTTPS with project/region: /{project}/{region}/{functionName} -> {functionName}
+///
+/// For event triggers, the triggerId may include region prefix like "us-central1-functionName"
+/// We need to extract just the function name part.
 String _extractFunctionName(String requestPath) {
   // Remove leading slash
   var path = requestPath;
@@ -263,12 +266,24 @@ String _extractFunctionName(String requestPath) {
     path = path.substring(1);
   }
 
-  // Event trigger path: functions/projects/{project}/triggers/{functionName}
+  // Event trigger path: functions/projects/{project}/triggers/{triggerId}
   if (path.startsWith('functions/projects/')) {
     final parts = path.split('/');
     if (parts.length >= 5 && parts[3] == 'triggers') {
-      // Extract function name from: functions/projects/{project}/triggers/{functionName}
-      return parts[4];
+      // Extract trigger ID from: functions/projects/{project}/triggers/{triggerId}
+      var triggerId = parts[4];
+
+      // Firebase-tools prefixes trigger IDs with region (e.g., "us-central1-functionName")
+      // and may add suffixes (e.g., "us-central1-functionName-0")
+      // We need to strip these to get the actual function entry point name.
+
+      // Remove region prefix (e.g., "us-central1-", "europe-west1-")
+      triggerId = triggerId.replaceFirst(RegExp(r'^[a-z]+-[a-z]+\d+-'), '');
+
+      // Remove numeric suffix (e.g., "-0", "-1")
+      triggerId = triggerId.replaceFirst(RegExp(r'-\d+$'), '');
+
+      return triggerId;
     }
   }
 
