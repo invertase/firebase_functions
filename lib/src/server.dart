@@ -224,7 +224,7 @@ FutureOr<Response> _routeByPath(
   Request request,
   List<FirebaseFunctionDeclaration> functions,
   String requestPath,
-) {
+) async {
   // Extract the function name from the path
   // Event triggers come as: /functions/projects/{project}/triggers/{triggerId}
   // HTTPS functions come as: /{functionName} (already stripped by firebase-tools)
@@ -243,11 +243,81 @@ FutureOr<Response> _routeByPath(
     }
   }
 
+  // Fallback: If path extraction failed and this is a POST request with CloudEvent,
+  // try to extract the function name from the CloudEvent body
+  if (functionName.isEmpty &&
+      request.method.toUpperCase() == 'POST' &&
+      (request.headers['content-type']?.contains('application/json') ?? false)) {
+    final result = await _tryMatchCloudEventFunction(request, functions);
+    if (result != null) {
+      // Use the recreated request with the body since we consumed the original
+      return result.$2.handler(result.$1);
+    }
+  }
+
   // No matching function found
   return Response.notFound(
     'Function not found: $requestPath\n'
     'Available functions: ${functions.map((f) => f.name).join(", ")}',
   );
+}
+
+/// Tries to match a function by parsing the CloudEvent body.
+///
+/// This is a fallback for when path-based routing fails.
+/// Supports Pub/Sub CloudEvents by extracting the topic from the source field.
+///
+/// Returns a record of (Request, FirebaseFunctionDeclaration) where the Request
+/// is recreated with the body since we consumed the original stream.
+Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
+  Request request,
+  List<FirebaseFunctionDeclaration> functions,
+) async {
+  try {
+    // Read and parse the request body as JSON
+    final bodyString = await request.readAsString();
+    final body = jsonDecode(bodyString) as Map<String, dynamic>;
+
+    // Check if this is a valid CloudEvent
+    if (!body.containsKey('source') || !body.containsKey('type')) {
+      return null;
+    }
+
+    final source = body['source'] as String;
+    final type = body['type'] as String;
+
+    // Handle Pub/Sub CloudEvents
+    // Source format: //pubsub.googleapis.com/projects/{project}/topics/{topic}
+    if (type == 'google.cloud.pubsub.topic.v1.messagePublished' &&
+        source.contains('/topics/')) {
+      final topicName = source.split('/topics/').last;
+
+      // Sanitize topic name to match function naming convention
+      // Topic "my-topic" becomes function "onMessagePublished_mytopic"
+      final sanitizedTopic = topicName.replaceAll('-', '').toLowerCase();
+      final expectedFunctionName = 'onMessagePublished_$sanitizedTopic';
+
+      // Try to find a matching function
+      for (final function in functions) {
+        if (function.name == expectedFunctionName && !function.external) {
+          print(
+            'CloudEvent fallback matched topic "$topicName" to function "$expectedFunctionName"',
+          );
+
+          // Recreate the request with the body since we consumed the stream
+          final newRequest = request.change(body: bodyString);
+          return (newRequest, function);
+        }
+      }
+    }
+
+    // TODO: Add support for other CloudEvent types (Firestore, Storage, etc.)
+
+    return null;
+  } catch (e) {
+    print('Failed to parse CloudEvent for function matching: $e');
+    return null;
+  }
 }
 
 /// Extracts the function name from a request path.
