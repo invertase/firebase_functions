@@ -247,7 +247,8 @@ FutureOr<Response> _routeByPath(
   // try to extract the function name from the CloudEvent body
   if (functionName.isEmpty &&
       request.method.toUpperCase() == 'POST' &&
-      (request.headers['content-type']?.contains('application/json') ?? false)) {
+      (request.headers['content-type']?.contains('application/json') ??
+          false)) {
     final result = await _tryMatchCloudEventFunction(request, functions);
     if (result != null) {
       // Use the recreated request with the body since we consumed the original
