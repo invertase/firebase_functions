@@ -245,10 +245,7 @@ FutureOr<Response> _routeByPath(
 
   // Fallback: If path extraction failed and this is a POST request with CloudEvent,
   // try to extract the function name from the CloudEvent body
-  if (functionName.isEmpty &&
-      request.method.toUpperCase() == 'POST' &&
-      (request.headers['content-type']?.contains('application/json') ??
-          false)) {
+  if (functionName.isEmpty && request.method.toUpperCase() == 'POST') {
     final result = await _tryMatchCloudEventFunction(request, functions);
     if (result != null) {
       // Use the recreated request with the body since we consumed the original
