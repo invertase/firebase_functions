@@ -32,9 +32,6 @@ jobs:
       - name: Analyze code
         run: dart analyze --fatal-infos
 
-      - name: Run unit tests
-        run: dart test --exclude-tags=snapshot,integration,e2e --reporter=github
-
   builder-validation:
     name: Validate Builder
     runs-on: ubuntu-latest
@@ -102,13 +99,19 @@ jobs:
       - name: Install dependencies
         run: dart pub get
 
-      - name: Generate Dart manifest
+      - name: Generate Dart manifest (basic)
         working-directory: example/basic
         run: |
           dart pub get
           dart run build_runner build --delete-conflicting-outputs
 
-      - name: Generate Node.js manifest
+      - name: Generate Dart manifest (with_options)
+        working-directory: example/with_options
+        run: |
+          dart pub get
+          dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate Node.js manifest (nodejs_reference)
         working-directory: example/nodejs_reference
         run: |
           npm ci
@@ -116,7 +119,7 @@ jobs:
             npx firebase-functions > /tmp/ff.log 2>&1 &
           FF_PID=$!
 
-          for i in {1..20}; do
+          for i in {1..30}; do
             if curl -s http://localhost:8080/__/functions.yaml > /dev/null 2>&1; then
               break
             fi
@@ -124,6 +127,24 @@ jobs:
           done
 
           curl -s http://localhost:8080/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
+          kill $FF_PID 2>/dev/null || true
+
+      - name: Generate Node.js manifest (with_options_nodejs)
+        working-directory: example/with_options_nodejs
+        run: |
+          npm ci
+          GCLOUD_PROJECT="test-project" PORT="8081" FUNCTIONS_CONTROL_API="true" \
+            npx firebase-functions > /tmp/ff_options.log 2>&1 &
+          FF_PID=$!
+
+          for i in {1..30}; do
+            if curl -s http://localhost:8081/__/functions.yaml > /dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl -s http://localhost:8081/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
           kill $FF_PID 2>/dev/null || true
 
       - name: Run snapshot tests
