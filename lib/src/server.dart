@@ -131,6 +131,12 @@ FutureOr<Response> _routeRequest(
   final functions = firebase.functions;
   final requestPath = request.url.path;
 
+  // Debug: Log full request details
+  print('DEBUG: Full request URL: ${request.requestedUri}');
+  print('DEBUG: Request path: $requestPath');
+  print('DEBUG: Request method: ${request.method}');
+  print('DEBUG: Headers: ${request.headers}');
+
   // Handle special Node.js-compatible endpoints
   if (requestPath == '__/quitquitquit') {
     // Graceful shutdown endpoint (used by Cloud Run)
@@ -225,8 +231,18 @@ FutureOr<Response> _routeByPath(
   List<FirebaseFunctionDeclaration> functions,
   String requestPath,
 ) async {
+  // For POST requests, check if this is a CloudEvent first (binary or structured mode)
+  // CloudEvents have all the routing info in headers, so check those before path parsing
+  if (request.method.toUpperCase() == 'POST') {
+    final result = await _tryMatchCloudEventFunction(request, functions);
+    if (result != null) {
+      // Use the recreated request with the body since we consumed the original
+      return result.$2.handler(result.$1);
+    }
+  }
+
+  // Not a CloudEvent, try path-based routing for HTTPS functions
   // Extract the function name from the path
-  // Event triggers come as: /functions/projects/{project}/triggers/{triggerId}
   // HTTPS functions come as: /{functionName} (already stripped by firebase-tools)
   final functionName = _extractFunctionName(requestPath);
 
@@ -243,16 +259,6 @@ FutureOr<Response> _routeByPath(
     }
   }
 
-  // Fallback: If path extraction failed and this is a POST request with CloudEvent,
-  // try to extract the function name from the CloudEvent body
-  if (functionName.isEmpty && request.method.toUpperCase() == 'POST') {
-    final result = await _tryMatchCloudEventFunction(request, functions);
-    if (result != null) {
-      // Use the recreated request with the body since we consumed the original
-      return result.$2.handler(result.$1);
-    }
-  }
-
   // No matching function found
   return Response.notFound(
     'Function not found: $requestPath\n'
@@ -260,30 +266,71 @@ FutureOr<Response> _routeByPath(
   );
 }
 
-/// Tries to match a function by parsing the CloudEvent body.
+/// Tries to match a function by parsing CloudEvent headers or body.
 ///
-/// This is a fallback for when path-based routing fails.
-/// Supports Pub/Sub CloudEvents by extracting the topic from the source field.
+/// Supports both:
+/// - Binary content mode: CloudEvent metadata in ce-* headers, protobuf body
+/// - Structured content mode: CloudEvent as JSON body
 ///
 /// Returns a record of (Request, FirebaseFunctionDeclaration) where the Request
 /// is recreated with the body since we consumed the original stream.
+/// Returns null if this is not a CloudEvent request.
 Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
   Request request,
   List<FirebaseFunctionDeclaration> functions,
 ) async {
   try {
-    // Read and parse the request body as JSON
-    final bodyString = await request.readAsString();
-    final body = jsonDecode(bodyString) as Map<String, dynamic>;
+    print('DEBUG: Trying to match CloudEvent function...');
+    print('DEBUG: Content-Type: ${request.headers['content-type']}');
 
-    // Check if this is a valid CloudEvent
-    if (!body.containsKey('source') || !body.containsKey('type')) {
-      return null;
+    String? bodyString; // Only set for structured mode
+    final isBinaryMode = request.headers.containsKey('ce-type') &&
+        request.headers.containsKey('ce-source');
+
+    String source;
+    String type;
+
+    // Check for binary content mode (CloudEvent metadata in headers)
+    if (isBinaryMode) {
+      print('DEBUG: Detected CloudEvent binary content mode');
+      final ceType = request.headers['ce-type'];
+      final ceSource = request.headers['ce-source'];
+
+      if (ceType == null || ceSource == null) {
+        print('DEBUG: Missing ce-type or ce-source header');
+        return null;
+      }
+
+      type = ceType;
+      source = ceSource;
+      print('DEBUG: ce-type: $type');
+      print('DEBUG: ce-source: $source');
+    } else {
+      // Check content-type to see if this might be structured mode
+      final contentType = request.headers['content-type'];
+      if (contentType == null || !contentType.contains('application/json')) {
+        print('DEBUG: Not a CloudEvent (no ce-* headers and not JSON)');
+        return null;
+      }
+
+      // Structured content mode - try to parse JSON body
+      print('DEBUG: Trying structured content mode (JSON body)');
+      bodyString = await request.readAsString();
+      print('DEBUG: Body length: ${bodyString.length} chars');
+
+      final body = jsonDecode(bodyString) as Map<String, dynamic>;
+
+      // Check if this is a valid CloudEvent
+      if (!body.containsKey('source') || !body.containsKey('type')) {
+        print('DEBUG: Not a CloudEvent (missing source or type in JSON body)');
+        return null;
+      }
+
+      source = body['source'] as String;
+      type = body['type'] as String;
     }
 
-    final source = body['source'] as String;
-    final type = body['type'] as String;
-
+    // Now we have source and type from either headers or body
     // Handle Pub/Sub CloudEvents
     // Source format: //pubsub.googleapis.com/projects/{project}/topics/{topic}
     if (type == 'google.cloud.pubsub.topic.v1.messagePublished' &&
@@ -302,14 +349,71 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
             'CloudEvent fallback matched topic "$topicName" to function "$expectedFunctionName"',
           );
 
-          // Recreate the request with the body since we consumed the stream
-          final newRequest = request.change(body: bodyString);
+          // For structured mode, recreate request with body; for binary mode, use original
+          final newRequest =
+              bodyString != null ? request.change(body: bodyString) : request;
           return (newRequest, function);
         }
       }
     }
 
-    // TODO: Add support for other CloudEvent types (Firestore, Storage, etc.)
+    // Handle Firestore CloudEvents
+    // Source format: //firestore.googleapis.com/projects/{project}/databases/{database}/documents/{document}
+    // Or use ce-document header in binary mode
+    // Event types:
+    // - google.cloud.firestore.document.v1.created
+    // - google.cloud.firestore.document.v1.updated
+    // - google.cloud.firestore.document.v1.deleted
+    // - google.cloud.firestore.document.v1.written
+    if (type.startsWith('google.cloud.firestore.document.v1.')) {
+      // Extract document path from ce-document header (binary mode) or source (structured mode)
+      String? documentPath;
+      if (isBinaryMode && request.headers.containsKey('ce-document')) {
+        documentPath = request.headers['ce-document'];
+        print('DEBUG: Using ce-document header: $documentPath');
+      } else if (source.contains('/documents/')) {
+        documentPath = source.split('/documents/').last;
+        print('DEBUG: Extracted document path from source: $documentPath');
+      }
+
+      if (documentPath != null) {
+        // Map CloudEvent type to method name
+        final methodName = _mapCloudEventTypeToFirestoreMethod(type);
+        if (methodName != null) {
+          print('DEBUG: Looking for Firestore function with method: $methodName');
+          print('DEBUG: Document path to match: $documentPath');
+
+          // Try to find a matching function by pattern matching
+          for (final function in functions) {
+            if (!function.external && function.name.startsWith(methodName)) {
+              // Check if this function has a document pattern to match against
+              if (function.documentPattern != null) {
+                print(
+                  'DEBUG: Checking pattern: ${function.documentPattern} against $documentPath',
+                );
+                if (_matchesDocumentPattern(
+                  documentPath,
+                  function.documentPattern!,
+                )) {
+                  print(
+                    'CloudEvent matched Firestore document "$documentPath" '
+                    'to function "${function.name}" with pattern "${function.documentPattern}"',
+                  );
+
+                  // For structured mode, recreate request with body; for binary mode, use original
+                  final newRequest = bodyString != null
+                      ? request.change(body: bodyString)
+                      : request;
+                  return (newRequest, function);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // TODO: Add support for other CloudEvent types (Storage, Auth, etc.)
 
     return null;
   } catch (e) {
@@ -328,15 +432,21 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
 /// For event triggers, the triggerId may include region prefix like "us-central1-functionName"
 /// We need to extract just the function name part.
 String _extractFunctionName(String requestPath) {
+  print('DEBUG: Extracting function name from path: $requestPath');
+
   // Remove leading slash
   var path = requestPath;
   if (path.startsWith('/')) {
     path = path.substring(1);
   }
 
+  print('DEBUG: Path after removing leading slash: $path');
+
   // Event trigger path: functions/projects/{project}/triggers/{triggerId}
   if (path.startsWith('functions/projects/')) {
+    print('DEBUG: Detected event trigger path');
     final parts = path.split('/');
+    print('DEBUG: Path parts: $parts (length: ${parts.length})');
     if (parts.length >= 5 && parts[3] == 'triggers') {
       // Extract trigger ID from: functions/projects/{project}/triggers/{triggerId}
       var triggerId = parts[4];
@@ -351,6 +461,7 @@ String _extractFunctionName(String requestPath) {
       // Remove numeric suffix (e.g., "-0", "-1")
       triggerId = triggerId.replaceFirst(RegExp(r'-\d+$'), '');
 
+      print('DEBUG: Extracted function name from trigger: $triggerId');
       return triggerId;
     }
   }
@@ -418,4 +529,50 @@ FutureOr<Response> _handleFunctionsManifest(
     manifestContent,
     headers: {'Content-Type': 'text/yaml; charset=utf-8'},
   );
+}
+
+/// Maps Firestore CloudEvent type to method name.
+String? _mapCloudEventTypeToFirestoreMethod(String eventType) =>
+    switch (eventType) {
+      'google.cloud.firestore.document.v1.created' => 'onDocumentCreated',
+      'google.cloud.firestore.document.v1.updated' => 'onDocumentUpdated',
+      'google.cloud.firestore.document.v1.deleted' => 'onDocumentDeleted',
+      'google.cloud.firestore.document.v1.written' => 'onDocumentWritten',
+      _ => null,
+    };
+
+/// Matches a document path against a pattern with wildcards.
+///
+/// Examples:
+/// - 'users/123' matches 'users/{userId}'
+/// - 'users/123/posts/456' matches 'users/{userId}/posts/{postId}'
+/// - 'users/123' does NOT match 'posts/{postId}'
+bool _matchesDocumentPattern(String documentPath, String pattern) {
+  // Split both paths by '/'
+  final docParts = documentPath.split('/');
+  final patternParts = pattern.split('/');
+
+  // Paths must have same number of segments
+  if (docParts.length != patternParts.length) {
+    return false;
+  }
+
+  // Check each segment
+  for (var i = 0; i < docParts.length; i++) {
+    final docPart = docParts[i];
+    final patternPart = patternParts[i];
+
+    // If pattern part is a wildcard (contains {})
+    if (patternPart.startsWith('{') && patternPart.endsWith('}')) {
+      // Wildcard matches any value
+      continue;
+    }
+
+    // Not a wildcard - must match exactly
+    if (docPart != patternPart) {
+      return false;
+    }
+  }
+
+  return true;
 }

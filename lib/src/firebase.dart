@@ -1,18 +1,22 @@
 import 'dart:async';
 import 'package:shelf/shelf.dart';
 
+import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
 
 /// Main Firebase Functions instance.
 ///
-/// Provides access to all function namespaces (https, pubsub, etc.).
+/// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
 
   /// Pub/Sub triggers namespace.
   PubSubNamespace get pubsub => PubSubNamespace(this);
+
+  /// Firestore triggers namespace.
+  FirestoreNamespace get firestore => FirestoreNamespace(this);
 }
 
 /// Extension for internal function registration.
@@ -31,10 +35,12 @@ extension FirebaseX on Firebase {
   /// [name] is the function name (used for routing).
   /// [handler] is the function handler that processes requests.
   /// [external] indicates if the function accepts non-POST requests.
+  /// [documentPattern] is the Firestore document path pattern (e.g., 'users/{userId}').
   void registerFunction(
     String name,
     FirebaseFunctionHandler handler, {
     bool external = false,
+    String? documentPattern,
   }) {
     // Check for duplicate function names
     if (functions.any((f) => f.name == name)) {
@@ -49,6 +55,7 @@ extension FirebaseX on Firebase {
         name: transformedName,
         handler: handler,
         external: external,
+        documentPattern: documentPattern,
       ),
     );
   }
@@ -66,6 +73,7 @@ final class FirebaseFunctionDeclaration {
     required this.name,
     required this.handler,
     required this.external,
+    this.documentPattern,
   }) : path = name;
 
   /// Function name (used for routing and identification).
@@ -73,6 +81,10 @@ final class FirebaseFunctionDeclaration {
 
   /// URL path for this function (derived from name).
   final String path;
+
+  /// For Firestore triggers: the document path pattern (e.g., 'users/{userId}').
+  /// Used for pattern matching against actual document paths.
+  final String? documentPattern;
 
   /// Whether this function accepts external (non-POST) requests.
   ///

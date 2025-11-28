@@ -9,6 +9,7 @@ environment:
 dependencies:
   shelf: ^1.4.0
   meta: ^1.15.0
+  dart_firebase_admin: ^0.3.0
   # Required for builder
   build: ^2.4.0
   source_gen: ^1.5.0
