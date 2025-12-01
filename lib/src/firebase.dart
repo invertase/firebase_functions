@@ -1,4 +1,8 @@
 import 'dart:async';
+import 'dart:io';
+
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:dart_firebase_admin/firestore.dart';
 import 'package:shelf/shelf.dart';
 
 import 'firestore/firestore_namespace.dart';
@@ -9,6 +13,55 @@ import 'pubsub/pubsub_namespace.dart';
 ///
 /// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
+  Firebase() {
+    _initializeAdminSDK();
+  }
+
+  FirebaseAdminApp? _adminApp;
+  Firestore? _firestoreInstance;
+
+  /// Initialize the Firebase Admin SDK
+  void _initializeAdminSDK() {
+    // Get project ID from environment
+    final projectId = Platform.environment['GCLOUD_PROJECT'] ??
+        Platform.environment['GCP_PROJECT'] ??
+        'demo-test'; // Fallback for emulator
+
+    // Check if running in emulator
+    final firestoreEmulatorHost = Platform.environment['FIRESTORE_EMULATOR_HOST'];
+    final isEmulator = firestoreEmulatorHost != null;
+
+    try {
+      if (isEmulator) {
+        // Emulator mode - no credentials needed
+        print('Initializing Firebase Admin SDK for emulator (project: $projectId)');
+        print('Firestore emulator: $firestoreEmulatorHost');
+
+        // For emulator, we don't need actual credentials
+        _adminApp = FirebaseAdminApp.initializeApp(
+          projectId,
+          Credential.fromApplicationDefaultCredentials(),
+        );
+      } else {
+        // Production mode - use Application Default Credentials
+        print('Initializing Firebase Admin SDK (project: $projectId)');
+        _adminApp = FirebaseAdminApp.initializeApp(
+          projectId,
+          Credential.fromApplicationDefaultCredentials(),
+        );
+      }
+
+      _firestoreInstance = Firestore(_adminApp!);
+      print('Firebase Admin SDK initialized successfully');
+    } catch (e) {
+      print('Warning: Failed to initialize Firebase Admin SDK: $e');
+      print('Firestore triggers will not be able to fetch document data');
+    }
+  }
+
+  /// Get the Firestore instance
+  Firestore? get firestoreAdmin => _firestoreInstance;
+
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
 

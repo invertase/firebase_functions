@@ -93,15 +93,52 @@ class FirestoreNamespace extends FunctionsNamespace {
             print('Event ID: $ceId');
             print('Event time: $ceTime');
 
-            // TODO: Parse protobuf body to create DocumentSnapshot and call handler
-            // The body contains protobuf-encoded document data that needs to be parsed
-            // Once implemented, we'll create a FirestoreEvent with the actual DocumentSnapshot
-            // and call: await handler(event)
+            // Fetch the document using the Admin SDK
+            final firestore = firebase.firestoreAdmin;
+            if (firestore == null) {
+              return Response(
+                500,
+                body: 'Firestore Admin SDK not initialized',
+              );
+            }
 
-            return Response.ok(
-              'CloudEvent received. Protobuf parsing not yet implemented - '
-              'handler will be called once document parsing is added.',
+            print('Fetching document from Firestore: $documentPath');
+            final docSnapshot = await firestore.doc(documentPath).get();
+
+            if (!docSnapshot.exists) {
+              print('Warning: Document does not exist (may have been deleted)');
+              // For created events, the document should exist. If not, it might have been deleted immediately
+              // We'll still call the handler but with a non-existent document
+            } else {
+              print('Document fetched successfully');
+            }
+
+            // Cast to QueryDocumentSnapshot (which exists in dart_firebase_admin)
+            final querySnapshot = docSnapshot as QueryDocumentSnapshot<DocumentData>;
+
+            // Create FirestoreEvent with the fetched document
+            final event = FirestoreEvent<QueryDocumentSnapshot<DocumentData>>(
+              data: querySnapshot,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1', // TODO: Extract from source or headers
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
             );
+
+            // Execute user's handler
+            print('Calling user handler...');
+            await handler(event);
+            print('Handler completed successfully');
+
+            return Response.ok('');
           } else {
             // Structured content mode: full CloudEvent in JSON body
             final bodyString = await request.readAsString();

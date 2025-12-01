@@ -8,8 +8,10 @@ void main(List<String> args) {
       (event) async {
         print('User created: ${event.document}');
         print('Params: ${event.params}');
-        // final snapshot = event.data;
-        // print('User data: ${snapshot.data()}');
+        final snapshot = event.data;
+        print('User ID: ${snapshot.id}');
+        print('User data: ${snapshot.data()}');
+        print('User exists: ${snapshot.exists}');
       },
     );
 
