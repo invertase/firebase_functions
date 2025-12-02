@@ -308,7 +308,10 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
     } else {
       // Check content-type to see if this might be structured mode
       final contentType = request.headers['content-type'];
-      if (contentType == null || !contentType.contains('application/json')) {
+      final isJson = contentType?.contains('application/json') ?? false;
+      final isCloudEvent =
+          contentType?.contains('application/cloudevents') ?? false;
+      if (!isJson && !isCloudEvent) {
         print('DEBUG: Not a CloudEvent (no ce-* headers and not JSON)');
         return null;
       }

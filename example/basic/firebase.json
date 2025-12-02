@@ -13,6 +13,9 @@
     "pubsub": {
       "port": 8085
     },
+    "firestore": {
+      "port": 8080
+    },
     "ui": {
       "enabled": false
     }
