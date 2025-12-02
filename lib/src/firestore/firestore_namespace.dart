@@ -1,14 +1,15 @@
 import 'dart:async';
+import 'dart:typed_data';
 
-import 'package:dart_firebase_admin/firestore.dart'
-    show QueryDocumentSnapshot, DocumentData;
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
 import '../firebase.dart';
+import 'document_snapshot.dart';
 import 'event.dart';
 import 'options.dart';
+import 'protobuf_parser.dart';
 
 /// Firestore triggers namespace.
 ///
@@ -18,27 +19,36 @@ class FirestoreNamespace extends FunctionsNamespace {
 
   /// Event handler that triggers when a document is created in Firestore.
   ///
-  /// The handler receives a [FirestoreEvent] containing the [QueryDocumentSnapshot].
+  /// The handler receives a [FirestoreEvent] containing an [EmulatorDocumentSnapshot].
   ///
   /// Example:
   /// ```dart
   /// firebase.firestore.onDocumentCreated(
   ///   document: 'users/{userId}',
   ///   (event) async {
-  ///     final snapshot = event.data;
-  ///     print('New user created: ${snapshot.id}');
-  ///     print('User data: ${snapshot.data()}');
+  ///     // Access document data (similar to Node.js)
+  ///     final data = event.data?.data();
+  ///     print('User data: $data');
+  ///     print('User name: ${data?['name']}');
+  ///
+  ///     // Access path parameters
+  ///     print('User ID: ${event.params['userId']}');
+  ///
+  ///     // Access document metadata
+  ///     print('Document path: ${event.document}');
+  ///     print('Document ID: ${event.data?.id}');
   ///   },
   /// );
   /// ```
   void onDocumentCreated(
     Future<void> Function(
-      FirestoreEvent<QueryDocumentSnapshot<DocumentData>> event,
+      FirestoreEvent<EmulatorDocumentSnapshot?> event,
     ) handler, {
     /// The Firestore document path to trigger on.
     /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
     @mustBeConst required String document,
+
     /// Options that can be set on an individual event-handling function.
     // ignore: experimental_member_use
     @mustBeConst DocumentOptions? options,
@@ -61,7 +71,8 @@ class FirestoreNamespace extends FunctionsNamespace {
             if (ceType != null && !_isFirestoreCreatedEvent(ceType)) {
               return Response(
                 400,
-                body: 'Invalid event type for Firestore onDocumentCreated: $ceType',
+                body:
+                    'Invalid event type for Firestore onDocumentCreated: $ceType',
               );
             }
 
@@ -74,7 +85,10 @@ class FirestoreNamespace extends FunctionsNamespace {
             final database = request.headers['ce-database'] ?? '(default)';
             final namespace = request.headers['ce-namespace'] ?? '(default)';
 
-            if (ceId == null || ceSource == null || ceTime == null || documentPath == null) {
+            if (ceId == null ||
+                ceSource == null ||
+                ceTime == null ||
+                documentPath == null) {
               return Response(
                 400,
                 body: 'Missing required CloudEvent headers',
@@ -93,50 +107,74 @@ class FirestoreNamespace extends FunctionsNamespace {
             print('Event ID: $ceId');
             print('Event time: $ceTime');
 
-            // Fetch the document using the Admin SDK
-            final firestore = firebase.firestoreAdmin;
-            if (firestore == null) {
-              return Response(
-                500,
-                body: 'Firestore Admin SDK not initialized',
+            // Parse protobuf body to get document snapshot
+            EmulatorDocumentSnapshot? snapshot;
+            try {
+              final bodyBytes = await request.read().fold<List<int>>(
+                [],
+                (previous, element) => previous..addAll(element),
               );
+
+              if (bodyBytes.isNotEmpty) {
+                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+                final parsed =
+                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
+
+                if (parsed != null) {
+                  snapshot = parsed['value'];
+                  print('Protobuf parsing successful!');
+                  if (snapshot != null) {
+                    print('  Document ID: ${snapshot.id}');
+                    print('  Document path: ${snapshot.path}');
+                    print('  Document data: ${snapshot.data()}');
+                  } else {
+                    print('  Warning: value field is null');
+                  }
+                } else {
+                  print('Warning: Protobuf parsing returned null');
+                }
+              } else {
+                print('Warning: Request body is empty');
+              }
+            } catch (e, stack) {
+              print('Error parsing protobuf body: $e');
+              print('Stack: $stack');
             }
 
-            print('Fetching document from Firestore: $documentPath');
-            final docSnapshot = await firestore.doc(documentPath).get();
-
-            if (!docSnapshot.exists) {
-              print('Warning: Document does not exist (may have been deleted)');
-              // For created events, the document should exist. If not, it might have been deleted immediately
-              // We'll still call the handler but with a non-existent document
-            } else {
-              print('Document fetched successfully');
-            }
-
-            // Cast to QueryDocumentSnapshot (which exists in dart_firebase_admin)
-            final querySnapshot = docSnapshot as QueryDocumentSnapshot<DocumentData>;
-
-            // Create FirestoreEvent with the fetched document
-            final event = FirestoreEvent<QueryDocumentSnapshot<DocumentData>>(
-              data: querySnapshot,
-              id: ceId,
-              source: ceSource,
-              specversion: '1.0',
-              subject: ceSubject,
-              time: DateTime.parse(ceTime),
-              type: ceType!,
-              location: 'us-central1', // TODO: Extract from source or headers
-              project: _extractProject(ceSource),
-              database: database,
-              namespace: namespace,
-              document: documentPath,
-              params: params,
-            );
-
-            // Execute user's handler
+            // Create event with parsed document snapshot
+            print('');
             print('Calling user handler...');
-            await handler(event);
-            print('Handler completed successfully');
+            if (snapshot != null) {
+              print(
+                  'event.data available - use event.data.data() to access fields',);
+            } else {
+              print('Note: event.data is null - could not fetch from emulator');
+            }
+
+            try {
+              final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
+                data: snapshot,
+                id: ceId,
+                source: ceSource,
+                specversion: '1.0',
+                subject: ceSubject,
+                time: DateTime.parse(ceTime),
+                type: ceType!,
+                location: 'us-central1',
+                project: _extractProject(ceSource),
+                database: database,
+                namespace: namespace,
+                document: documentPath,
+                params: params,
+              );
+
+              await handler(event);
+              print('Handler completed successfully');
+            } catch (e, stack) {
+              print('Handler error: $e');
+              print('Stack: $stack');
+              return Response(500, body: 'Handler error: $e');
+            }
 
             return Response.ok('');
           } else {
@@ -156,15 +194,13 @@ class FirestoreNamespace extends FunctionsNamespace {
               );
             }
 
-            // Parse CloudEvent with QueryDocumentSnapshot data
-            final event =
-                FirestoreEvent<QueryDocumentSnapshot<DocumentData>>.fromJson(
+            // Parse CloudEvent with EmulatorDocumentSnapshot data
+            final event = FirestoreEvent<EmulatorDocumentSnapshot?>.fromJson(
               json,
               (data) {
-                // TODO: Parse the actual DocumentSnapshot from CloudEvent data
-                throw UnimplementedError(
-                  'Firestore document snapshot parsing not yet implemented',
-                );
+                // TODO: Parse protobuf data from structured CloudEvent
+                // For now, return null until protobuf parsing is implemented
+                return null;
               },
             );
 
@@ -178,6 +214,495 @@ class FirestoreNamespace extends FunctionsNamespace {
             400,
             body: 'Invalid CloudEvent: ${e.message}',
           );
+        } catch (e, stackTrace) {
+          return Response(
+            500,
+            body: 'Error processing Firestore event: $e\n$stackTrace',
+          );
+        }
+      },
+      documentPattern: document,
+    );
+  }
+
+  /// Event handler that triggers when a document is updated in Firestore.
+  ///
+  /// The handler receives a [FirestoreEvent] containing a [Change] object
+  /// with `before` and `after` snapshots.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentUpdated(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     final before = event.data?.before.data();
+  ///     final after = event.data?.after.data();
+  ///
+  ///     print('User ${event.params['userId']} updated');
+  ///     print('Old name: ${before?['name']}');
+  ///     print('New name: ${after?['name']}');
+  ///   },
+  /// );
+  /// ```
+  void onDocumentUpdated(
+    Future<void> Function(
+      FirestoreEvent<Change<EmulatorDocumentSnapshot>?> event,
+    ) handler, {
+    /// The Firestore document path to trigger on.
+    /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+
+    /// Options that can be set on an individual event-handling function.
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName('onDocumentUpdated', document);
+
+    firebase.registerFunction(
+      functionName,
+      (request) async {
+        try {
+          final isBinaryMode = request.headers.containsKey('ce-type');
+
+          if (isBinaryMode) {
+            final ceType = request.headers['ce-type'];
+
+            if (ceType != null && !_isFirestoreUpdatedEvent(ceType)) {
+              return Response(
+                400,
+                body:
+                    'Invalid event type for Firestore onDocumentUpdated: $ceType',
+              );
+            }
+
+            final ceId = request.headers['ce-id'];
+            final ceSource = request.headers['ce-source'];
+            final ceTime = request.headers['ce-time'];
+            final ceSubject = request.headers['ce-subject'];
+            final documentPath = request.headers['ce-document'];
+            final database = request.headers['ce-database'] ?? '(default)';
+            final namespace = request.headers['ce-namespace'] ?? '(default)';
+
+            if (ceId == null ||
+                ceSource == null ||
+                ceTime == null ||
+                documentPath == null) {
+              return Response(
+                400,
+                body: 'Missing required CloudEvent headers',
+              );
+            }
+
+            final params = _extractParams(document, documentPath);
+
+            print('Firestore onDocumentUpdated triggered!');
+            print('Document: $documentPath');
+            print('Params: $params');
+
+            // Parse protobuf body to get before/after snapshots
+            EmulatorDocumentSnapshot? beforeSnapshot;
+            EmulatorDocumentSnapshot? afterSnapshot;
+            try {
+              final bodyBytes = await request.read().fold<List<int>>(
+                [],
+                (previous, element) => previous..addAll(element),
+              );
+
+              if (bodyBytes.isNotEmpty) {
+                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+                final parsed =
+                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
+
+                if (parsed != null) {
+                  beforeSnapshot = parsed['old_value'];
+                  afterSnapshot = parsed['value'];
+                  print('Protobuf parsing successful!');
+                  if (beforeSnapshot != null) {
+                    print('  Before - Document ID: ${beforeSnapshot.id}');
+                    print('  Before - Document data: ${beforeSnapshot.data()}');
+                  } else {
+                    print('  Warning: old_value field is null');
+                  }
+                  if (afterSnapshot != null) {
+                    print('  After - Document ID: ${afterSnapshot.id}');
+                    print('  After - Document data: ${afterSnapshot.data()}');
+                  } else {
+                    print('  Warning: value field is null');
+                  }
+                } else {
+                  print('Warning: Protobuf parsing returned null');
+                }
+              } else {
+                print('Warning: Request body is empty');
+              }
+            } catch (e, stack) {
+              print('Error parsing protobuf body: $e');
+              print('Stack: $stack');
+            }
+
+            try {
+              final change = Change<EmulatorDocumentSnapshot>(
+                before: beforeSnapshot,
+                after: afterSnapshot,
+              );
+
+              final event = FirestoreEvent<Change<EmulatorDocumentSnapshot>?>(
+                data: change,
+                id: ceId,
+                source: ceSource,
+                specversion: '1.0',
+                subject: ceSubject,
+                time: DateTime.parse(ceTime),
+                type: ceType!,
+                location: 'us-central1',
+                project: _extractProject(ceSource),
+                database: database,
+                namespace: namespace,
+                document: documentPath,
+                params: params,
+              );
+
+              await handler(event);
+              print('Handler completed successfully');
+            } catch (e, stack) {
+              print('Handler error: $e');
+              print('Stack: $stack');
+              return Response(500, body: 'Handler error: $e');
+            }
+
+            return Response.ok('');
+          } else {
+            return Response(
+              501,
+              body:
+                  'Structured CloudEvent mode not yet supported for onDocumentUpdated',
+            );
+          }
+        } catch (e, stackTrace) {
+          return Response(
+            500,
+            body: 'Error processing Firestore event: $e\n$stackTrace',
+          );
+        }
+      },
+      documentPattern: document,
+    );
+  }
+
+  /// Event handler that triggers when a document is deleted in Firestore.
+  ///
+  /// The handler receives a [FirestoreEvent] containing the deleted document snapshot.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentDeleted(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     final deletedData = event.data?.data();
+  ///     print('User ${event.params['userId']} deleted');
+  ///     print('Final data: $deletedData');
+  ///   },
+  /// );
+  /// ```
+  void onDocumentDeleted(
+    Future<void> Function(
+      FirestoreEvent<EmulatorDocumentSnapshot?> event,
+    ) handler, {
+    /// The Firestore document path to trigger on.
+    /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+
+    /// Options that can be set on an individual event-handling function.
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName('onDocumentDeleted', document);
+
+    firebase.registerFunction(
+      functionName,
+      (request) async {
+        try {
+          final isBinaryMode = request.headers.containsKey('ce-type');
+
+          if (isBinaryMode) {
+            final ceType = request.headers['ce-type'];
+
+            if (ceType != null && !_isFirestoreDeletedEvent(ceType)) {
+              return Response(
+                400,
+                body:
+                    'Invalid event type for Firestore onDocumentDeleted: $ceType',
+              );
+            }
+
+            final ceId = request.headers['ce-id'];
+            final ceSource = request.headers['ce-source'];
+            final ceTime = request.headers['ce-time'];
+            final ceSubject = request.headers['ce-subject'];
+            final documentPath = request.headers['ce-document'];
+            final database = request.headers['ce-database'] ?? '(default)';
+            final namespace = request.headers['ce-namespace'] ?? '(default)';
+
+            if (ceId == null ||
+                ceSource == null ||
+                ceTime == null ||
+                documentPath == null) {
+              return Response(
+                400,
+                body: 'Missing required CloudEvent headers',
+              );
+            }
+
+            final params = _extractParams(document, documentPath);
+
+            print('Firestore onDocumentDeleted triggered!');
+            print('Document: $documentPath');
+            print('Params: $params');
+
+            // Parse protobuf body to get deleted document snapshot
+            EmulatorDocumentSnapshot? snapshot;
+            try {
+              final bodyBytes = await request.read().fold<List<int>>(
+                [],
+                (previous, element) => previous..addAll(element),
+              );
+
+              if (bodyBytes.isNotEmpty) {
+                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+                final parsed =
+                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
+
+                if (parsed != null) {
+                  // For delete events, the document state before deletion is in 'value'
+                  snapshot = parsed['value'];
+                  print('Protobuf parsing successful!');
+                  if (snapshot != null) {
+                    print('  Deleted document ID: ${snapshot.id}');
+                    print('  Deleted document data: ${snapshot.data()}');
+                  } else {
+                    print('  Warning: value field is null');
+                  }
+                } else {
+                  print('Warning: Protobuf parsing returned null');
+                }
+              } else {
+                print('Warning: Request body is empty');
+              }
+            } catch (e, stack) {
+              print('Error parsing protobuf body: $e');
+              print('Stack: $stack');
+            }
+
+            try {
+              final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
+                data: snapshot,
+                id: ceId,
+                source: ceSource,
+                specversion: '1.0',
+                subject: ceSubject,
+                time: DateTime.parse(ceTime),
+                type: ceType!,
+                location: 'us-central1',
+                project: _extractProject(ceSource),
+                database: database,
+                namespace: namespace,
+                document: documentPath,
+                params: params,
+              );
+
+              await handler(event);
+              print('Handler completed successfully');
+            } catch (e, stack) {
+              print('Handler error: $e');
+              print('Stack: $stack');
+              return Response(500, body: 'Handler error: $e');
+            }
+
+            return Response.ok('');
+          } else {
+            return Response(
+              501,
+              body:
+                  'Structured CloudEvent mode not yet supported for onDocumentDeleted',
+            );
+          }
+        } catch (e, stackTrace) {
+          return Response(
+            500,
+            body: 'Error processing Firestore event: $e\n$stackTrace',
+          );
+        }
+      },
+      documentPattern: document,
+    );
+  }
+
+  /// Event handler that triggers on any write to a document (create, update, or delete).
+  ///
+  /// The handler receives a [FirestoreEvent] containing a [Change] object.
+  /// Use `before.exists` and `after.exists` to determine the operation type.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentWritten(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     final before = event.data?.before;
+  ///     final after = event.data?.after;
+  ///
+  ///     if (before == null || !before.exists) {
+  ///       print('Document created');
+  ///     } else if (after == null || !after.exists) {
+  ///       print('Document deleted');
+  ///     } else {
+  ///       print('Document updated');
+  ///     }
+  ///   },
+  /// );
+  /// ```
+  void onDocumentWritten(
+    Future<void> Function(
+      FirestoreEvent<Change<EmulatorDocumentSnapshot>?> event,
+    ) handler, {
+    /// The Firestore document path to trigger on.
+    /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+
+    /// Options that can be set on an individual event-handling function.
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName('onDocumentWritten', document);
+
+    firebase.registerFunction(
+      functionName,
+      (request) async {
+        try {
+          final isBinaryMode = request.headers.containsKey('ce-type');
+
+          if (isBinaryMode) {
+            final ceType = request.headers['ce-type'];
+
+            if (ceType != null && !_isFirestoreWrittenEvent(ceType)) {
+              return Response(
+                400,
+                body:
+                    'Invalid event type for Firestore onDocumentWritten: $ceType',
+              );
+            }
+
+            final ceId = request.headers['ce-id'];
+            final ceSource = request.headers['ce-source'];
+            final ceTime = request.headers['ce-time'];
+            final ceSubject = request.headers['ce-subject'];
+            final documentPath = request.headers['ce-document'];
+            final database = request.headers['ce-database'] ?? '(default)';
+            final namespace = request.headers['ce-namespace'] ?? '(default)';
+
+            if (ceId == null ||
+                ceSource == null ||
+                ceTime == null ||
+                documentPath == null) {
+              return Response(
+                400,
+                body: 'Missing required CloudEvent headers',
+              );
+            }
+
+            final params = _extractParams(document, documentPath);
+
+            print('Firestore onDocumentWritten triggered!');
+            print('Document: $documentPath');
+            print('Params: $params');
+
+            // Parse protobuf body to get before/after snapshots
+            EmulatorDocumentSnapshot? beforeSnapshot;
+            EmulatorDocumentSnapshot? afterSnapshot;
+            try {
+              final bodyBytes = await request.read().fold<List<int>>(
+                [],
+                (previous, element) => previous..addAll(element),
+              );
+
+              if (bodyBytes.isNotEmpty) {
+                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+                final parsed =
+                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
+
+                if (parsed != null) {
+                  beforeSnapshot = parsed['old_value'];
+                  afterSnapshot = parsed['value'];
+                  print('Protobuf parsing successful!');
+
+                  // Determine operation type
+                  if (beforeSnapshot == null && afterSnapshot != null) {
+                    print('  Operation: CREATE');
+                  } else if (beforeSnapshot != null && afterSnapshot == null) {
+                    print('  Operation: DELETE');
+                  } else if (beforeSnapshot != null && afterSnapshot != null) {
+                    print('  Operation: UPDATE');
+                  }
+
+                  if (beforeSnapshot != null) {
+                    print('  Before - Document ID: ${beforeSnapshot.id}');
+                    print('  Before - Document data: ${beforeSnapshot.data()}');
+                  }
+                  if (afterSnapshot != null) {
+                    print('  After - Document ID: ${afterSnapshot.id}');
+                    print('  After - Document data: ${afterSnapshot.data()}');
+                  }
+                } else {
+                  print('Warning: Protobuf parsing returned null');
+                }
+              } else {
+                print('Warning: Request body is empty');
+              }
+            } catch (e, stack) {
+              print('Error parsing protobuf body: $e');
+              print('Stack: $stack');
+            }
+
+            try {
+              final change = Change<EmulatorDocumentSnapshot>(
+                before: beforeSnapshot,
+                after: afterSnapshot,
+              );
+
+              final event = FirestoreEvent<Change<EmulatorDocumentSnapshot>?>(
+                data: change,
+                id: ceId,
+                source: ceSource,
+                specversion: '1.0',
+                subject: ceSubject,
+                time: DateTime.parse(ceTime),
+                type: ceType!,
+                location: 'us-central1',
+                project: _extractProject(ceSource),
+                database: database,
+                namespace: namespace,
+                document: documentPath,
+                params: params,
+              );
+
+              await handler(event);
+              print('Handler completed successfully');
+            } catch (e, stack) {
+              print('Handler error: $e');
+              print('Stack: $stack');
+              return Response(500, body: 'Handler error: $e');
+            }
+
+            return Response.ok('');
+          } else {
+            return Response(
+              501,
+              body:
+                  'Structured CloudEvent mode not yet supported for onDocumentWritten',
+            );
+          }
         } catch (e, stackTrace) {
           return Response(
             500,
@@ -212,6 +737,18 @@ class FirestoreNamespace extends FunctionsNamespace {
   bool _isFirestoreCreatedEvent(String type) =>
       type == 'google.cloud.firestore.document.v1.created';
 
+  /// Checks if the CloudEvent type is a Firestore document updated event.
+  bool _isFirestoreUpdatedEvent(String type) =>
+      type == 'google.cloud.firestore.document.v1.updated';
+
+  /// Checks if the CloudEvent type is a Firestore document deleted event.
+  bool _isFirestoreDeletedEvent(String type) =>
+      type == 'google.cloud.firestore.document.v1.deleted';
+
+  /// Checks if the CloudEvent type is a Firestore document written event.
+  bool _isFirestoreWrittenEvent(String type) =>
+      type == 'google.cloud.firestore.document.v1.written';
+
   /// Extracts path parameters from a document path by matching against a pattern.
   ///
   /// Example:
@@ -244,13 +781,22 @@ class FirestoreNamespace extends FunctionsNamespace {
   /// Extracts the project ID from a CloudEvent source.
   ///
   /// Source format: //firestore.googleapis.com/projects/{project}/databases/{database}/...
+  /// Note: Source may have nested paths like projects/projects/demo-test
   String _extractProject(String source) {
     final uri = Uri.parse(source.replaceFirst('//', 'https://'));
     final pathSegments = uri.pathSegments;
 
-    // Find 'projects' segment and return the next one
-    final projectIndex = pathSegments.indexOf('projects');
-    if (projectIndex != -1 && projectIndex + 1 < pathSegments.length) {
+    // Find LAST 'projects' segment and return the next one
+    // This handles cases like: projects/projects/demo-test
+    var projectIndex = -1;
+    for (var i = pathSegments.length - 1; i >= 0; i--) {
+      if (pathSegments[i] == 'projects' && i + 1 < pathSegments.length) {
+        projectIndex = i;
+        break;
+      }
+    }
+
+    if (projectIndex != -1) {
       return pathSegments[projectIndex + 1];
     }
 

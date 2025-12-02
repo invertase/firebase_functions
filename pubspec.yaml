@@ -11,6 +11,8 @@ dependencies:
   meta: ^1.15.0
   dart_firebase_admin: ^0.3.0
   protobuf: ^3.1.0
+  http: ^1.1.0
+  googleapis: ^15.0.0
   # Required for builder
   build: ^2.4.0
   source_gen: ^1.5.0
@@ -22,5 +24,4 @@ dev_dependencies:
   test: ^1.25.0
   mocktail: ^1.0.0
   lints: ^4.0.0
-  http: ^1.1.0
   yaml: ^3.1.0

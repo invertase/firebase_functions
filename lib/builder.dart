@@ -1048,7 +1048,8 @@ String _generateYaml(
         buffer.writeln('    eventTrigger:');
         buffer.writeln('      eventType: "$eventType"');
         buffer.writeln('      eventFilters:');
-        buffer.writeln('        database: "${endpoint.database ?? '(default)'}"');
+        buffer
+            .writeln('        database: "${endpoint.database ?? '(default)'}"');
         buffer.writeln(
           '        namespace: "${endpoint.namespace ?? '(default)'}"',
         );

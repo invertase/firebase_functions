@@ -380,7 +380,8 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
         // Map CloudEvent type to method name
         final methodName = _mapCloudEventTypeToFirestoreMethod(type);
         if (methodName != null) {
-          print('DEBUG: Looking for Firestore function with method: $methodName');
+          print(
+              'DEBUG: Looking for Firestore function with method: $methodName',);
           print('DEBUG: Document path to match: $documentPath');
 
           // Try to find a matching function by pattern matching

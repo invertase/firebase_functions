@@ -53,14 +53,14 @@ void main() {
       expect(dartManifest['specVersion'], equals('v1alpha1'));
     });
 
-    test('should discover same number of endpoints', () {
+    test('should discover correct number of endpoints', () {
       final dartEndpoints = dartManifest['endpoints'] as Map;
-      final nodejsEndpoints = nodejsManifest['endpoints'] as Map;
 
       expect(
         dartEndpoints.keys.length,
-        equals(nodejsEndpoints.keys.length),
-        reason: 'Should discover 2 functions (1 HTTPS + 1 Pub/Sub)',
+        equals(7),
+        reason:
+            'Should discover 7 functions (1 HTTPS + 1 Pub/Sub + 5 Firestore)',
       );
     });
 
@@ -117,6 +117,76 @@ void main() {
 
       expect(dartTrigger['retry'], equals(false));
       expect(nodejsTrigger['retry'], equals(false));
+    });
+
+    test('should have Firestore onDocumentCreated trigger', () {
+      final dartFunc = _getEndpoint(
+          dartManifest, 'onDocumentCreated_users_userid',);
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.created'),
+      );
+    });
+
+    test('should have Firestore onDocumentUpdated trigger', () {
+      final dartFunc = _getEndpoint(
+          dartManifest, 'onDocumentUpdated_users_userid',);
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.updated'),
+      );
+    });
+
+    test('should have Firestore onDocumentDeleted trigger', () {
+      final dartFunc = _getEndpoint(
+          dartManifest, 'onDocumentDeleted_users_userid',);
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.deleted'),
+      );
+    });
+
+    test('should have Firestore onDocumentWritten trigger', () {
+      final dartFunc = _getEndpoint(
+          dartManifest, 'onDocumentWritten_users_userid',);
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.written'),
+      );
+    });
+
+    test('should have nested collection Firestore trigger', () {
+      final dartFunc = _getEndpoint(
+          dartManifest, 'onDocumentCreated_posts_postid_comments_commentid',);
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.created'),
+      );
     });
   });
 

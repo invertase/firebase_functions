@@ -28,30 +28,33 @@ class Firebase {
         'demo-test'; // Fallback for emulator
 
     // Check if running in emulator
-    final firestoreEmulatorHost = Platform.environment['FIRESTORE_EMULATOR_HOST'];
+    final firestoreEmulatorHost =
+        Platform.environment['FIRESTORE_EMULATOR_HOST'];
     final isEmulator = firestoreEmulatorHost != null;
 
+    if (isEmulator) {
+      print('Running in emulator mode - Firestore Admin SDK disabled');
+      print('Firestore emulator: $firestoreEmulatorHost');
+      print('Document fetching from emulator not yet implemented');
+      print('Handler will receive CloudEvent metadata only');
+      // TODO: Implement direct REST API calls to emulator
+      // For now, we'll skip document fetching in emulator mode
+      return;
+    }
+
+    // Production mode only
     try {
-      if (isEmulator) {
-        // Emulator mode - no credentials needed
-        print('Initializing Firebase Admin SDK for emulator (project: $projectId)');
-        print('Firestore emulator: $firestoreEmulatorHost');
+      print('Initializing Firebase Admin SDK (project: $projectId)');
 
-        // For emulator, we don't need actual credentials
-        _adminApp = FirebaseAdminApp.initializeApp(
-          projectId,
-          Credential.fromApplicationDefaultCredentials(),
-        );
-      } else {
-        // Production mode - use Application Default Credentials
-        print('Initializing Firebase Admin SDK (project: $projectId)');
-        _adminApp = FirebaseAdminApp.initializeApp(
-          projectId,
-          Credential.fromApplicationDefaultCredentials(),
-        );
-      }
+      // Initialize Admin SDK
+      _adminApp = FirebaseAdminApp.initializeApp(
+        projectId,
+        Credential.fromApplicationDefaultCredentials(),
+      );
 
+      // Create Firestore instance
       _firestoreInstance = Firestore(_adminApp!);
+
       print('Firebase Admin SDK initialized successfully');
     } catch (e) {
       print('Warning: Failed to initialize Firebase Admin SDK: $e');
