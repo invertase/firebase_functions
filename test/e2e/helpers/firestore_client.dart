@@ -95,7 +95,8 @@ class FirestoreClient {
       {'doubleValue': value};
 
   /// Helper to create a boolean field value.
-  static Map<String, dynamic> boolValue(bool value) => {'booleanValue': value};
+  static Map<String, dynamic> boolValue({required bool value}) =>
+      {'booleanValue': value};
 
   /// Helper to create a null field value.
   static Map<String, dynamic> nullValue() => {'nullValue': null};

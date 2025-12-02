@@ -29,11 +29,11 @@ void runFirestoreTests(
           'name': FirestoreClient.stringValue('John Doe'),
           'email': FirestoreClient.stringValue('john@example.com'),
           'age': FirestoreClient.intValue(28),
-          'active': FirestoreClient.boolValue(true),
+          'active': FirestoreClient.boolValue(value: true),
           'score': FirestoreClient.doubleValue(95.5),
           'metadata': FirestoreClient.mapValue({
             'created': FirestoreClient.stringValue('2024-01-01'),
-            'verified': FirestoreClient.boolValue(true),
+            'verified': FirestoreClient.boolValue(value: true),
           }),
           'tags': FirestoreClient.arrayValue([
             FirestoreClient.stringValue('admin'),
@@ -208,7 +208,7 @@ void runFirestoreTests(
           'string': FirestoreClient.stringValue('text'),
           'int': FirestoreClient.intValue(42),
           'double': FirestoreClient.doubleValue(3.14),
-          'bool': FirestoreClient.boolValue(true),
+          'bool': FirestoreClient.boolValue(value: true),
           'null': FirestoreClient.nullValue(),
           'nestedMap': FirestoreClient.mapValue({
             'level2': FirestoreClient.mapValue({
