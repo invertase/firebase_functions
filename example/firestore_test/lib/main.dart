@@ -67,7 +67,8 @@ void main(List<String> args) {
 
             if (beforeData['name'] != afterData['name']) {
               print(
-                  'Name changed: ${beforeData['name']} -> ${afterData['name']}',);
+                'Name changed: ${beforeData['name']} -> ${afterData['name']}',
+              );
             }
           }
         }

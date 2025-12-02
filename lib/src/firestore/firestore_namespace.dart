@@ -146,7 +146,8 @@ class FirestoreNamespace extends FunctionsNamespace {
             print('Calling user handler...');
             if (snapshot != null) {
               print(
-                  'event.data available - use event.data.data() to access fields',);
+                'event.data available - use event.data.data() to access fields',
+              );
             } else {
               print('Note: event.data is null - could not fetch from emulator');
             }

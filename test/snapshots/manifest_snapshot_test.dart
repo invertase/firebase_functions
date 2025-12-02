@@ -121,7 +121,9 @@ void main() {
 
     test('should have Firestore onDocumentCreated trigger', () {
       final dartFunc = _getEndpoint(
-          dartManifest, 'onDocumentCreated_users_userid',);
+        dartManifest,
+        'onDocumentCreated_users_userid',
+      );
 
       expect(dartFunc, isNotNull);
       expect(dartFunc!['eventTrigger'], isNotNull);
@@ -135,7 +137,9 @@ void main() {
 
     test('should have Firestore onDocumentUpdated trigger', () {
       final dartFunc = _getEndpoint(
-          dartManifest, 'onDocumentUpdated_users_userid',);
+        dartManifest,
+        'onDocumentUpdated_users_userid',
+      );
 
       expect(dartFunc, isNotNull);
       expect(dartFunc!['eventTrigger'], isNotNull);
@@ -149,7 +153,9 @@ void main() {
 
     test('should have Firestore onDocumentDeleted trigger', () {
       final dartFunc = _getEndpoint(
-          dartManifest, 'onDocumentDeleted_users_userid',);
+        dartManifest,
+        'onDocumentDeleted_users_userid',
+      );
 
       expect(dartFunc, isNotNull);
       expect(dartFunc!['eventTrigger'], isNotNull);
@@ -163,7 +169,9 @@ void main() {
 
     test('should have Firestore onDocumentWritten trigger', () {
       final dartFunc = _getEndpoint(
-          dartManifest, 'onDocumentWritten_users_userid',);
+        dartManifest,
+        'onDocumentWritten_users_userid',
+      );
 
       expect(dartFunc, isNotNull);
       expect(dartFunc!['eventTrigger'], isNotNull);
@@ -177,7 +185,9 @@ void main() {
 
     test('should have nested collection Firestore trigger', () {
       final dartFunc = _getEndpoint(
-          dartManifest, 'onDocumentCreated_posts_postid_comments_commentid',);
+        dartManifest,
+        'onDocumentCreated_posts_postid_comments_commentid',
+      );
 
       expect(dartFunc, isNotNull);
       expect(dartFunc!['eventTrigger'], isNotNull);

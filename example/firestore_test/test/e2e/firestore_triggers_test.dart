@@ -15,7 +15,7 @@ void main() {
 
     setUpAll(() async {
       // Wait for emulator to be ready
-      await Future.delayed(Duration(seconds: 2));
+      await Future<void>.delayed(Duration(seconds: 2));
 
       print('Running E2E tests against Firestore emulator at: $firestoreHost');
       print('Base URL: $firestoreBaseUrl');
@@ -62,12 +62,15 @@ void main() {
         body: jsonEncode(userData),
       );
 
-      expect(response.statusCode, 200,
-          reason: 'Failed to create document: ${response.body}',);
+      expect(
+        response.statusCode,
+        200,
+        reason: 'Failed to create document: ${response.body}',
+      );
       print('✓ Document created successfully');
 
       // Wait for trigger to process
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
 
       // Verify document exists
       final getResponse = await http.get(
@@ -99,7 +102,7 @@ void main() {
         body: jsonEncode(initialData),
       );
 
-      await Future.delayed(Duration(milliseconds: 500));
+      await Future<void>.delayed(Duration(milliseconds: 500));
       print('✓ Initial document created');
 
       // Now update it
@@ -118,12 +121,15 @@ void main() {
         body: jsonEncode(updatedData),
       );
 
-      expect(updateResponse.statusCode, 200,
-          reason: 'Failed to update document: ${updateResponse.body}',);
+      expect(
+        updateResponse.statusCode,
+        200,
+        reason: 'Failed to update document: ${updateResponse.body}',
+      );
       print('✓ Document updated successfully');
 
       // Wait for trigger
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
 
       // Verify updated document
       final getResponse = await http.get(
@@ -155,7 +161,7 @@ void main() {
         body: jsonEncode(userData),
       );
 
-      await Future.delayed(Duration(milliseconds: 500));
+      await Future<void>.delayed(Duration(milliseconds: 500));
       print('✓ Document created for deletion test');
 
       // Delete the document
@@ -163,20 +169,26 @@ void main() {
         Uri.parse('$firestoreBaseUrl/users/$testUserId'),
       );
 
-      expect(deleteResponse.statusCode, 200,
-          reason: 'Failed to delete document: ${deleteResponse.body}',);
+      expect(
+        deleteResponse.statusCode,
+        200,
+        reason: 'Failed to delete document: ${deleteResponse.body}',
+      );
       print('✓ Document deleted successfully');
 
       // Wait for trigger
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
 
       // Verify document no longer exists
       final getResponse = await http.get(
         Uri.parse('$firestoreBaseUrl/users/$testUserId'),
       );
 
-      expect(getResponse.statusCode, 404,
-          reason: 'Document should not exist after deletion',);
+      expect(
+        getResponse.statusCode,
+        404,
+        reason: 'Document should not exist after deletion',
+      );
       print('✓ Document deletion verified');
     });
 
@@ -198,7 +210,7 @@ void main() {
       );
 
       expect(createResponse.statusCode, 200);
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
       print('✓ CREATE operation triggered');
 
       // Test 2: UPDATE operation
@@ -218,7 +230,7 @@ void main() {
       );
 
       expect(updateResponse.statusCode, 200);
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
       print('✓ UPDATE operation triggered');
 
       // Test 3: DELETE operation
@@ -229,7 +241,7 @@ void main() {
       );
 
       expect(deleteResponse.statusCode, 200);
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
       print('✓ DELETE operation triggered');
     });
 
@@ -250,7 +262,8 @@ void main() {
 
       final response = await http.post(
         Uri.parse(
-            '$firestoreBaseUrl/posts/$postId/comments?documentId=$commentId',),
+          '$firestoreBaseUrl/posts/$postId/comments?documentId=$commentId',
+        ),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(commentData),
       );
@@ -258,7 +271,7 @@ void main() {
       expect(response.statusCode, 200);
       print('✓ Nested collection document created');
 
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
 
       // Verify document exists
       final getResponse = await http.get(
@@ -322,7 +335,7 @@ void main() {
       expect(response.statusCode, 200);
       print('✓ Complex document created');
 
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
 
       // Verify all types are preserved
       final getResponse = await http.get(
@@ -335,9 +348,10 @@ void main() {
       expect(doc['fields']['double']['doubleValue'], 3.14);
       expect(doc['fields']['bool']['booleanValue'], true);
       expect(
-          doc['fields']['nestedMap']['mapValue']['fields']['level2']['mapValue']
-              ['fields']['deep']['stringValue'],
-          'value',);
+        doc['fields']['nestedMap']['mapValue']['fields']['level2']['mapValue']
+            ['fields']['deep']['stringValue'],
+        'value',
+      );
       print('✓ All data types verified');
     });
 
@@ -362,7 +376,7 @@ void main() {
       print('✓ Document with path parameter created');
       print('  Test user ID: $testUserId');
 
-      await Future.delayed(Duration(seconds: 1));
+      await Future<void>.delayed(Duration(seconds: 1));
       print('✓ Path parameter extraction verified (check function logs)');
     });
 

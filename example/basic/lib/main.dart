@@ -74,7 +74,8 @@ void main(List<String> args) {
       (event) async {
         final data = event.data?.data();
         print(
-            'Comment created: posts/${event.params['postId']}/comments/${event.params['commentId']}',);
+          'Comment created: posts/${event.params['postId']}/comments/${event.params['commentId']}',
+        );
         print('  Text: ${data?['text']}');
         print('  Author: ${data?['author']}');
       },
