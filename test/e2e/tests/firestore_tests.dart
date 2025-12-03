@@ -26,19 +26,16 @@ void runFirestoreTests(
         'users',
         testUserId,
         {
-          'name': FirestoreClient.stringValue('John Doe'),
-          'email': FirestoreClient.stringValue('john@example.com'),
-          'age': FirestoreClient.intValue(28),
-          'active': FirestoreClient.boolValue(value: true),
-          'score': FirestoreClient.doubleValue(95.5),
-          'metadata': FirestoreClient.mapValue({
-            'created': FirestoreClient.stringValue('2024-01-01'),
-            'verified': FirestoreClient.boolValue(value: true),
-          }),
-          'tags': FirestoreClient.arrayValue([
-            FirestoreClient.stringValue('admin'),
-            FirestoreClient.stringValue('premium'),
-          ]),
+          'name': 'John Doe',
+          'email': 'john@example.com',
+          'age': 28,
+          'active': true,
+          'score': 95.5,
+          'metadata': {
+            'created': '2024-01-01',
+            'verified': true,
+          },
+          'tags': ['admin', 'premium'],
         },
       );
 
@@ -67,9 +64,9 @@ void runFirestoreTests(
         'users',
         testUserId,
         {
-          'name': FirestoreClient.stringValue('Jane Doe'),
-          'age': FirestoreClient.intValue(25),
-          'status': FirestoreClient.stringValue('active'),
+          'name': 'Jane Doe',
+          'age': 25,
+          'status': 'active',
         },
       );
 
@@ -80,10 +77,10 @@ void runFirestoreTests(
       final updated = await client.updateDocument(
         'users/$testUserId',
         {
-          'name': FirestoreClient.stringValue('Jane Smith'), // Changed
-          'age': FirestoreClient.intValue(26), // Changed
-          'status': FirestoreClient.stringValue('active'), // Same
-          'newField': FirestoreClient.stringValue('added'), // New
+          'name': 'Jane Smith', // Changed
+          'age': 26, // Changed
+          'status': 'active', // Same
+          'newField': 'added', // New
         },
       );
 
@@ -109,9 +106,9 @@ void runFirestoreTests(
         'users',
         testUserId,
         {
-          'name': FirestoreClient.stringValue('To Be Deleted'),
-          'email': FirestoreClient.stringValue('delete@example.com'),
-          'finalMessage': FirestoreClient.stringValue('goodbye'),
+          'name': 'To Be Deleted',
+          'email': 'delete@example.com',
+          'finalMessage': 'goodbye',
         },
       );
 
@@ -139,8 +136,8 @@ void runFirestoreTests(
         'users',
         testUserId,
         {
-          'name': FirestoreClient.stringValue('Written User'),
-          'operation': FirestoreClient.stringValue('create'),
+          'name': 'Written User',
+          'operation': 'create',
         },
       );
 
@@ -153,8 +150,8 @@ void runFirestoreTests(
       await client.updateDocument(
         'users/$testUserId',
         {
-          'name': FirestoreClient.stringValue('Updated Written User'),
-          'operation': FirestoreClient.stringValue('update'),
+          'name': 'Updated Written User',
+          'operation': 'update',
         },
       );
 
@@ -181,9 +178,9 @@ void runFirestoreTests(
         'posts/$postId/comments',
         commentId,
         {
-          'text': FirestoreClient.stringValue('This is a comment'),
-          'author': FirestoreClient.stringValue('John'),
-          'likes': FirestoreClient.intValue(5),
+          'text': 'This is a comment',
+          'author': 'John',
+          'likes': 5,
         },
       );
 
@@ -205,23 +202,21 @@ void runFirestoreTests(
         'users',
         testUserId,
         {
-          'string': FirestoreClient.stringValue('text'),
-          'int': FirestoreClient.intValue(42),
-          'double': FirestoreClient.doubleValue(3.14),
-          'bool': FirestoreClient.boolValue(value: true),
-          'null': FirestoreClient.nullValue(),
-          'nestedMap': FirestoreClient.mapValue({
-            'level2': FirestoreClient.mapValue({
-              'deep': FirestoreClient.stringValue('value'),
-            }),
-          }),
-          'nestedArray': FirestoreClient.arrayValue([
-            FirestoreClient.intValue(1),
-            FirestoreClient.intValue(2),
-            FirestoreClient.mapValue({
-              'inArray': FirestoreClient.stringValue('yes'),
-            }),
-          ]),
+          'string': 'text',
+          'int': 42,
+          'double': 3.14,
+          'bool': true,
+          'null': null,
+          'nestedMap': {
+            'level2': {
+              'deep': 'value',
+            },
+          },
+          'nestedArray': [
+            1,
+            2,
+            {'inArray': 'yes'},
+          ],
         },
       );
 
@@ -251,8 +246,8 @@ void runFirestoreTests(
         'users',
         testUserId,
         {
-          'name': FirestoreClient.stringValue('Parameter Test'),
-          'userId': FirestoreClient.stringValue(testUserId),
+          'name': 'Parameter Test',
+          'userId': testUserId,
         },
       );
 
