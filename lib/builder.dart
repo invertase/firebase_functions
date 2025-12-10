@@ -174,7 +174,8 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name == 'defineDouble' ||
       name == 'defineBoolean' ||
       name == 'defineList' ||
-      name == 'defineSecret';
+      name == 'defineSecret' ||
+      name == 'defineJsonSecret';
 
   /// Extracts an HTTPS function declaration.
   void _extractHttpsFunction(MethodInvocation node, String methodName) {
@@ -274,7 +275,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final paramName = _extractStringLiteral(nameArg);
     if (paramName == null) return;
 
-    // Second argument is optional ParamOptions
+    // Second argument is optional ParamOptions (not used for secrets)
     _ParamOptions? paramOptions;
     if (args.length > 1 && args[1] is InstanceCreationExpression) {
       paramOptions = _extractParamOptions(
@@ -283,10 +284,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     }
 
     final paramType = _getParamType(functionName);
+    final isJsonSecret = _isJsonSecret(functionName);
+
     params[paramName] = _ParamSpec(
       name: paramName,
       type: paramType,
       options: paramOptions,
+      format: isJsonSecret ? 'json' : null,
     );
   }
 
@@ -308,13 +312,17 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Gets the parameter type name for YAML.
   String _getParamType(String functionName) => switch (functionName) {
-        'defineString' || 'defineSecret' => 'string',
+        'defineString' => 'string',
+        'defineSecret' || 'defineJsonSecret' => 'secret',
         'defineInt' => 'int',
         'defineDouble' => 'float',
         'defineBoolean' => 'boolean',
         'defineList' => 'list',
         _ => 'string',
       };
+
+  /// Checks if the parameter is a JSON secret.
+  bool _isJsonSecret(String functionName) => functionName == 'defineJsonSecret';
 
   /// Extracts ParamOptions from an InstanceCreationExpression.
   _ParamOptions? _extractParamOptions(InstanceCreationExpression node) =>
@@ -373,10 +381,16 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
 /// Specification for a parameter.
 class _ParamSpec {
-  _ParamSpec({required this.name, required this.type, this.options});
+  _ParamSpec({
+    required this.name,
+    required this.type,
+    this.options,
+    this.format,
+  });
   final String name;
   final String type;
   final _ParamOptions? options;
+  final String? format; // 'json' for JSON secrets
 }
 
 /// Options for a parameter.
@@ -878,6 +892,9 @@ String _generateYaml(
     for (final param in params.values) {
       buffer.writeln('  - name: "${param.name}"');
       buffer.writeln('    type: "${param.type}"');
+      if (param.format != null) {
+        buffer.writeln('    format: "${param.format}"');
+      }
       if (param.options?.defaultValue != null) {
         buffer.writeln(
           '    default: ${_yamlValue(param.options!.defaultValue)}',

@@ -23,21 +23,73 @@ class GlobalOptions {
     this.vpcConnector,
     this.vpcConnectorEgressSettings,
   });
+
+  /// Maximum number of concurrent requests per instance.
   final Concurrency? concurrency;
+
+  /// Amount of CPU to allocate to the function.
   final Cpu? cpu;
+
+  /// Ingress settings controlling who can call the function.
   final Ingress? ingressSettings;
+
+  /// Who can invoke the function (public or specific service accounts).
   final Invoker? invoker;
+
+  /// Labels to apply to the function for organization.
   final Map<String, String>? labels;
+
+  /// Minimum number of instances to keep warm.
   final Instances? minInstances;
+
+  /// Maximum number of instances.
   final Instances? maxInstances;
+
+  /// Amount of memory to allocate to the function.
   final Memory? memory;
+
+  /// Whether to omit this function from deployment.
   final Omit? omit;
+
+  /// Whether to preserve changes made outside of deployment.
   final PreserveExternalChanges? preserveExternalChanges;
+
+  /// Region(s) where the function should run.
   final Region? region;
-  final List<SecretParam>? secrets;
+
+  /// List of secrets this function needs access to.
+  ///
+  /// Only secrets listed here will be available via `.value()` at runtime.
+  /// Supports both [SecretParam] (from [defineSecret]) and [JsonSecretParam]
+  /// (from [defineJsonSecret]).
+  ///
+  /// Example:
+  /// ```dart
+  /// final apiKey = defineSecret('API_KEY');
+  /// final apiConfig = defineJsonSecret<Map<String, dynamic>>('API_CONFIG');
+  ///
+  /// firebase.https.onRequest(
+  ///   name: 'secure',
+  ///   options: HttpsOptions(secrets: [apiKey, apiConfig]),
+  ///   (request) async {
+  ///     final key = apiKey.value();
+  ///     final config = apiConfig.value();
+  ///     return Response.ok('Configured');
+  ///   },
+  /// );
+  /// ```
+  final List<Object>? secrets; // SecretParam | JsonSecretParam
+
+  /// Service account to run the function as.
   final ServiceAccount? serviceAccount;
+
+  /// Timeout in seconds for the function.
   final TimeoutSeconds? timeoutSeconds;
+
+  /// VPC connector for the function.
   final VpcConnector? vpcConnector;
+
+  /// VPC egress settings.
   final VpcConnectorEgressSettings? vpcConnectorEgressSettings;
 }
 
