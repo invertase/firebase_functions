@@ -132,6 +132,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       }
     }
 
+    // Check for parameter definitions (top-level function calls with no target)
+    if (target == null && _isParamDefinition(methodName)) {
+      _extractParameterFromMethod(node, methodName);
+    }
+
     super.visitMethodInvocation(node);
   }
 
@@ -310,12 +315,24 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     );
   }
 
-  /// Extracts a parameter definition.
+  /// Extracts a parameter definition from FunctionExpressionInvocation.
   void _extractParameter(
     FunctionExpressionInvocation node,
     String functionName,
   ) {
-    final args = node.argumentList.arguments;
+    _extractParamFromArgs(node.argumentList.arguments, functionName);
+  }
+
+  /// Extracts a parameter definition from MethodInvocation.
+  void _extractParameterFromMethod(
+    MethodInvocation node,
+    String functionName,
+  ) {
+    _extractParamFromArgs(node.argumentList.arguments, functionName);
+  }
+
+  /// Common logic for extracting parameter definitions from arguments.
+  void _extractParamFromArgs(NodeList<Expression> args, String functionName) {
     if (args.isEmpty) return;
 
     // First argument is the parameter name
