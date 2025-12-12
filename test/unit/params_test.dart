@@ -1,7 +1,4 @@
-import 'dart:io';
-
 import 'package:firebase_functions/src/common/params.dart';
-import 'package:firebase_functions/src/common/on_init.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -97,6 +97,10 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   final Map<String, _ParamSpec> params = {};
   final Map<String, _EndpointSpec> endpoints = {};
 
+  /// Maps variable names to their actual parameter names.
+  /// e.g., 'minInstances' -> 'MIN_INSTANCES'
+  final Map<String, String> _variableToParamName = {};
+
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
@@ -144,6 +148,47 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     }
 
     super.visitFunctionExpressionInvocation(node);
+  }
+
+  @override
+  void visitTopLevelVariableDeclaration(TopLevelVariableDeclaration node) {
+    // Track variable declarations for param definitions
+    for (final variable in node.variables.variables) {
+      final initializer = variable.initializer;
+
+      // Handle top-level function calls like defineInt(...), defineString(...)
+      // These can be either FunctionExpressionInvocation or MethodInvocation
+      String? functionName;
+      ArgumentList? argList;
+
+      if (initializer is FunctionExpressionInvocation) {
+        final function = initializer.function;
+        if (function is SimpleIdentifier) {
+          functionName = function.name;
+          argList = initializer.argumentList;
+        }
+      } else if (initializer is MethodInvocation && initializer.target == null) {
+        // Top-level function call (no target)
+        functionName = initializer.methodName.name;
+        argList = initializer.argumentList;
+      }
+
+      if (functionName != null &&
+          argList != null &&
+          _isParamDefinition(functionName)) {
+        // Extract the param name from the first argument
+        final args = argList.arguments;
+        if (args.isNotEmpty) {
+          final nameArg = args.first;
+          final paramName = _extractStringLiteral(nameArg);
+          if (paramName != null) {
+            // Map variable name to actual param name
+            _variableToParamName[variable.name.lexeme] = paramName;
+          }
+        }
+      }
+    }
+    super.visitTopLevelVariableDeclaration(node);
   }
 
   /// Checks if the target is firebase.https.
@@ -196,6 +241,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name: functionName,
       type: triggerType,
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
     );
   }
 
@@ -220,6 +266,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
     );
   }
 
@@ -259,6 +306,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       database: database ?? '(default)',
       namespace: namespace ?? '(default)',
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
     );
   }
 
@@ -412,6 +460,7 @@ class _EndpointSpec {
     this.database,
     this.namespace,
     this.options,
+    this.variableToParamName = const {},
   });
   final String name;
   final String type; // 'https', 'callable', 'pubsub', 'firestore'
@@ -421,6 +470,9 @@ class _EndpointSpec {
   final String? database; // For Firestore: (default) or database name
   final String? namespace; // For Firestore: (default) or namespace
   final InstanceCreationExpression? options;
+
+  /// Maps variable names to their actual parameter names.
+  final Map<String, String> variableToParamName;
 
   /// Extracts options configuration from the AST.
   Map<String, dynamic> extractOptions() {
@@ -540,6 +592,15 @@ class _EndpointSpec {
       return _extractParamReference(expression);
     }
 
+    // Check if it's Memory.expression() - generate CEL from expression
+    if (expression.constructorName.name?.name == 'expression') {
+      final args = expression.argumentList.arguments;
+      if (args.isNotEmpty) {
+        return _extractExpressionCEL(args.first);
+      }
+      return null;
+    }
+
     // Check if it's Memory.reset()
     if (expression.constructorName.name?.name == 'reset') {
       return null; // Reset means use default
@@ -585,6 +646,15 @@ class _EndpointSpec {
     // Check if it's Cpu.param() - generate CEL
     if (expression.constructorName.name?.name == 'param') {
       return _extractParamReference(expression);
+    }
+
+    // Check if it's Cpu.expression() - generate CEL from expression
+    if (expression.constructorName.name?.name == 'expression') {
+      final args = expression.argumentList.arguments;
+      if (args.isNotEmpty) {
+        return _extractExpressionCEL(args.first);
+      }
+      return null;
     }
 
     // Check if it's Cpu.reset()
@@ -677,6 +747,15 @@ class _EndpointSpec {
       // Check if it's Option.param() - generate CEL
       if (expression.constructorName.name?.name == 'param') {
         return _extractParamReference(expression);
+      }
+
+      // Check if it's Option.expression() - generate CEL from expression
+      if (expression.constructorName.name?.name == 'expression') {
+        final args = expression.argumentList.arguments;
+        if (args.isNotEmpty) {
+          return _extractExpressionCEL(args.first);
+        }
+        return null;
       }
 
       // Extract literal: Option(123)
@@ -855,24 +934,113 @@ class _EndpointSpec {
 
     final firstArg = args.first;
     if (firstArg is SimpleIdentifier) {
-      // Convert parameter variable name to PARAM_NAME format
-      final paramName = _toParamName(firstArg.name);
+      // Look up actual param name from the variable-to-param mapping
+      final variableName = firstArg.name;
+      final paramName = variableToParamName[variableName] ?? variableName;
       return '{{ params.$paramName }}';
     }
 
     return '{{ params.UNKNOWN }}';
   }
 
-  /// Converts a variable name to PARAM_NAME format.
-  String _toParamName(String variableName) {
-    // Convert camelCase to UPPER_SNAKE_CASE
-    return variableName
-        .replaceAllMapped(
-          RegExp(r'[A-Z]'),
-          (match) => '_${match.group(0)}',
-        )
-        .toUpperCase()
-        .replaceFirst('_', '');
+  /// Extracts a CEL expression from an Expression (e.g., thenElse result).
+  String? _extractExpressionCEL(Expression expression) {
+    // Handle method invocation like `isProduction.thenElse(2048, 512)`
+    if (expression is MethodInvocation) {
+      final methodName = expression.methodName.name;
+      final target = expression.target;
+
+      if (methodName == 'thenElse' && target is SimpleIdentifier) {
+        // Get the param name for the condition variable
+        final variableName = target.name;
+        final paramName = variableToParamName[variableName] ?? variableName;
+
+        // Extract the then/else values
+        final args = expression.argumentList.arguments;
+        if (args.length >= 2) {
+          final thenValue = _extractConstValue(args[0]);
+          final elseValue = _extractConstValue(args[1]);
+          if (thenValue != null && elseValue != null) {
+            return '{{ params.$paramName ? $thenValue : $elseValue }}';
+          }
+        }
+      }
+    }
+
+    // Handle InstanceCreationExpression for If<T>(...) constructor
+    if (expression is InstanceCreationExpression) {
+      final constructorName =
+          expression.constructorName.type.element?.name ?? '';
+      if (constructorName == 'If') {
+        // Extract test, then, otherwise from named arguments
+        final args = expression.argumentList.arguments;
+        if (args.isNotEmpty) {
+          // First positional arg is test
+          final testExpr = args.first;
+          String? testCel;
+          if (testExpr is SimpleIdentifier) {
+            final variableName = testExpr.name;
+            testCel =
+                'params.${variableToParamName[variableName] ?? variableName}';
+          }
+
+          // Named args: then and otherwise
+          String? thenValue;
+          String? elseValue;
+          for (final arg in args) {
+            if (arg is NamedExpression) {
+              if (arg.name.label.name == 'then') {
+                thenValue = _extractExpressionValue(arg.expression);
+              } else if (arg.name.label.name == 'otherwise') {
+                elseValue = _extractExpressionValue(arg.expression);
+              }
+            }
+          }
+
+          if (testCel != null && thenValue != null && elseValue != null) {
+            return '{{ $testCel ? $thenValue : $elseValue }}';
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Extracts value from a LiteralExpression or similar.
+  String? _extractExpressionValue(Expression expression) {
+    if (expression is InstanceCreationExpression) {
+      final constructorName =
+          expression.constructorName.type.element?.name ?? '';
+      if (constructorName == 'LiteralExpression') {
+        final args = expression.argumentList.arguments;
+        if (args.isNotEmpty) {
+          final value = _extractConstValue(args.first);
+          return value?.toString();
+        }
+      }
+    }
+    return _extractConstValue(expression)?.toString();
+  }
+
+  /// Extracts a constant value from an expression.
+  dynamic _extractConstValue(Expression expression) {
+    if (expression is StringLiteral) {
+      return expression.stringValue;
+    } else if (expression is IntegerLiteral) {
+      return expression.value;
+    } else if (expression is DoubleLiteral) {
+      return expression.value;
+    } else if (expression is BooleanLiteral) {
+      return expression.value;
+    } else if (expression is ListLiteral) {
+      return expression.elements
+          .whereType<Expression>()
+          .map(_extractConstValue)
+          .whereType<dynamic>()
+          .toList();
+    }
+    return null;
   }
 }
 
