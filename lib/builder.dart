@@ -1126,36 +1126,42 @@ String _generateYaml(
 
       // Add memory if specified
       if (options.containsKey('availableMemoryMb')) {
-        buffer
-            .writeln('    availableMemoryMb: ${options['availableMemoryMb']}');
+        buffer.writeln(
+          '    availableMemoryMb: ${_yamlValueWithCelSupport(options['availableMemoryMb'])}',
+        );
       }
 
       // Add CPU if specified
       if (options.containsKey('cpu')) {
-        final cpu = options['cpu'];
-        if (cpu is String) {
-          buffer.writeln('    cpu: "$cpu"');
-        } else {
-          buffer.writeln('    cpu: $cpu');
-        }
+        buffer.writeln(
+          '    cpu: ${_yamlValueWithCelSupport(options['cpu'])}',
+        );
       }
 
       // Add timeout if specified
       if (options.containsKey('timeoutSeconds')) {
-        buffer.writeln('    timeoutSeconds: ${options['timeoutSeconds']}');
+        buffer.writeln(
+          '    timeoutSeconds: ${_yamlValueWithCelSupport(options['timeoutSeconds'])}',
+        );
       }
 
       // Add concurrency if specified
       if (options.containsKey('concurrency')) {
-        buffer.writeln('    concurrency: ${options['concurrency']}');
+        buffer.writeln(
+          '    concurrency: ${_yamlValueWithCelSupport(options['concurrency'])}',
+        );
       }
 
       // Add min/max instances
       if (options.containsKey('minInstances')) {
-        buffer.writeln('    minInstances: ${options['minInstances']}');
+        buffer.writeln(
+          '    minInstances: ${_yamlValueWithCelSupport(options['minInstances'])}',
+        );
       }
       if (options.containsKey('maxInstances')) {
-        buffer.writeln('    maxInstances: ${options['maxInstances']}');
+        buffer.writeln(
+          '    maxInstances: ${_yamlValueWithCelSupport(options['maxInstances'])}',
+        );
       }
 
       // Add service account if specified (Node.js uses serviceAccountEmail)
@@ -1290,6 +1296,20 @@ String _yamlValue(dynamic value) {
     return value.toString();
   } else if (value is List) {
     return '[${value.map(_yamlValue).join(", ")}]';
+  }
+  return value.toString();
+}
+
+/// Converts a value to YAML format, quoting CEL expressions.
+/// CEL expressions like `{{ params.X }}` must be quoted in YAML.
+String _yamlValueWithCelSupport(dynamic value) {
+  if (value is String) {
+    // Always quote strings (includes CEL expressions like {{ params.X }})
+    return '"$value"';
+  } else if (value is num || value is bool) {
+    return value.toString();
+  } else if (value is List) {
+    return '[${value.map(_yamlValueWithCelSupport).join(", ")}]';
   }
   return value.toString();
 }
