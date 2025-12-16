@@ -58,9 +58,9 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(7),
+        equals(8),
         reason:
-            'Should discover 7 functions (1 HTTPS + 1 Pub/Sub + 5 Firestore)',
+            'Should discover 8 functions (2 HTTPS + 1 Pub/Sub + 5 Firestore)',
       );
     });
 
