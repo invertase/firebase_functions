@@ -6,9 +6,9 @@ import 'dart:convert';
 /// Firebase Functions uses CloudEvents for all event-driven triggers.
 ///
 /// See: https://cloudevents.io/
-class CloudEvent<T extends Object> {
+class CloudEvent<T extends Object?> {
   const CloudEvent({
-    required this.data,
+    this.data,
     required this.id,
     required this.source,
     required this.specversion,
@@ -36,7 +36,8 @@ class CloudEvent<T extends Object> {
       );
 
   /// The event data. Type depends on the event source.
-  final T data;
+  /// May be null in emulator mode when protobuf parsing is not available.
+  final T? data;
 
   /// Unique identifier for this event.
   final String id;
@@ -65,7 +66,7 @@ class CloudEvent<T extends Object> {
         'type': type,
         'time': time.toIso8601String(),
         if (subject != null) 'subject': subject,
-        'data': dataEncoder(data),
+        if (data != null) 'data': dataEncoder(data as T),
       };
 }
 

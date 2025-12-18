@@ -6,18 +6,20 @@
       "runtime": "dart3"
     }
   ],
+  "firestore": {},
   "emulators": {
     "functions": {
       "port": 5001
     },
-    "pubsub": {
-      "port": 8085
-    },
     "firestore": {
       "port": 8080
     },
+    "pubsub": {
+      "port": 8085
+    },
     "ui": {
-      "enabled": false
-    }
+      "enabled": true
+    },
+    "singleProjectMode": true
   }
 }
