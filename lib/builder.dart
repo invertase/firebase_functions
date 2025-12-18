@@ -172,7 +172,8 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
           functionName = function.name;
           argList = initializer.argumentList;
         }
-      } else if (initializer is MethodInvocation && initializer.target == null) {
+      } else if (initializer is MethodInvocation &&
+          initializer.target == null) {
         // Top-level function call (no target)
         functionName = initializer.methodName.name;
         argList = initializer.argumentList;

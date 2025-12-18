@@ -57,13 +57,17 @@ void main() {
       var initCompleted = false;
 
       onInit(() async {
-        await Future.delayed(Duration(milliseconds: 50));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
         initCompleted = true;
       });
 
       final handler = withInit<String, int>((x) {
         // When this runs, init should have completed
-        expect(initCompleted, true, reason: 'Init should complete before handler');
+        expect(
+          initCompleted,
+          true,
+          reason: 'Init should complete before handler',
+        );
         return 'result $x';
       });
 
@@ -97,7 +101,11 @@ void main() {
       final handler = withInit<void, void>((_) {});
       await handler(null);
 
-      expect(firstCalled, false, reason: 'First callback should be overwritten');
+      expect(
+        firstCalled,
+        false,
+        reason: 'First callback should be overwritten',
+      );
       expect(secondCalled, true);
     });
 

@@ -59,6 +59,8 @@ export 'package:dart_firebase_admin/firestore.dart'
 // Re-export Shelf types for convenience
 export 'package:shelf/shelf.dart' show Request, Response;
 
+// Re-export built-in params from params.dart for convenience
+export 'params.dart' show databaseURL, gcloudProject, projectID, storageBucket;
 // Common types
 export 'src/common/cloud_event.dart';
 export 'src/common/expression.dart';
@@ -75,6 +77,3 @@ export 'src/https/https.dart';
 export 'src/pubsub/pubsub.dart';
 // Core runtime
 export 'src/server.dart' show fireUp;
-
-// Re-export built-in params from params.dart for convenience
-export 'params.dart' show projectID, databaseURL, storageBucket, gcloudProject;

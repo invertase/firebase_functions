@@ -51,7 +51,7 @@ void main() {
 
     test('defineJsonSecret registers a JsonSecretParam', () {
       final param = defineJsonSecret<Map<String, dynamic>>('TEST_JSON_SECRET');
-      expect(param, isA<JsonSecretParam>());
+      expect(param, isA<JsonSecretParam<Map<String, dynamic>>>());
       expect(param.name, 'TEST_JSON_SECRET');
       expect(declaredParams, contains(param));
     });
@@ -185,7 +185,7 @@ void main() {
     test('select creates SelectParamInput', () {
       final input = ParamInput.select([1, 2, 3]);
       expect(input, isA<SelectParamInput<int>>());
-      expect((input as SelectParamInput<int>).options.length, 3);
+      expect(input.options.length, 3);
     });
 
     test('selectWithLabels creates SelectParamInput with labels', () {
@@ -195,7 +195,7 @@ void main() {
         'Large': 1024,
       });
       expect(input, isA<SelectParamInput<int>>());
-      expect((input as SelectParamInput<int>).options.length, 3);
+      expect(input.options.length, 3);
       expect(input.options[0].label, 'Small');
       expect(input.options[0].value, 256);
     });

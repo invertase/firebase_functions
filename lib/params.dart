@@ -74,47 +74,45 @@ library params;
 
 import 'src/common/params.dart' as internal;
 
+// Re-export expression types
+export 'src/common/expression.dart'
+    show Equals, Expression, If, LiteralExpression, NotEquals;
+// Re-export onInit
+export 'src/common/on_init.dart' show onInit;
 // Re-export factory functions
 export 'src/common/params.dart'
     show
-        // Factory functions
-        defineString,
-        defineInt,
-        defineDouble,
-        defineBoolean,
-        defineList,
-        defineSecret,
-        defineJsonSecret,
         // Classes
-        Param,
-        ParamOptions,
-        StringParam,
-        IntParam,
-        DoubleParam,
         BooleanParam,
-        ListParam,
-        SecretParam,
+        DoubleParam,
+        IntParam,
         JsonSecretParam,
+        ListParam,
+        // Input types
+        MultiSelectParamInput,
+        Param,
+        ParamInput,
+        ParamOptions,
+        ResourceInput,
+        SecretParam,
+        SelectOption,
+        SelectParamInput,
+        StringParam,
+        TextParamInput,
         WireParamSpec,
         // Registry
-        declaredParams,
         clearParams,
-        // Input types
-        ParamInput,
-        TextParamInput,
-        SelectParamInput,
-        MultiSelectParamInput,
-        ResourceInput,
-        SelectOption,
+        declaredParams,
+        // Factory functions
+        defineBoolean,
+        defineDouble,
+        defineInt,
+        defineJsonSecret,
+        defineList,
+        defineSecret,
+        defineString,
         // Internal expression (for built-in params)
         InternalExpression;
-
-// Re-export expression types
-export 'src/common/expression.dart'
-    show Expression, If, LiteralExpression, Equals, NotEquals;
-
-// Re-export onInit
-export 'src/common/on_init.dart' show onInit;
 
 // ============================================================================
 // Built-in Parameters

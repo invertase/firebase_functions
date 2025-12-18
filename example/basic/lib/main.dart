@@ -37,6 +37,7 @@ void main(List<String> args) {
     // HTTPS onRequest example - using parameterized configuration
     firebase.https.onRequest(
       name: 'helloWorld',
+      // ignore: non_const_argument_for_const_parameter
       options: HttpsOptions(
         // Use parameters in options - evaluated at deploy time
         minInstances: DeployOption.param(minInstances),
@@ -50,6 +51,7 @@ void main(List<String> args) {
     // Conditional configuration based on boolean parameter
     firebase.https.onRequest(
       name: 'configuredEndpoint',
+      // ignore: non_const_argument_for_const_parameter
       options: HttpsOptions(
         // Use thenElse for conditional configuration at deploy time
         // isProduction.thenElse(trueValue, falseValue) returns an expression

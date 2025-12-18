@@ -173,7 +173,7 @@ final List<Object> declaredParams = [];
 
 /// Registers a parameter, ensuring uniqueness by name.
 void _registerParam(Object param) {
-  final String? name = switch (param) {
+  final name = switch (param) {
     final Param<Object> p => p.name,
     final JsonSecretParam<Object> p => p.name,
     _ => null,
@@ -182,7 +182,7 @@ void _registerParam(Object param) {
   if (name != null) {
     // Remove any existing param with the same name
     declaredParams.removeWhere((p) {
-      final String? existingName = switch (p) {
+      final existingName = switch (p) {
         final Param<Object> existing => existing.name,
         final JsonSecretParam<Object> existing => existing.name,
         _ => null,
