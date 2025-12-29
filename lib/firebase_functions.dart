@@ -67,6 +67,8 @@ export 'src/common/expression.dart';
 export 'src/common/on_init.dart' show onInit;
 export 'src/common/options.dart';
 export 'src/common/params.dart';
+// Database triggers
+export 'src/database/database.dart';
 // Core firebase instance
 export 'src/firebase.dart' show Firebase;
 // Firestore triggers

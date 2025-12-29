@@ -7,10 +7,12 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'helpers/database_client.dart';
 import 'helpers/emulator.dart';
 import 'helpers/firestore_client.dart';
 import 'helpers/http_client.dart';
 import 'helpers/pubsub_client.dart';
+import 'tests/database_tests.dart';
 import 'tests/firestore_tests.dart';
 import 'tests/https_onrequest_tests.dart';
 import 'tests/integration_tests.dart';
@@ -21,6 +23,7 @@ void main() {
   late FunctionsHttpClient client;
   late PubSubClient pubsubClient;
   late FirestoreClient firestoreClient;
+  late DatabaseClient databaseClient;
 
   final examplePath =
       '${Directory.current.path}/example/basic'.replaceAll('/test/e2e', '');
@@ -60,6 +63,9 @@ void main() {
     // Create Firestore client
     firestoreClient = FirestoreClient(emulator.firestoreUrl);
 
+    // Create Database client
+    databaseClient = DatabaseClient(emulator.databaseUrl, 'demo-test');
+
     // Give emulator a moment to fully initialize
     await Future<void>.delayed(const Duration(seconds: 2));
   });
@@ -74,6 +80,7 @@ void main() {
     client.close();
     pubsubClient.close();
     firestoreClient.close();
+    databaseClient.close();
     await emulator.stop();
   });
 
@@ -82,4 +89,5 @@ void main() {
   runIntegrationTests(() => examplePath);
   runPubSubTests(() => examplePath, () => pubsubClient, () => emulator);
   runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
+  runDatabaseTests(() => examplePath, () => databaseClient, () => emulator);
 }

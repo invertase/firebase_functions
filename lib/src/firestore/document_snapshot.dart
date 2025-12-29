@@ -1,5 +1,7 @@
 import 'package:dart_firebase_admin/firestore.dart' show DocumentData;
 
+export '../common/change.dart';
+
 /// Parses Firestore REST API field format into Dart values.
 ///
 /// Firestore REST API uses typed wrappers like:
@@ -136,26 +138,4 @@ class EmulatorDocumentSnapshot {
 
   @override
   String toString() => 'EmulatorDocumentSnapshot($path)';
-}
-
-/// Represents a change to a document with before and after states.
-///
-/// This matches the Node.js `Change` object returned by `onDocumentUpdated`
-/// and `onDocumentWritten` triggers.
-class Change<T> {
-  const Change({
-    required this.before,
-    required this.after,
-  });
-
-  /// The state of the document before the change.
-  /// May be null if the document didn't exist (for creates).
-  final T? before;
-
-  /// The state of the document after the change.
-  /// May be null if the document was deleted.
-  final T? after;
-
-  @override
-  String toString() => 'Change(before: $before, after: $after)';
 }

@@ -6,6 +6,8 @@
 
 const { onRequest } = require("firebase-functions/v2/https");
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
+const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onValueCreated, onValueUpdated, onValueDeleted, onValueWritten } = require("firebase-functions/v2/database");
 const { defineString, defineInt, defineBoolean } = require("firebase-functions/params");
 
 // =============================================================================
@@ -67,5 +69,129 @@ exports.onMessagePublished_mytopic = onMessagePublished(
     console.log("  Published:", message.publishTime);
     console.log("  Data:", message.data ? Buffer.from(message.data, "base64").toString() : "");
     console.log("  Attributes:", message.attributes);
+  }
+);
+
+// =============================================================================
+// Firestore trigger examples
+// =============================================================================
+
+exports.onDocumentCreated_users_userId = onDocumentCreated(
+  "users/{userId}",
+  (event) => {
+    const data = event.data?.data();
+    console.log("Document created: users/" + event.params.userId);
+    console.log("  Name:", data?.name);
+    console.log("  Email:", data?.email);
+  }
+);
+
+exports.onDocumentUpdated_users_userId = onDocumentUpdated(
+  "users/{userId}",
+  (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    console.log("Document updated: users/" + event.params.userId);
+    console.log("  Before:", before);
+    console.log("  After:", after);
+  }
+);
+
+exports.onDocumentDeleted_users_userId = onDocumentDeleted(
+  "users/{userId}",
+  (event) => {
+    const data = event.data?.data();
+    console.log("Document deleted: users/" + event.params.userId);
+    console.log("  Final data:", data);
+  }
+);
+
+exports.onDocumentWritten_users_userId = onDocumentWritten(
+  "users/{userId}",
+  (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    console.log("Document written: users/" + event.params.userId);
+    if (!before && after) {
+      console.log("  Operation: CREATE");
+    } else if (before && after) {
+      console.log("  Operation: UPDATE");
+    } else if (before && !after) {
+      console.log("  Operation: DELETE");
+    }
+  }
+);
+
+exports.onDocumentCreated_posts_postId_comments_commentId = onDocumentCreated(
+  "posts/{postId}/comments/{commentId}",
+  (event) => {
+    const data = event.data?.data();
+    console.log("Comment created: posts/" + event.params.postId + "/comments/" + event.params.commentId);
+    console.log("  Text:", data?.text);
+    console.log("  Author:", data?.author);
+  }
+);
+
+// =============================================================================
+// Realtime Database trigger examples
+// =============================================================================
+
+exports.onValueCreated_messages_messageId = onValueCreated(
+  "/messages/{messageId}",
+  (event) => {
+    const data = event.data?.val();
+    console.log("Database value created: messages/" + event.params.messageId);
+    console.log("  Data:", data);
+    console.log("  Instance:", event.instance);
+    console.log("  Ref:", event.ref);
+  }
+);
+
+exports.onValueUpdated_messages_messageId = onValueUpdated(
+  "/messages/{messageId}",
+  (event) => {
+    const before = event.data?.before?.val();
+    const after = event.data?.after?.val();
+    console.log("Database value updated: messages/" + event.params.messageId);
+    console.log("  Before:", before);
+    console.log("  After:", after);
+  }
+);
+
+exports.onValueDeleted_messages_messageId = onValueDeleted(
+  "/messages/{messageId}",
+  (event) => {
+    const data = event.data?.val();
+    console.log("Database value deleted: messages/" + event.params.messageId);
+    console.log("  Final data:", data);
+  }
+);
+
+exports.onValueWritten_messages_messageId = onValueWritten(
+  "/messages/{messageId}",
+  (event) => {
+    const before = event.data?.before;
+    const after = event.data?.after;
+    console.log("Database value written: messages/" + event.params.messageId);
+    if (!before?.exists() && after?.exists()) {
+      console.log("  Operation: CREATE");
+      console.log("  New data:", after.val());
+    } else if (before?.exists() && !after?.exists()) {
+      console.log("  Operation: DELETE");
+      console.log("  Deleted data:", before.val());
+    } else {
+      console.log("  Operation: UPDATE");
+      console.log("  Before:", before?.val());
+      console.log("  After:", after?.val());
+    }
+  }
+);
+
+exports.onValueWritten_users_userId_status = onValueWritten(
+  "/users/{userId}/status",
+  (event) => {
+    const after = event.data?.after?.val();
+    console.log("User status changed:", event.params.userId);
+    console.log("  New status:", after);
   }
 );
