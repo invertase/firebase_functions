@@ -402,7 +402,8 @@ Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
 dynamic _yamlToJson(dynamic value) {
   if (value is Map) {
     return Map<String, dynamic>.fromEntries(
-      value.entries.map((e) => MapEntry(e.key.toString(), _yamlToJson(e.value))),
+      value.entries
+          .map((e) => MapEntry(e.key.toString(), _yamlToJson(e.value))),
     );
   } else if (value is List) {
     return value.map(_yamlToJson).toList();

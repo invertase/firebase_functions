@@ -995,8 +995,8 @@ class _EndpointSpec {
     if (firstArg is SimpleIdentifier) {
       // Look up the actual param name from the mapping
       final variableName = firstArg.name;
-      final paramName = variableToParamName[variableName] ??
-          _toUpperSnakeCase(variableName);
+      final paramName =
+          variableToParamName[variableName] ?? _toUpperSnakeCase(variableName);
       return '{{ params.$paramName }}';
     }
 
