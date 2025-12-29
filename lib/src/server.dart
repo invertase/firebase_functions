@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
+import 'common/on_init.dart';
 import 'firebase.dart';
 
 /// Callback type for the user's function registration code.
@@ -222,7 +223,9 @@ FutureOr<Response> _routeToTargetFunction(
   }
 
   // Execute the target function (all requests go to this function)
-  return targetFunction.handler(request);
+  // Wrap with onInit to ensure initialization callback runs before first execution
+  final wrappedHandler = withInit(targetFunction.handler);
+  return wrappedHandler(request);
 }
 
 /// Routes request by path matching (development/shared process mode).
@@ -237,7 +240,9 @@ FutureOr<Response> _routeByPath(
     final result = await _tryMatchCloudEventFunction(request, functions);
     if (result != null) {
       // Use the recreated request with the body since we consumed the original
-      return result.$2.handler(result.$1);
+      // Wrap with onInit to ensure initialization callback runs before first execution
+      final wrappedHandler = withInit(result.$2.handler);
+      return wrappedHandler(result.$1);
     }
   }
 
@@ -255,7 +260,9 @@ FutureOr<Response> _routeByPath(
 
     // Match by function name
     if (functionName == function.name) {
-      return function.handler(request);
+      // Wrap with onInit to ensure initialization callback runs before first execution
+      final wrappedHandler = withInit(function.handler);
+      return wrappedHandler(request);
     }
   }
 
