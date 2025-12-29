@@ -125,6 +125,22 @@ DoubleParam defineDouble(String name, [ParamOptions<double>? options]) {
   return param;
 }
 
+/// Creates a float parameter.
+///
+/// This is an alias for [defineDouble] for API compatibility with the
+/// Node.js SDK. In Dart, both float and double are represented by `double`.
+///
+/// Example:
+/// ```dart
+/// final threshold = defineFloat(
+///   'THRESHOLD',
+///   ParamOptions(defaultValue: 0.75),
+/// );
+/// ```
+DoubleParam defineFloat(String name, [ParamOptions<double>? options]) {
+  return defineDouble(name, options);
+}
+
 /// Creates a string parameter.
 ///
 /// Example:
@@ -160,6 +176,52 @@ ListParam defineList(String name, [ParamOptions<List<String>>? options]) {
   final param = ListParam(name, options);
   _registerParam(param);
   return param;
+}
+
+/// Creates an enum list parameter from enum values.
+///
+/// This provides a type-safe way to define a parameter that accepts
+/// multiple values from an enum. The values are stored as strings
+/// (using the enum name) and can be selected at deploy time.
+///
+/// Example:
+/// ```dart
+/// enum Region { usCentral1, europeWest1, asiaNortheast1 }
+///
+/// final regions = defineEnumList(
+///   Region.values,
+///   ParamOptions(
+///     defaultValue: [Region.usCentral1],
+///     label: 'Deployment Regions',
+///     description: 'Select the regions to deploy to',
+///   ),
+/// );
+///
+/// // At runtime
+/// final selectedRegions = regions.value(); // Returns List<Region>
+/// ```
+EnumListParam<T> defineEnumList<T extends Enum>(
+  List<T> values, [
+  ParamOptions<List<T>>? options,
+]) {
+  // Derive the parameter name from the enum type name
+  final typeName = T.toString();
+  final paramName = '${_toUpperSnakeCase(typeName)}_LIST';
+
+  final param = EnumListParam<T>(paramName, values, options);
+  _registerParam(param);
+  return param;
+}
+
+/// Converts a camelCase or PascalCase string to UPPER_SNAKE_CASE.
+String _toUpperSnakeCase(String input) {
+  return input
+      .replaceAllMapped(
+        RegExp(r'[A-Z]'),
+        (match) => '_${match.group(0)}',
+      )
+      .toUpperCase()
+      .replaceFirst('_', '');
 }
 
 // ============================================================================
@@ -461,6 +523,15 @@ class StringParam extends Param<String> {
 /// An integer parameter.
 ///
 /// Reads from `Platform.environment` at runtime and parses as int.
+///
+/// Supports comparison methods for creating conditional expressions:
+/// ```dart
+/// final memoryMb = defineInt('MEMORY_MB', ParamOptions(defaultValue: 512));
+///
+/// // Use comparison in conditional
+/// final needsMoreCpu = memoryMb.greaterThan(1024);
+/// final cpuCount = needsMoreCpu.thenElse(2, 1);
+/// ```
 class IntParam extends Param<int> {
   const IntParam(super.name, super.options);
 
@@ -472,11 +543,56 @@ class IntParam extends Param<int> {
     }
     return int.tryParse(envValue) ?? options?.defaultValue ?? 0;
   }
+
+  /// Creates a greater-than comparison expression.
+  ///
+  /// Example:
+  /// ```dart
+  /// final memoryMb = defineInt('MEMORY_MB');
+  /// final isHighMemory = memoryMb.greaterThan(2048);
+  /// ```
+  GreaterThan greaterThan(int other) =>
+      GreaterThan(this, LiteralExpression(other));
+
+  /// Creates a greater-than-or-equal comparison expression.
+  GreaterThanOrEqualTo greaterThanOrEqualTo(int other) =>
+      GreaterThanOrEqualTo(this, LiteralExpression(other));
+
+  /// Creates a less-than comparison expression.
+  LessThan lessThan(int other) => LessThan(this, LiteralExpression(other));
+
+  /// Creates a less-than-or-equal comparison expression.
+  LessThanOrEqualTo lessThanOrEqualTo(int other) =>
+      LessThanOrEqualTo(this, LiteralExpression(other));
+
+  /// Creates a conditional expression based on comparison with another value.
+  ///
+  /// Shorthand for `this.equals(other).thenElse(ifTrue, ifFalse)`.
+  ///
+  /// Example:
+  /// ```dart
+  /// final instances = defineInt('INSTANCES');
+  /// final label = instances.cmp(0).thenElse('none', 'some');
+  /// ```
+  If<T> cmp<T extends Object>(int other, T ifEqual, T ifNotEqual) {
+    return equals(LiteralExpression(other)).when(
+      then: LiteralExpression(ifEqual),
+      otherwise: LiteralExpression(ifNotEqual),
+    );
+  }
 }
 
 /// A double/float parameter.
 ///
 /// Reads from `Platform.environment` at runtime and parses as double.
+///
+/// Supports comparison methods for creating conditional expressions:
+/// ```dart
+/// final threshold = defineDouble('THRESHOLD', ParamOptions(defaultValue: 0.5));
+///
+/// // Use comparison in conditional
+/// final isHighThreshold = threshold.greaterThan(0.75);
+/// ```
 class DoubleParam extends Param<double> {
   const DoubleParam(super.name, super.options);
 
@@ -487,6 +603,37 @@ class DoubleParam extends Param<double> {
       return options?.defaultValue ?? 0.0;
     }
     return double.tryParse(envValue) ?? options?.defaultValue ?? 0.0;
+  }
+
+  /// Creates a greater-than comparison expression.
+  ///
+  /// Example:
+  /// ```dart
+  /// final threshold = defineDouble('THRESHOLD');
+  /// final isHigh = threshold.greaterThan(0.75);
+  /// ```
+  GreaterThan greaterThan(double other) =>
+      GreaterThan(this, LiteralExpression(other));
+
+  /// Creates a greater-than-or-equal comparison expression.
+  GreaterThanOrEqualTo greaterThanOrEqualTo(double other) =>
+      GreaterThanOrEqualTo(this, LiteralExpression(other));
+
+  /// Creates a less-than comparison expression.
+  LessThan lessThan(double other) => LessThan(this, LiteralExpression(other));
+
+  /// Creates a less-than-or-equal comparison expression.
+  LessThanOrEqualTo lessThanOrEqualTo(double other) =>
+      LessThanOrEqualTo(this, LiteralExpression(other));
+
+  /// Creates a conditional expression based on comparison with another value.
+  ///
+  /// Shorthand for `this.equals(other).thenElse(ifTrue, ifFalse)`.
+  If<T> cmp<T extends Object>(double other, T ifEqual, T ifNotEqual) {
+    return equals(LiteralExpression(other)).when(
+      then: LiteralExpression(ifEqual),
+      otherwise: LiteralExpression(ifNotEqual),
+    );
   }
 }
 
@@ -553,6 +700,81 @@ class ListParam extends Param<List<String>> {
 
     return options?.defaultValue ?? [];
   }
+}
+
+/// An enum list parameter.
+///
+/// Provides type-safe list parameters using Dart enums. Values are stored
+/// as strings (enum names) in the environment variable and parsed back
+/// to enum values at runtime.
+///
+/// Example:
+/// ```dart
+/// enum Region { usCentral1, europeWest1, asiaNortheast1 }
+///
+/// final regions = defineEnumList(Region.values);
+///
+/// // At runtime
+/// final selectedRegions = regions.value(); // Returns List<Region>
+/// ```
+class EnumListParam<T extends Enum> extends Param<List<T>> {
+  const EnumListParam(super.name, this.enumValues, super.options);
+
+  /// All possible values of the enum type.
+  final List<T> enumValues;
+
+  @override
+  List<T> runtimeValue() {
+    final val = Platform.environment[name];
+    if (val == null || val.isEmpty) {
+      return options?.defaultValue ?? [];
+    }
+
+    try {
+      final parsed = jsonDecode(val);
+      if (parsed is List && parsed.every((v) => v is String)) {
+        final result = <T>[];
+        for (final stringValue in parsed) {
+          final enumValue = enumValues.firstWhere(
+            (e) => e.name == stringValue,
+            orElse: () =>
+                throw FormatException('Invalid enum value: $stringValue'),
+          );
+          result.add(enumValue);
+        }
+        return result;
+      }
+    } on FormatException catch (e) {
+      print(
+        'Warning: Failed to parse enum list parameter "$name". '
+        'Expected format: \'["value1", "value2"]\'. Error: $e. '
+        'Returning default value.',
+      );
+    }
+
+    return options?.defaultValue ?? [];
+  }
+
+  @override
+  WireParamSpec<List<T>> toSpec() => WireParamSpec<List<T>>(
+        name: name,
+        label: options?.label,
+        description: options?.description,
+        type: 'list',
+        input: options?.input ??
+            _EnumSelectParamInput<T>(
+              options: enumValues
+                  .map((e) => SelectOption(value: e, label: e.name))
+                  .toList(),
+            ),
+        defaultValue: options?.defaultValue,
+      );
+}
+
+/// Internal: Select input for enum types.
+class _EnumSelectParamInput<T extends Enum> extends ParamInput<List<T>> {
+  const _EnumSelectParamInput({required this.options});
+  final List<SelectOption<T>> options;
 }
 
 /// Internal expression for Firebase-provided values.

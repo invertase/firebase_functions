@@ -1,5 +1,9 @@
+import 'package:firebase_functions/src/common/expression.dart';
 import 'package:firebase_functions/src/common/params.dart';
 import 'package:test/test.dart';
+
+// Test enum for defineEnumList tests
+enum TestRegion { usCentral1, europeWest1, asiaNortheast1 }
 
 void main() {
   group('Parameter Factory Functions', () {
@@ -239,6 +243,192 @@ void main() {
     test('returns params.NAME format', () {
       final param = defineString('MY_PARAM');
       expect(param.toString(), 'params.MY_PARAM');
+    });
+  });
+
+  group('defineFloat()', () {
+    setUp(() => clearParams());
+
+    test('registers a DoubleParam', () {
+      final param = defineFloat('TEST_FLOAT');
+      expect(param, isA<DoubleParam>());
+      expect(param.name, 'TEST_FLOAT');
+      expect(declaredParams, contains(param));
+    });
+
+    test('is an alias for defineDouble', () {
+      final floatParam = defineFloat('FLOAT_PARAM');
+      final doubleParam = defineDouble('DOUBLE_PARAM');
+
+      // Both return DoubleParam
+      expect(floatParam.runtimeType, doubleParam.runtimeType);
+    });
+
+    test('generates correct spec', () {
+      final param = defineFloat(
+        'MY_FLOAT',
+        ParamOptions(defaultValue: 3.14),
+      );
+
+      final spec = param.toSpec();
+      expect(spec.name, 'MY_FLOAT');
+      expect(spec.type, 'double'); // Type name from class
+      expect(spec.defaultValue, 3.14);
+    });
+  });
+
+  group('defineEnumList()', () {
+    setUp(() => clearParams());
+
+    test('registers an EnumListParam', () {
+      final param = defineEnumList(TestRegion.values);
+      expect(param, isA<EnumListParam<TestRegion>>());
+      expect(declaredParams, contains(param));
+    });
+
+    test('derives parameter name from enum type', () {
+      final param = defineEnumList(TestRegion.values);
+      expect(param.name, 'TEST_REGION_LIST');
+    });
+
+    test('accepts ParamOptions with default values', () {
+      final param = defineEnumList(
+        TestRegion.values,
+        ParamOptions(
+          defaultValue: [TestRegion.usCentral1],
+          label: 'Regions',
+          description: 'Select deployment regions',
+        ),
+      );
+
+      expect(param.options?.defaultValue, [TestRegion.usCentral1]);
+      expect(param.options?.label, 'Regions');
+      expect(param.options?.description, 'Select deployment regions');
+    });
+
+    test('generates correct spec', () {
+      final param = defineEnumList(
+        TestRegion.values,
+        ParamOptions(
+          defaultValue: [TestRegion.europeWest1],
+          label: 'Deployment Regions',
+        ),
+      );
+
+      final spec = param.toSpec();
+      expect(spec.name, 'TEST_REGION_LIST');
+      expect(spec.type, 'list');
+      expect(spec.label, 'Deployment Regions');
+    });
+  });
+
+  group('IntParam comparison methods', () {
+    setUp(() => clearParams());
+
+    test('greaterThan creates GreaterThan expression', () {
+      final param = defineInt('MEMORY_MB');
+      final comparison = param.greaterThan(1024);
+
+      expect(comparison, isA<GreaterThan>());
+      expect(comparison.toString(), contains('params.MEMORY_MB'));
+      expect(comparison.toString(), contains('> 1024'));
+    });
+
+    test('greaterThanOrEqualTo creates GreaterThanOrEqualTo expression', () {
+      final param = defineInt('INSTANCES');
+      final comparison = param.greaterThanOrEqualTo(2);
+
+      expect(comparison, isA<GreaterThanOrEqualTo>());
+      expect(comparison.toString(), contains('>= 2'));
+    });
+
+    test('lessThan creates LessThan expression', () {
+      final param = defineInt('TIMEOUT');
+      final comparison = param.lessThan(60);
+
+      expect(comparison, isA<LessThan>());
+      expect(comparison.toString(), contains('< 60'));
+    });
+
+    test('lessThanOrEqualTo creates LessThanOrEqualTo expression', () {
+      final param = defineInt('RETRIES');
+      final comparison = param.lessThanOrEqualTo(3);
+
+      expect(comparison, isA<LessThanOrEqualTo>());
+      expect(comparison.toString(), contains('<= 3'));
+    });
+
+    test('comparison can be used with thenElse for conditionals', () {
+      final param = defineInt('MEMORY_MB');
+      final needsMoreCpu = param.greaterThan(2048);
+      final cpuCount = needsMoreCpu.when(
+        then: LiteralExpression(4),
+        otherwise: LiteralExpression(1),
+      );
+
+      expect(cpuCount, isA<If<int>>());
+    });
+  });
+
+  group('DoubleParam comparison methods', () {
+    setUp(() => clearParams());
+
+    test('greaterThan creates GreaterThan expression', () {
+      final param = defineDouble('THRESHOLD');
+      final comparison = param.greaterThan(0.75);
+
+      expect(comparison, isA<GreaterThan>());
+      expect(comparison.toString(), contains('params.THRESHOLD'));
+      expect(comparison.toString(), contains('> 0.75'));
+    });
+
+    test('greaterThanOrEqualTo creates GreaterThanOrEqualTo expression', () {
+      final param = defineDouble('MIN_SCORE');
+      final comparison = param.greaterThanOrEqualTo(0.5);
+
+      expect(comparison, isA<GreaterThanOrEqualTo>());
+      expect(comparison.toString(), contains('>= 0.5'));
+    });
+
+    test('lessThan creates LessThan expression', () {
+      final param = defineDouble('RATE_LIMIT');
+      final comparison = param.lessThan(1.0);
+
+      expect(comparison, isA<LessThan>());
+      expect(comparison.toString(), contains('< 1.0'));
+    });
+
+    test('lessThanOrEqualTo creates LessThanOrEqualTo expression', () {
+      final param = defineDouble('MAX_RATIO');
+      final comparison = param.lessThanOrEqualTo(0.9);
+
+      expect(comparison, isA<LessThanOrEqualTo>());
+      expect(comparison.toString(), contains('<= 0.9'));
+    });
+
+    test('defineFloat also has comparison methods', () {
+      final param = defineFloat('CONFIDENCE');
+      final comparison = param.greaterThan(0.8);
+
+      expect(comparison, isA<GreaterThan>());
+    });
+  });
+
+  group('cmp method on numeric params', () {
+    setUp(() => clearParams());
+
+    test('IntParam.cmp creates conditional based on equality', () {
+      final param = defineInt('COUNT');
+      final result = param.cmp(0, 'none', 'some');
+
+      expect(result, isA<If<String>>());
+    });
+
+    test('DoubleParam.cmp creates conditional based on equality', () {
+      final param = defineDouble('VALUE');
+      final result = param.cmp(0.0, 'zero', 'non-zero');
+
+      expect(result, isA<If<String>>());
     });
   });
 }

@@ -76,7 +76,16 @@ import 'src/common/params.dart' as internal;
 
 // Re-export expression types
 export 'src/common/expression.dart'
-    show Equals, Expression, If, LiteralExpression, NotEquals;
+    show
+        Equals,
+        Expression,
+        GreaterThan,
+        GreaterThanOrEqualTo,
+        If,
+        LessThan,
+        LessThanOrEqualTo,
+        LiteralExpression,
+        NotEquals;
 // Re-export onInit
 export 'src/common/on_init.dart' show onInit;
 // Re-export factory functions
@@ -85,6 +94,7 @@ export 'src/common/params.dart'
         // Classes
         BooleanParam,
         DoubleParam,
+        EnumListParam,
         IntParam,
         JsonSecretParam,
         ListParam,
@@ -106,6 +116,8 @@ export 'src/common/params.dart'
         // Factory functions
         defineBoolean,
         defineDouble,
+        defineEnumList,
+        defineFloat,
         defineInt,
         defineJsonSecret,
         defineList,
