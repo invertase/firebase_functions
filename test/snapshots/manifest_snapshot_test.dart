@@ -35,8 +35,8 @@ void main() {
       final dartYaml = File(
         'example/basic/.dart_tool/firebase/functions.yaml',
       ).readAsStringSync();
-      final dartParsed = loadYaml(dartYaml) as Map;
-      dartManifest = jsonDecode(jsonEncode(dartParsed)) as Map<String, dynamic>;
+      final dartParsed = loadYaml(dartYaml);
+      dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
       // Read Node.js reference JSON
       final nodejsJson = File(
@@ -223,8 +223,8 @@ void main() {
       final dartYaml = File(
         'example/with_options/.dart_tool/firebase/functions.yaml',
       ).readAsStringSync();
-      final dartParsed = loadYaml(dartYaml) as Map;
-      dartManifest = jsonDecode(jsonEncode(dartParsed)) as Map<String, dynamic>;
+      final dartParsed = loadYaml(dartYaml);
+      dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
       // Read Node.js reference JSON
       final nodejsJson = File(
@@ -392,4 +392,20 @@ void main() {
 Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
   final endpoints = manifest['endpoints'] as Map?;
   return endpoints?[name] as Map<String, dynamic>?;
+}
+
+/// Converts YAML objects (YamlMap, YamlList) to JSON-compatible Dart types.
+///
+/// The yaml package returns YamlMap and YamlList which aren't directly
+/// JSON-encodable. This function recursively converts them to regular
+/// Map<String, dynamic> and List<dynamic>.
+dynamic _yamlToJson(dynamic value) {
+  if (value is Map) {
+    return Map<String, dynamic>.fromEntries(
+      value.entries.map((e) => MapEntry(e.key.toString(), _yamlToJson(e.value))),
+    );
+  } else if (value is List) {
+    return value.map(_yamlToJson).toList();
+  }
+  return value;
 }
