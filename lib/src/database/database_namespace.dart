@@ -325,11 +325,62 @@ class DatabaseNamespace extends FunctionsNamespace {
 
             return Response.ok('');
           } else {
-            return Response(
-              501,
-              body:
-                  'Structured CloudEvent mode not yet supported for onValueUpdated',
+            // Structured content mode: full CloudEvent in JSON body
+            final bodyString = await request.readAsString();
+            final json = parseCloudEventJson(bodyString);
+            validateCloudEvent(json);
+
+            if (!_isUpdatedEvent(json['type'] as String)) {
+              return Response(
+                400,
+                body:
+                    'Invalid event type for Database onValueUpdated: ${json['type']}',
+              );
+            }
+
+            final eventData = json['data'] as Map<String, dynamic>?;
+            final beforeData = eventData?['data'];
+            final deltaData = eventData?['delta'];
+            final afterData = _applyDelta(beforeData, deltaData);
+
+            final refPath = json['ref'] as String? ?? '';
+            final instanceName = json['instance'] as String? ?? instance;
+
+            final beforeSnapshot = DataSnapshot(
+              instance: instanceName,
+              ref: refPath,
+              data: beforeData,
             );
+            final afterSnapshot = DataSnapshot(
+              instance: instanceName,
+              ref: refPath,
+              data: afterData,
+            );
+            final change = Change<DataSnapshot>(
+              before: beforeSnapshot,
+              after: afterSnapshot,
+            );
+
+            final params = _extractParams(ref, refPath);
+
+            final event = DatabaseEvent<Change<DataSnapshot>?>(
+              data: change,
+              id: json['id'] as String,
+              source: json['source'] as String,
+              specversion: json['specversion'] as String,
+              subject: json['subject'] as String?,
+              time: DateTime.parse(json['time'] as String),
+              type: json['type'] as String,
+              firebaseDatabaseHost:
+                  json['firebasedatabasehost'] as String? ?? '',
+              instance: instanceName,
+              ref: refPath,
+              location: json['location'] as String? ?? 'us-central1',
+              params: params,
+            );
+
+            await handler(event);
+            return Response.ok('');
           }
         } catch (e, stackTrace) {
           return Response(
@@ -450,11 +501,51 @@ class DatabaseNamespace extends FunctionsNamespace {
 
             return Response.ok('');
           } else {
-            return Response(
-              501,
-              body:
-                  'Structured CloudEvent mode not yet supported for onValueDeleted',
+            // Structured content mode: full CloudEvent in JSON body
+            final bodyString = await request.readAsString();
+            final json = parseCloudEventJson(bodyString);
+            validateCloudEvent(json);
+
+            if (!_isDeletedEvent(json['type'] as String)) {
+              return Response(
+                400,
+                body:
+                    'Invalid event type for Database onValueDeleted: ${json['type']}',
+              );
+            }
+
+            final eventData = json['data'] as Map<String, dynamic>?;
+            final deletedData = eventData?['data'];
+
+            final refPath = json['ref'] as String? ?? '';
+            final instanceName = json['instance'] as String? ?? instance;
+
+            final snapshot = DataSnapshot(
+              instance: instanceName,
+              ref: refPath,
+              data: deletedData,
             );
+
+            final params = _extractParams(ref, refPath);
+
+            final event = DatabaseEvent<DataSnapshot?>(
+              data: snapshot,
+              id: json['id'] as String,
+              source: json['source'] as String,
+              specversion: json['specversion'] as String,
+              subject: json['subject'] as String?,
+              time: DateTime.parse(json['time'] as String),
+              type: json['type'] as String,
+              firebaseDatabaseHost:
+                  json['firebasedatabasehost'] as String? ?? '',
+              instance: instanceName,
+              ref: refPath,
+              location: json['location'] as String? ?? 'us-central1',
+              params: params,
+            );
+
+            await handler(event);
+            return Response.ok('');
           }
         } catch (e, stackTrace) {
           return Response(
@@ -609,11 +700,62 @@ class DatabaseNamespace extends FunctionsNamespace {
 
             return Response.ok('');
           } else {
-            return Response(
-              501,
-              body:
-                  'Structured CloudEvent mode not yet supported for onValueWritten',
+            // Structured content mode: full CloudEvent in JSON body
+            final bodyString = await request.readAsString();
+            final json = parseCloudEventJson(bodyString);
+            validateCloudEvent(json);
+
+            if (!_isWrittenEvent(json['type'] as String)) {
+              return Response(
+                400,
+                body:
+                    'Invalid event type for Database onValueWritten: ${json['type']}',
+              );
+            }
+
+            final eventData = json['data'] as Map<String, dynamic>?;
+            final beforeData = eventData?['data'];
+            final deltaData = eventData?['delta'];
+            final afterData = _applyDelta(beforeData, deltaData);
+
+            final refPath = json['ref'] as String? ?? '';
+            final instanceName = json['instance'] as String? ?? instance;
+
+            final beforeSnapshot = DataSnapshot(
+              instance: instanceName,
+              ref: refPath,
+              data: beforeData,
             );
+            final afterSnapshot = DataSnapshot(
+              instance: instanceName,
+              ref: refPath,
+              data: afterData,
+            );
+            final change = Change<DataSnapshot>(
+              before: beforeSnapshot,
+              after: afterSnapshot,
+            );
+
+            final params = _extractParams(ref, refPath);
+
+            final event = DatabaseEvent<Change<DataSnapshot>?>(
+              data: change,
+              id: json['id'] as String,
+              source: json['source'] as String,
+              specversion: json['specversion'] as String,
+              subject: json['subject'] as String?,
+              time: DateTime.parse(json['time'] as String),
+              type: json['type'] as String,
+              firebaseDatabaseHost:
+                  json['firebasedatabasehost'] as String? ?? '',
+              instance: instanceName,
+              ref: refPath,
+              location: json['location'] as String? ?? 'us-central1',
+              params: params,
+            );
+
+            await handler(event);
+            return Response.ok('');
           }
         } catch (e, stackTrace) {
           return Response(
