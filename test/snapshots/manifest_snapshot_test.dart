@@ -340,11 +340,15 @@ void main() {
 
       // Database triggers should have empty eventFilters
       expect(dartTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
-      expect((dartTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
-          isTrue);
+      expect(
+        (dartTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
       expect(nodejsTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
-      expect((nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
-          isTrue);
+      expect(
+        (nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
 
       // Both ref and instance should be in eventFilterPathPatterns
       expect(dartTrigger['eventFilterPathPatterns'], isNotNull);
