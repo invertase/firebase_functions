@@ -26,6 +26,8 @@ class _TypeCheckers {
   static final pubsubNamespace = TypeChecker.fromRuntime(ff.PubSubNamespace);
   static final firestoreNamespace =
       TypeChecker.fromRuntime(ff.FirestoreNamespace);
+  static final databaseNamespace =
+      TypeChecker.fromRuntime(ff.DatabaseNamespace);
 }
 
 /// The main builder that generates functions.yaml.
@@ -129,6 +131,16 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
           methodName == 'onDocumentDeleted' ||
           methodName == 'onDocumentWritten') {
         _extractFirestoreFunction(node, methodName);
+      }
+    }
+
+    // Check for Database function declarations
+    if (target != null && _isDatabaseNamespace(target)) {
+      if (methodName == 'onValueCreated' ||
+          methodName == 'onValueUpdated' ||
+          methodName == 'onValueDeleted' ||
+          methodName == 'onValueWritten') {
+        _extractDatabaseFunction(node, methodName);
       }
     }
 
@@ -236,6 +248,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     return _TypeCheckers.firestoreNamespace.isExactlyType(staticType);
   }
 
+  /// Checks if the target is firebase.database.
+  bool _isDatabaseNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.databaseNamespace.isExactlyType(staticType);
+  }
+
   /// Checks if this is a parameter definition function.
   bool _isParamDefinition(String name) =>
       name == 'defineString' ||
@@ -331,6 +350,44 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       documentPath: documentPath,
       database: database ?? '(default)',
       namespace: namespace ?? '(default)',
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts a Database function declaration.
+  void _extractDatabaseFunction(MethodInvocation node, String methodName) {
+    // Extract ref path from named argument
+    final refArg = _findNamedArg(node, 'ref');
+    if (refArg == null) return;
+
+    final refPath = _extractStringLiteral(refArg);
+    if (refPath == null) return;
+
+    // Extract options if present (for instance)
+    final optionsArg = _findNamedArg(node, 'options');
+    String? instance;
+
+    if (optionsArg is InstanceCreationExpression) {
+      instance = _extractStringField(optionsArg, 'instance');
+    }
+
+    // Generate function name from ref path and event type
+    // Similar to how we do it in database_namespace.dart
+    final sanitizedPath = refPath
+        .replaceAll(RegExp(r'^/+|/+$'), '') // Remove leading/trailing slashes
+        .replaceAll('/', '_')
+        .replaceAll('{', '')
+        .replaceAll('}', '')
+        .replaceAll('-', '');
+    final functionName = '${methodName}_$sanitizedPath';
+
+    endpoints[functionName] = _EndpointSpec(
+      name: functionName,
+      type: 'database',
+      databaseEventType: methodName,
+      refPath: refPath,
+      instance: instance ?? '*',
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
       variableToParamName: _variableToParamName,
     );
@@ -538,16 +595,22 @@ class _EndpointSpec {
     this.documentPath,
     this.database,
     this.namespace,
+    this.databaseEventType,
+    this.refPath,
+    this.instance,
     this.options,
     this.variableToParamName = const {},
   });
   final String name;
-  final String type; // 'https', 'callable', 'pubsub', 'firestore'
+  final String type; // 'https', 'callable', 'pubsub', 'firestore', 'database'
   final String? topic; // For Pub/Sub functions
   final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
   final String? documentPath; // For Firestore: users/{userId}
   final String? database; // For Firestore: (default) or database name
   final String? namespace; // For Firestore: (default) or namespace
+  final String? databaseEventType; // For Database: onValueCreated, etc.
+  final String? refPath; // For Database: /users/{userId}
+  final String? instance; // For Database: database instance or '*'
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 
@@ -1262,6 +1325,27 @@ String _generateYaml(
         }
 
         buffer.writeln('      retry: false');
+      } else if (endpoint.type == 'database' &&
+          endpoint.databaseEventType != null &&
+          endpoint.refPath != null) {
+        // Map Dart method name to Database CloudEvent type
+        final eventType = _mapDatabaseEventType(endpoint.databaseEventType!);
+
+        buffer.writeln('    eventTrigger:');
+        buffer.writeln('      eventType: "$eventType"');
+        // Database triggers use empty eventFilters
+        buffer.writeln('      eventFilters: {}');
+
+        // Both ref and instance go in eventFilterPathPatterns
+        // The ref path should not have a leading slash to match Node.js format
+        final normalizedRef = endpoint.refPath!.startsWith('/')
+            ? endpoint.refPath!.substring(1)
+            : endpoint.refPath!;
+        buffer.writeln('      eventFilterPathPatterns:');
+        buffer.writeln('        ref: "$normalizedRef"');
+        buffer.writeln('        instance: "${endpoint.instance ?? '*'}"');
+
+        buffer.writeln('      retry: false');
       }
     }
   }
@@ -1276,6 +1360,15 @@ String _mapFirestoreEventType(String methodName) => switch (methodName) {
       'onDocumentDeleted' => 'google.cloud.firestore.document.v1.deleted',
       'onDocumentWritten' => 'google.cloud.firestore.document.v1.written',
       _ => throw ArgumentError('Unknown Firestore event type: $methodName'),
+    };
+
+/// Maps Database method name to CloudEvent event type.
+String _mapDatabaseEventType(String methodName) => switch (methodName) {
+      'onValueCreated' => 'google.firebase.database.ref.v1.created',
+      'onValueUpdated' => 'google.firebase.database.ref.v1.updated',
+      'onValueDeleted' => 'google.firebase.database.ref.v1.deleted',
+      'onValueWritten' => 'google.firebase.database.ref.v1.written',
+      _ => throw ArgumentError('Unknown Database event type: $methodName'),
     };
 
 /// Converts a value to YAML format.

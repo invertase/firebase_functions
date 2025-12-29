@@ -58,9 +58,9 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(8),
+        equals(13),
         reason:
-            'Should discover 8 functions (2 HTTPS + 1 Pub/Sub + 5 Firestore)',
+            'Should discover 13 functions (2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database)',
       );
     });
 
@@ -197,6 +197,170 @@ void main() {
         dartTrigger['eventType'],
         equals('google.cloud.firestore.document.v1.created'),
       );
+    });
+
+    test('should have Database onValueCreated trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueCreated_messages_messageId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueCreated_messages_messageId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.created'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.created'),
+      );
+    });
+
+    test('should have Database onValueUpdated trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueUpdated_messages_messageId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueUpdated_messages_messageId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.updated'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.updated'),
+      );
+    });
+
+    test('should have Database onValueDeleted trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueDeleted_messages_messageId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueDeleted_messages_messageId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.deleted'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.deleted'),
+      );
+    });
+
+    test('should have Database onValueWritten trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueWritten_messages_messageId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueWritten_messages_messageId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.written'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.written'),
+      );
+    });
+
+    test('should have nested path Database trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueWritten_users_userId_status',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueWritten_users_userId_status',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.written'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.database.ref.v1.written'),
+      );
+    });
+
+    test('should use eventFilterPathPatterns format for Database', () {
+      final dartFunc =
+          _getEndpoint(dartManifest, 'onValueCreated_messages_messageId')!;
+      final nodejsFunc =
+          _getEndpoint(nodejsManifest, 'onValueCreated_messages_messageId')!;
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
+
+      // Database triggers should have empty eventFilters
+      expect(dartTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect((dartTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+          isTrue);
+      expect(nodejsTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect((nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+          isTrue);
+
+      // Both ref and instance should be in eventFilterPathPatterns
+      expect(dartTrigger['eventFilterPathPatterns'], isNotNull);
+      expect(nodejsTrigger['eventFilterPathPatterns'], isNotNull);
+
+      final dartPatterns = dartTrigger['eventFilterPathPatterns'] as Map;
+      final nodejsPatterns = nodejsTrigger['eventFilterPathPatterns'] as Map;
+
+      expect(dartPatterns['ref'], equals('messages/{messageId}'));
+      expect(nodejsPatterns['ref'], equals('messages/{messageId}'));
+
+      expect(dartPatterns['instance'], equals('*'));
+      expect(nodejsPatterns['instance'], equals('*'));
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
     });
   });
 

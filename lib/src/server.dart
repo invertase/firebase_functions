@@ -425,6 +425,57 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
       }
     }
 
+    // Handle Realtime Database CloudEvents
+    // Event types:
+    // - google.firebase.database.ref.v1.created
+    // - google.firebase.database.ref.v1.updated
+    // - google.firebase.database.ref.v1.deleted
+    // - google.firebase.database.ref.v1.written
+    // Binary mode headers: ce-ref (path), ce-instance (database instance)
+    if (type.startsWith('google.firebase.database.ref.v1.')) {
+      // Extract ref path from ce-ref header (binary mode)
+      String? refPath;
+      if (isBinaryMode && request.headers.containsKey('ce-ref')) {
+        refPath = request.headers['ce-ref'];
+        print('DEBUG: Using ce-ref header: $refPath');
+      }
+
+      if (refPath != null) {
+        // Map CloudEvent type to method name
+        final methodName = _mapCloudEventTypeToDatabaseMethod(type);
+        if (methodName != null) {
+          print(
+            'DEBUG: Looking for Database function with method: $methodName',
+          );
+          print('DEBUG: Ref path to match: $refPath');
+
+          // Try to find a matching function by pattern matching
+          for (final function in functions) {
+            if (!function.external && function.name.startsWith(methodName)) {
+              // Check if this function has a ref pattern to match against
+              if (function.refPattern != null) {
+                print(
+                  'DEBUG: Checking pattern: ${function.refPattern} against $refPath',
+                );
+                if (_matchesRefPattern(refPath, function.refPattern!)) {
+                  print(
+                    'CloudEvent matched Database ref "$refPath" '
+                    'to function "${function.name}" with pattern "${function.refPattern}"',
+                  );
+
+                  // For structured mode, recreate request with body; for binary mode, use original
+                  final newRequest = bodyString != null
+                      ? request.change(body: bodyString)
+                      : request;
+                  return (newRequest, function);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     // TODO: Add support for other CloudEvent types (Storage, Auth, etc.)
 
     return null;
@@ -582,6 +633,52 @@ bool _matchesDocumentPattern(String documentPath, String pattern) {
 
     // Not a wildcard - must match exactly
     if (docPart != patternPart) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/// Maps Database CloudEvent type to method name.
+String? _mapCloudEventTypeToDatabaseMethod(String eventType) =>
+    switch (eventType) {
+      'google.firebase.database.ref.v1.created' => 'onValueCreated',
+      'google.firebase.database.ref.v1.updated' => 'onValueUpdated',
+      'google.firebase.database.ref.v1.deleted' => 'onValueDeleted',
+      'google.firebase.database.ref.v1.written' => 'onValueWritten',
+      _ => null,
+    };
+
+/// Matches a database ref path against a pattern with wildcards.
+///
+/// Examples:
+/// - 'messages/abc123' matches 'messages/{messageId}'
+/// - 'users/123/status' matches 'users/{userId}/status'
+/// - 'messages/abc123' does NOT match 'users/{userId}'
+bool _matchesRefPattern(String refPath, String pattern) {
+  // Split both paths by '/'
+  final refParts = refPath.split('/');
+  final patternParts = pattern.split('/');
+
+  // Paths must have same number of segments
+  if (refParts.length != patternParts.length) {
+    return false;
+  }
+
+  // Check each segment
+  for (var i = 0; i < refParts.length; i++) {
+    final refPart = refParts[i];
+    final patternPart = patternParts[i];
+
+    // If pattern part is a wildcard (contains {})
+    if (patternPart.startsWith('{') && patternPart.endsWith('}')) {
+      // Wildcard matches any value
+      continue;
+    }
+
+    // Not a wildcard - must match exactly
+    if (refPart != patternPart) {
       return false;
     }
   }
