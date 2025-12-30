@@ -241,7 +241,8 @@ void main(List<String> args) {
         print('Performance threshold exceeded:');
         print('  Event: ${payload?.eventName}');
         print('  Metric: ${payload?.metricType}');
-        print('  Threshold: ${payload?.thresholdValue} ${payload?.thresholdUnit}');
+        print(
+            '  Threshold: ${payload?.thresholdValue} ${payload?.thresholdUnit}');
         print('  Actual: ${payload?.violationValue} ${payload?.violationUnit}');
       },
     );

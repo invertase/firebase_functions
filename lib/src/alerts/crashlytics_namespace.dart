@@ -33,7 +33,8 @@ class CrashlyticsNamespace {
 
   /// Handles new non-fatal issue alerts from Crashlytics.
   void onNewNonfatalIssuePublished(
-    FutureOr<void> Function(AlertEvent<NewNonfatalIssuePayload> event) handler, {
+    FutureOr<void> Function(AlertEvent<NewNonfatalIssuePayload> event)
+        handler, {
     // ignore: experimental_member_use
     @mustBeConst AlertOptions? options = const AlertOptions(),
   }) {

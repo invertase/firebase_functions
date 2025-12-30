@@ -20,10 +20,10 @@ class ThresholdAlertPayload {
   factory ThresholdAlertPayload.fromJson(Map<String, dynamic> json) {
     // Handle conditionPercentile: omit if 0 or missing
     final rawConditionPercentile = json['conditionPercentile'] as int?;
-    final conditionPercentile = (rawConditionPercentile == null ||
-            rawConditionPercentile == 0)
-        ? null
-        : rawConditionPercentile;
+    final conditionPercentile =
+        (rawConditionPercentile == null || rawConditionPercentile == 0)
+            ? null
+            : rawConditionPercentile;
 
     // Handle appVersion: omit if empty or missing
     final rawAppVersion = json['appVersion'] as String?;

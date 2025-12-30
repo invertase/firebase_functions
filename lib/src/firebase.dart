@@ -78,7 +78,7 @@ class Firebase {
 
   /// Realtime Database triggers namespace.
   DatabaseNamespace get database => DatabaseNamespace(this);
-  
+
   /// Firebase Alerts namespace.
   AlertsNamespace get alerts => AlertsNamespace(this);
 }
