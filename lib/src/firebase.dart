@@ -5,6 +5,7 @@ import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:shelf/shelf.dart';
 
+import 'alerts/alerts_namespace.dart';
 import 'database/database_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
@@ -77,6 +78,9 @@ class Firebase {
 
   /// Realtime Database triggers namespace.
   DatabaseNamespace get database => DatabaseNamespace(this);
+  
+  /// Firebase Alerts namespace.
+  AlertsNamespace get alerts => AlertsNamespace(this);
 }
 
 /// Extension for internal function registration.

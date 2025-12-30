@@ -28,6 +28,14 @@ class _TypeCheckers {
       TypeChecker.fromRuntime(ff.FirestoreNamespace);
   static final databaseNamespace =
       TypeChecker.fromRuntime(ff.DatabaseNamespace);
+  static final alertsNamespace = TypeChecker.fromRuntime(ff.AlertsNamespace);
+  static final crashlyticsNamespace =
+      TypeChecker.fromRuntime(ff.CrashlyticsNamespace);
+  static final billingNamespace = TypeChecker.fromRuntime(ff.BillingNamespace);
+  static final appDistributionNamespace =
+      TypeChecker.fromRuntime(ff.AppDistributionNamespace);
+  static final performanceNamespace =
+      TypeChecker.fromRuntime(ff.PerformanceNamespace);
 }
 
 /// The main builder that generates functions.yaml.
@@ -144,6 +152,33 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       }
     }
 
+    // Check for Alerts function declarations (main namespace)
+    if (target != null && _isAlertsNamespace(target)) {
+      if (methodName == 'onAlertPublished') {
+        _extractGenericAlertFunction(node);
+      }
+    }
+
+    // Check for Crashlytics alert declarations
+    if (target != null && _isCrashlyticsNamespace(target)) {
+      _extractCrashlyticsAlertFunction(node, methodName);
+    }
+
+    // Check for Billing alert declarations
+    if (target != null && _isBillingNamespace(target)) {
+      _extractBillingAlertFunction(node, methodName);
+    }
+
+    // Check for App Distribution alert declarations
+    if (target != null && _isAppDistributionNamespace(target)) {
+      _extractAppDistributionAlertFunction(node, methodName);
+    }
+
+    // Check for Performance alert declarations
+    if (target != null && _isPerformanceNamespace(target)) {
+      _extractPerformanceAlertFunction(node, methodName);
+    }
+
     // Check for parameter definitions (top-level function calls with no target)
     if (target == null && _isParamDefinition(methodName)) {
       _extractParameterFromMethod(node, methodName);
@@ -253,6 +288,41 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final staticType = target.staticType;
     if (staticType == null) return false;
     return _TypeCheckers.databaseNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.alerts.
+  bool _isAlertsNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.alertsNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.alerts.crashlytics.
+  bool _isCrashlyticsNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.crashlyticsNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.alerts.billing.
+  bool _isBillingNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.billingNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.alerts.appDistribution.
+  bool _isAppDistributionNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.appDistributionNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.alerts.performance.
+  bool _isPerformanceNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.performanceNamespace.isExactlyType(staticType);
   }
 
   /// Checks if this is a parameter definition function.
@@ -391,6 +461,149 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
       variableToParamName: _variableToParamName,
     );
+  }
+
+  /// Extracts a generic alert function declaration (onAlertPublished).
+  void _extractGenericAlertFunction(MethodInvocation node) {
+    // Extract alertType from named argument
+    final alertTypeArg = _findNamedArg(node, 'alertType');
+    if (alertTypeArg == null) return;
+
+    final alertTypeValue = _extractAlertTypeValue(alertTypeArg);
+    if (alertTypeValue == null) return;
+
+    // Extract appId from options if present
+    final optionsArg = _findNamedArg(node, 'options');
+    String? appId;
+
+    if (optionsArg is InstanceCreationExpression) {
+      appId = _extractStringField(optionsArg, 'appId');
+    }
+
+    // Generate function name
+    final sanitizedAlertType =
+        alertTypeValue.replaceAll('.', '_').replaceAll('-', '');
+    final functionName = 'onAlertPublished_$sanitizedAlertType';
+
+    endpoints[functionName] = _EndpointSpec(
+      name: functionName,
+      type: 'alert',
+      alertType: alertTypeValue,
+      appId: appId,
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts Crashlytics alert function declarations.
+  void _extractCrashlyticsAlertFunction(MethodInvocation node, String methodName) {
+    // Map method names to alert types
+    final alertType = switch (methodName) {
+      'onNewFatalIssuePublished' => 'crashlytics.newFatalIssue',
+      'onNewNonfatalIssuePublished' => 'crashlytics.newNonfatalIssue',
+      'onRegressionAlertPublished' => 'crashlytics.regression',
+      'onStabilityDigestPublished' => 'crashlytics.stabilityDigest',
+      'onVelocityAlertPublished' => 'crashlytics.velocity',
+      'onNewAnrIssuePublished' => 'crashlytics.newAnrIssue',
+      _ => null,
+    };
+
+    if (alertType == null) return;
+
+    _extractAlertEndpoint(node, alertType);
+  }
+
+  /// Extracts Billing alert function declarations.
+  void _extractBillingAlertFunction(MethodInvocation node, String methodName) {
+    final alertType = switch (methodName) {
+      'onPlanUpdatePublished' => 'billing.planUpdate',
+      'onPlanAutomatedUpdatePublished' => 'billing.planAutomatedUpdate',
+      _ => null,
+    };
+
+    if (alertType == null) return;
+
+    _extractAlertEndpoint(node, alertType);
+  }
+
+  /// Extracts App Distribution alert function declarations.
+  void _extractAppDistributionAlertFunction(
+    MethodInvocation node,
+    String methodName,
+  ) {
+    final alertType = switch (methodName) {
+      'onNewTesterIosDevicePublished' => 'appDistribution.newTesterIosDevice',
+      'onInAppFeedbackPublished' => 'appDistribution.inAppFeedback',
+      _ => null,
+    };
+
+    if (alertType == null) return;
+
+    _extractAlertEndpoint(node, alertType);
+  }
+
+  /// Extracts Performance alert function declarations.
+  void _extractPerformanceAlertFunction(
+    MethodInvocation node,
+    String methodName,
+  ) {
+    final alertType = switch (methodName) {
+      'onThresholdAlertPublished' => 'performance.threshold',
+      _ => null,
+    };
+
+    if (alertType == null) return;
+
+    _extractAlertEndpoint(node, alertType);
+  }
+
+  /// Helper to extract alert endpoint from a method invocation.
+  void _extractAlertEndpoint(MethodInvocation node, String alertType) {
+    // Extract appId from options if present
+    final optionsArg = _findNamedArg(node, 'options');
+    String? appId;
+
+    if (optionsArg is InstanceCreationExpression) {
+      appId = _extractStringField(optionsArg, 'appId');
+    }
+
+    // Generate function name
+    final sanitizedAlertType =
+        alertType.replaceAll('.', '_').replaceAll('-', '');
+    final functionName = 'onAlertPublished_$sanitizedAlertType';
+
+    endpoints[functionName] = _EndpointSpec(
+      name: functionName,
+      type: 'alert',
+      alertType: alertType,
+      appId: appId,
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts alert type value from an expression.
+  String? _extractAlertTypeValue(Expression expression) {
+    if (expression is InstanceCreationExpression) {
+      // Extract from constructor: const CrashlyticsNewFatalIssue()
+      final typeName = expression.constructorName.type.name2.lexeme;
+      return switch (typeName) {
+        'CrashlyticsNewFatalIssue' => 'crashlytics.newFatalIssue',
+        'CrashlyticsNewNonfatalIssue' => 'crashlytics.newNonfatalIssue',
+        'CrashlyticsRegression' => 'crashlytics.regression',
+        'CrashlyticsStabilityDigest' => 'crashlytics.stabilityDigest',
+        'CrashlyticsVelocity' => 'crashlytics.velocity',
+        'CrashlyticsNewAnrIssue' => 'crashlytics.newAnrIssue',
+        'BillingPlanUpdate' => 'billing.planUpdate',
+        'BillingPlanAutomatedUpdate' => 'billing.planAutomatedUpdate',
+        'AppDistributionNewTesterIosDevice' =>
+          'appDistribution.newTesterIosDevice',
+        'AppDistributionInAppFeedback' => 'appDistribution.inAppFeedback',
+        'PerformanceThreshold' => 'performance.threshold',
+        _ => null,
+      };
+    }
+    return null;
   }
 
   /// Extracts a parameter definition from FunctionExpressionInvocation.
@@ -598,11 +811,14 @@ class _EndpointSpec {
     this.databaseEventType,
     this.refPath,
     this.instance,
+    this.alertType,
+    this.appId,
     this.options,
     this.variableToParamName = const {},
   });
   final String name;
-  final String type; // 'https', 'callable', 'pubsub', 'firestore', 'database'
+  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert'
+  final String type;
   final String? topic; // For Pub/Sub functions
   final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
   final String? documentPath; // For Firestore: users/{userId}
@@ -611,6 +827,8 @@ class _EndpointSpec {
   final String? databaseEventType; // For Database: onValueCreated, etc.
   final String? refPath; // For Database: /users/{userId}
   final String? instance; // For Database: database instance or '*'
+  final String? alertType; // For Alerts: crashlytics.newFatalIssue, etc.
+  final String? appId; // For Alerts: optional app ID filter
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 
@@ -1345,6 +1563,17 @@ String _generateYaml(
         buffer.writeln('        ref: "$normalizedRef"');
         buffer.writeln('        instance: "${endpoint.instance ?? '*'}"');
 
+        buffer.writeln('      retry: false');
+      } else if (endpoint.type == 'alert' && endpoint.alertType != null) {
+        buffer.writeln('    eventTrigger:');
+        buffer.writeln(
+          '      eventType: "google.firebase.firebasealerts.alerts.v1.published"',
+        );
+        buffer.writeln('      eventFilters:');
+        buffer.writeln('        alerttype: "${endpoint.alertType}"');
+        if (endpoint.appId != null) {
+          buffer.writeln('        appid: "${endpoint.appId}"');
+        }
         buffer.writeln('      retry: false');
       }
     }

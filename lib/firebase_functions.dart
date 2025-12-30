@@ -61,6 +61,8 @@ export 'package:shelf/shelf.dart' show Request, Response;
 
 // Re-export built-in params from params.dart for convenience
 export 'params.dart' show databaseURL, gcloudProject, projectID, storageBucket;
+// Alerts triggers
+export 'src/alerts/alerts.dart';
 // Common types
 export 'src/common/cloud_event.dart';
 export 'src/common/expression.dart';
