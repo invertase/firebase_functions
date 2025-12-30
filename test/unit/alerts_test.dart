@@ -263,7 +263,8 @@ void main() {
 
     test('InAppFeedbackPayload handles optional fields', () {
       final json = {
-        'feedbackReport': 'projects/123/apps/456/releases/789/feedbackReports/abc',
+        'feedbackReport':
+            'projects/123/apps/456/releases/789/feedbackReports/abc',
         'feedbackConsoleUri': 'https://console.firebase.google.com/feedback',
         'testerEmail': 'jane@example.com',
         'appVersion': '1.2.3',
@@ -314,7 +315,7 @@ void main() {
         'thresholdValue': 95.0,
         'thresholdUnit': 'percent',
         'conditionPercentile': 0, // Should be omitted
-        'appVersion': '',          // Should be omitted
+        'appVersion': '', // Should be omitted
         'violationValue': 90.0,
         'violationUnit': 'percent',
         'investigateUri': 'https://console.firebase.google.com/perf',
@@ -439,7 +440,7 @@ void main() {
         'type': 'google.firebase.firebasealerts.alerts.v1.published',
         'time': '2024-01-01T12:00:00Z',
         'alertType': 'performance.threshold', // camelCase
-        'appId': 'app-id-123',               // camelCase
+        'appId': 'app-id-123', // camelCase
         'data': {
           'createTime': '2024-01-01T12:00:00Z',
           'payload': {
