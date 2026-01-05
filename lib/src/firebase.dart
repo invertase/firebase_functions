@@ -5,6 +5,7 @@ import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:dart_firebase_admin/firestore.dart';
 import 'package:shelf/shelf.dart';
 
+import 'database/database_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
@@ -73,6 +74,9 @@ class Firebase {
 
   /// Firestore triggers namespace.
   FirestoreNamespace get firestore => FirestoreNamespace(this);
+
+  /// Realtime Database triggers namespace.
+  DatabaseNamespace get database => DatabaseNamespace(this);
 }
 
 /// Extension for internal function registration.
@@ -92,11 +96,13 @@ extension FirebaseX on Firebase {
   /// [handler] is the function handler that processes requests.
   /// [external] indicates if the function accepts non-POST requests.
   /// [documentPattern] is the Firestore document path pattern (e.g., 'users/{userId}').
+  /// [refPattern] is the Database ref path pattern (e.g., 'messages/{messageId}').
   void registerFunction(
     String name,
     FirebaseFunctionHandler handler, {
     bool external = false,
     String? documentPattern,
+    String? refPattern,
   }) {
     // Check for duplicate function names
     if (functions.any((f) => f.name == name)) {
@@ -112,6 +118,7 @@ extension FirebaseX on Firebase {
         handler: handler,
         external: external,
         documentPattern: documentPattern,
+        refPattern: refPattern,
       ),
     );
   }
@@ -130,6 +137,7 @@ final class FirebaseFunctionDeclaration {
     required this.handler,
     required this.external,
     this.documentPattern,
+    this.refPattern,
   }) : path = name;
 
   /// Function name (used for routing and identification).
@@ -141,6 +149,10 @@ final class FirebaseFunctionDeclaration {
   /// For Firestore triggers: the document path pattern (e.g., 'users/{userId}').
   /// Used for pattern matching against actual document paths.
   final String? documentPattern;
+
+  /// For Database triggers: the ref path pattern (e.g., 'messages/{messageId}').
+  /// Used for pattern matching against actual ref paths.
+  final String? refPattern;
 
   /// Whether this function accepts external (non-POST) requests.
   ///
