@@ -24,6 +24,8 @@ Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 class _TypeCheckers {
   static final httpsNamespace = TypeChecker.fromRuntime(ff.HttpsNamespace);
   static final pubsubNamespace = TypeChecker.fromRuntime(ff.PubSubNamespace);
+  static final firestoreNamespace =
+      TypeChecker.fromRuntime(ff.FirestoreNamespace);
 }
 
 /// The main builder that generates functions.yaml.
@@ -116,6 +118,16 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       }
     }
 
+    // Check for Firestore function declarations
+    if (target != null && _isFirestoreNamespace(target)) {
+      if (methodName == 'onDocumentCreated' ||
+          methodName == 'onDocumentUpdated' ||
+          methodName == 'onDocumentDeleted' ||
+          methodName == 'onDocumentWritten') {
+        _extractFirestoreFunction(node, methodName);
+      }
+    }
+
     super.visitMethodInvocation(node);
   }
 
@@ -146,6 +158,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final staticType = target.staticType;
     if (staticType == null) return false;
     return _TypeCheckers.pubsubNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.firestore.
+  bool _isFirestoreNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.firestoreNamespace.isExactlyType(staticType);
   }
 
   /// Checks if this is a parameter definition function.
@@ -199,6 +218,45 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name: functionName,
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+    );
+  }
+
+  /// Extracts a Firestore function declaration.
+  void _extractFirestoreFunction(MethodInvocation node, String methodName) {
+    // Extract document path from named argument
+    final documentArg = _findNamedArg(node, 'document');
+    if (documentArg == null) return;
+
+    final documentPath = _extractStringLiteral(documentArg);
+    if (documentPath == null) return;
+
+    // Extract options if present (for database and namespace)
+    final optionsArg = _findNamedArg(node, 'options');
+    String? database;
+    String? namespace;
+
+    if (optionsArg is InstanceCreationExpression) {
+      database = _extractStringField(optionsArg, 'database');
+      namespace = _extractStringField(optionsArg, 'namespace');
+    }
+
+    // Generate function name from document path and event type
+    // Similar to how we do it in firestore_namespace.dart
+    final sanitizedPath = documentPath
+        .replaceAll('/', '_')
+        .replaceAll('{', '')
+        .replaceAll('}', '')
+        .replaceAll('-', '');
+    final functionName = '${methodName}_$sanitizedPath';
+
+    endpoints[functionName] = _EndpointSpec(
+      name: functionName,
+      type: 'firestore',
+      firestoreEventType: methodName,
+      documentPath: documentPath,
+      database: database ?? '(default)',
+      namespace: namespace ?? '(default)',
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
     );
   }
@@ -335,11 +393,19 @@ class _EndpointSpec {
     required this.name,
     required this.type,
     this.topic,
+    this.firestoreEventType,
+    this.documentPath,
+    this.database,
+    this.namespace,
     this.options,
   });
   final String name;
-  final String type; // 'https', 'callable', 'pubsub'
+  final String type; // 'https', 'callable', 'pubsub', 'firestore'
   final String? topic; // For Pub/Sub functions
+  final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
+  final String? documentPath; // For Firestore: users/{userId}
+  final String? database; // For Firestore: (default) or database name
+  final String? namespace; // For Firestore: (default) or namespace
   final InstanceCreationExpression? options;
 
   /// Extracts options configuration from the AST.
@@ -973,12 +1039,46 @@ String _generateYaml(
         buffer.writeln('      eventFilters:');
         buffer.writeln('        topic: "${endpoint.topic}"');
         buffer.writeln('      retry: false');
+      } else if (endpoint.type == 'firestore' &&
+          endpoint.firestoreEventType != null &&
+          endpoint.documentPath != null) {
+        // Map Dart method name to Firestore CloudEvent type
+        final eventType = _mapFirestoreEventType(endpoint.firestoreEventType!);
+
+        buffer.writeln('    eventTrigger:');
+        buffer.writeln('      eventType: "$eventType"');
+        buffer.writeln('      eventFilters:');
+        buffer
+            .writeln('        database: "${endpoint.database ?? '(default)'}"');
+        buffer.writeln(
+          '        namespace: "${endpoint.namespace ?? '(default)'}"',
+        );
+
+        // Check if document path has wildcards
+        final hasWildcards = endpoint.documentPath!.contains('{');
+        if (hasWildcards) {
+          buffer.writeln('      eventFilterPathPatterns:');
+          buffer.writeln('        document: "${endpoint.documentPath}"');
+        } else {
+          buffer.writeln('        document: "${endpoint.documentPath}"');
+        }
+
+        buffer.writeln('      retry: false');
       }
     }
   }
 
   return buffer.toString();
 }
+
+/// Maps Firestore method name to CloudEvent event type.
+String _mapFirestoreEventType(String methodName) => switch (methodName) {
+      'onDocumentCreated' => 'google.cloud.firestore.document.v1.created',
+      'onDocumentUpdated' => 'google.cloud.firestore.document.v1.updated',
+      'onDocumentDeleted' => 'google.cloud.firestore.document.v1.deleted',
+      'onDocumentWritten' => 'google.cloud.firestore.document.v1.written',
+      _ => throw ArgumentError('Unknown Firestore event type: $methodName'),
+    };
 
 /// Converts a value to YAML format.
 String _yamlValue(dynamic value) {
