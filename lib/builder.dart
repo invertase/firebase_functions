@@ -97,6 +97,10 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   final Map<String, _ParamSpec> params = {};
   final Map<String, _EndpointSpec> endpoints = {};
 
+  /// Maps variable names to their actual parameter names.
+  /// e.g., 'minInstances' -> 'MIN_INSTANCES'
+  final Map<String, String> _variableToParamName = {};
+
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target;
@@ -128,6 +132,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       }
     }
 
+    // Check for parameter definitions (top-level function calls with no target)
+    if (target == null && _isParamDefinition(methodName)) {
+      _extractParameterFromMethod(node, methodName);
+    }
+
     super.visitMethodInvocation(node);
   }
 
@@ -144,6 +153,66 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     }
 
     super.visitFunctionExpressionInvocation(node);
+  }
+
+  @override
+  void visitTopLevelVariableDeclaration(TopLevelVariableDeclaration node) {
+    // Track variable declarations for param definitions
+    for (final variable in node.variables.variables) {
+      final initializer = variable.initializer;
+
+      // Handle top-level function calls like defineInt(...), defineString(...)
+      // These can be either FunctionExpressionInvocation or MethodInvocation
+      String? functionName;
+      ArgumentList? argList;
+
+      if (initializer is FunctionExpressionInvocation) {
+        final function = initializer.function;
+        if (function is SimpleIdentifier) {
+          functionName = function.name;
+          argList = initializer.argumentList;
+        }
+      } else if (initializer is MethodInvocation &&
+          initializer.target == null) {
+        // Top-level function call (no target)
+        functionName = initializer.methodName.name;
+        argList = initializer.argumentList;
+      }
+
+      if (functionName != null &&
+          argList != null &&
+          _isParamDefinition(functionName)) {
+        // Extract the param name from the first argument
+        final args = argList.arguments;
+        if (args.isNotEmpty) {
+          // Handle defineEnumList differently - it derives name from enum type
+          if (functionName == 'defineEnumList') {
+            final valuesArg = args.first;
+            String? paramName;
+            if (valuesArg is PrefixedIdentifier) {
+              final enumTypeName = valuesArg.prefix.name;
+              paramName = '${_toUpperSnakeCase(enumTypeName)}_LIST';
+            } else if (valuesArg is PropertyAccess) {
+              final target = valuesArg.target;
+              if (target is SimpleIdentifier) {
+                paramName = '${_toUpperSnakeCase(target.name)}_LIST';
+              }
+            }
+            if (paramName != null) {
+              _variableToParamName[variable.name.lexeme] = paramName;
+            }
+          } else {
+            final nameArg = args.first;
+            final paramName = _extractStringLiteral(nameArg);
+            if (paramName != null) {
+              // Map variable name to actual param name
+              _variableToParamName[variable.name.lexeme] = paramName;
+            }
+          }
+        }
+      }
+    }
+    super.visitTopLevelVariableDeclaration(node);
   }
 
   /// Checks if the target is firebase.https.
@@ -172,9 +241,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name == 'defineString' ||
       name == 'defineInt' ||
       name == 'defineDouble' ||
+      name == 'defineFloat' ||
       name == 'defineBoolean' ||
       name == 'defineList' ||
-      name == 'defineSecret';
+      name == 'defineEnumList' ||
+      name == 'defineSecret' ||
+      name == 'defineJsonSecret';
 
   /// Extracts an HTTPS function declaration.
   void _extractHttpsFunction(MethodInvocation node, String methodName) {
@@ -195,6 +267,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name: functionName,
       type: triggerType,
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
     );
   }
 
@@ -219,6 +292,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
     );
   }
 
@@ -258,36 +332,93 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       database: database ?? '(default)',
       namespace: namespace ?? '(default)',
       options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
     );
   }
 
-  /// Extracts a parameter definition.
+  /// Extracts a parameter definition from FunctionExpressionInvocation.
   void _extractParameter(
     FunctionExpressionInvocation node,
     String functionName,
   ) {
-    final args = node.argumentList.arguments;
+    _extractParamFromArgs(node.argumentList.arguments, functionName);
+  }
+
+  /// Extracts a parameter definition from MethodInvocation.
+  void _extractParameterFromMethod(
+    MethodInvocation node,
+    String functionName,
+  ) {
+    _extractParamFromArgs(node.argumentList.arguments, functionName);
+  }
+
+  /// Common logic for extracting parameter definitions from arguments.
+  void _extractParamFromArgs(NodeList<Expression> args, String functionName) {
     if (args.isEmpty) return;
 
-    // First argument is the parameter name
-    final nameArg = args.first;
-    final paramName = _extractStringLiteral(nameArg);
-    if (paramName == null) return;
-
-    // Second argument is optional ParamOptions
+    String? paramName;
     _ParamOptions? paramOptions;
-    if (args.length > 1 && args[1] is InstanceCreationExpression) {
-      paramOptions = _extractParamOptions(
-        args[1] as InstanceCreationExpression,
-      );
+
+    // Handle defineEnumList which has a different signature:
+    // defineEnumList(EnumType.values, [ParamOptions])
+    if (functionName == 'defineEnumList') {
+      // First argument is the enum values (e.g., Region.values)
+      final valuesArg = args.first;
+      if (valuesArg is PrefixedIdentifier) {
+        // Extract the enum type name from "EnumType.values"
+        final enumTypeName = valuesArg.prefix.name;
+        paramName = '${_toUpperSnakeCase(enumTypeName)}_LIST';
+      } else if (valuesArg is PropertyAccess) {
+        // Handle qualified access like mypackage.Region.values
+        final target = valuesArg.target;
+        if (target is PrefixedIdentifier) {
+          paramName = '${_toUpperSnakeCase(target.identifier.name)}_LIST';
+        } else if (target is SimpleIdentifier) {
+          paramName = '${_toUpperSnakeCase(target.name)}_LIST';
+        }
+      }
+
+      // Second argument is optional ParamOptions
+      if (args.length > 1 && args[1] is InstanceCreationExpression) {
+        paramOptions = _extractParamOptions(
+          args[1] as InstanceCreationExpression,
+        );
+      }
+    } else {
+      // Standard parameter definitions: defineXxx('NAME', [ParamOptions])
+      final nameArg = args.first;
+      paramName = _extractStringLiteral(nameArg);
+
+      // Second argument is optional ParamOptions (not used for secrets)
+      if (args.length > 1 && args[1] is InstanceCreationExpression) {
+        paramOptions = _extractParamOptions(
+          args[1] as InstanceCreationExpression,
+        );
+      }
     }
 
+    if (paramName == null) return;
+
     final paramType = _getParamType(functionName);
+    final isJsonSecret = _isJsonSecret(functionName);
+
     params[paramName] = _ParamSpec(
       name: paramName,
       type: paramType,
       options: paramOptions,
+      format: isJsonSecret ? 'json' : null,
     );
+  }
+
+  /// Converts a camelCase or PascalCase string to UPPER_SNAKE_CASE.
+  String _toUpperSnakeCase(String input) {
+    return input
+        .replaceAllMapped(
+          RegExp(r'[A-Z]'),
+          (match) => '_${match.group(0)}',
+        )
+        .toUpperCase()
+        .replaceFirst('_', '');
   }
 
   /// Finds a named argument in a method invocation.
@@ -308,13 +439,17 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Gets the parameter type name for YAML.
   String _getParamType(String functionName) => switch (functionName) {
-        'defineString' || 'defineSecret' => 'string',
+        'defineString' => 'string',
+        'defineSecret' || 'defineJsonSecret' => 'secret',
         'defineInt' => 'int',
-        'defineDouble' => 'float',
+        'defineDouble' || 'defineFloat' => 'float',
         'defineBoolean' => 'boolean',
-        'defineList' => 'list',
+        'defineList' || 'defineEnumList' => 'list',
         _ => 'string',
       };
+
+  /// Checks if the parameter is a JSON secret.
+  bool _isJsonSecret(String functionName) => functionName == 'defineJsonSecret';
 
   /// Extracts ParamOptions from an InstanceCreationExpression.
   _ParamOptions? _extractParamOptions(InstanceCreationExpression node) =>
@@ -373,10 +508,16 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
 /// Specification for a parameter.
 class _ParamSpec {
-  _ParamSpec({required this.name, required this.type, this.options});
+  _ParamSpec({
+    required this.name,
+    required this.type,
+    this.options,
+    this.format,
+  });
   final String name;
   final String type;
   final _ParamOptions? options;
+  final String? format; // 'json' for JSON secrets
 }
 
 /// Options for a parameter.
@@ -398,6 +539,7 @@ class _EndpointSpec {
     this.database,
     this.namespace,
     this.options,
+    this.variableToParamName = const {},
   });
   final String name;
   final String type; // 'https', 'callable', 'pubsub', 'firestore'
@@ -407,6 +549,7 @@ class _EndpointSpec {
   final String? database; // For Firestore: (default) or database name
   final String? namespace; // For Firestore: (default) or namespace
   final InstanceCreationExpression? options;
+  final Map<String, String> variableToParamName;
 
   /// Extracts options configuration from the AST.
   Map<String, dynamic> extractOptions() {
@@ -524,6 +667,15 @@ class _EndpointSpec {
     // Check if it's Memory.param() - generate CEL
     if (expression.constructorName.name?.name == 'param') {
       return _extractParamReference(expression);
+    }
+
+    // Check if it's Memory.expression() - generate CEL from expression
+    if (expression.constructorName.name?.name == 'expression') {
+      final args = expression.argumentList.arguments;
+      if (args.isNotEmpty) {
+        return _extractCelExpression(args.first);
+      }
+      return null;
     }
 
     // Check if it's Memory.reset()
@@ -841,17 +993,56 @@ class _EndpointSpec {
 
     final firstArg = args.first;
     if (firstArg is SimpleIdentifier) {
-      // Convert parameter variable name to PARAM_NAME format
-      final paramName = _toParamName(firstArg.name);
+      // Look up the actual param name from the mapping
+      final variableName = firstArg.name;
+      final paramName =
+          variableToParamName[variableName] ?? _toUpperSnakeCase(variableName);
       return '{{ params.$paramName }}';
     }
 
     return '{{ params.UNKNOWN }}';
   }
 
-  /// Converts a variable name to PARAM_NAME format.
-  String _toParamName(String variableName) {
-    // Convert camelCase to UPPER_SNAKE_CASE
+  /// Extracts a CEL expression from an expression argument.
+  /// Handles thenElse (ternary) expressions on boolean params.
+  String? _extractCelExpression(Expression expression) {
+    // Handle method invocation like: isProduction.thenElse(2048, 512)
+    if (expression is MethodInvocation) {
+      final target = expression.target;
+      final methodName = expression.methodName.name;
+
+      if (methodName == 'thenElse' && target is SimpleIdentifier) {
+        // Get the param name from the variable
+        final variableName = target.name;
+        final paramName = variableToParamName[variableName] ??
+            _toUpperSnakeCase(variableName);
+
+        // Extract the two arguments
+        final args = expression.argumentList.arguments;
+        if (args.length >= 2) {
+          final trueValue = _extractLiteralValue(args[0]);
+          final falseValue = _extractLiteralValue(args[1]);
+          if (trueValue != null && falseValue != null) {
+            return '{{ params.$paramName ? $trueValue : $falseValue }}';
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Extracts a literal value from an expression.
+  dynamic _extractLiteralValue(Expression expression) {
+    if (expression is IntegerLiteral) return expression.value;
+    if (expression is DoubleLiteral) return expression.value;
+    if (expression is StringLiteral) return '"${expression.stringValue}"';
+    if (expression is BooleanLiteral) return expression.value;
+    return null;
+  }
+
+  /// Converts a variable name to UPPER_SNAKE_CASE format.
+  static String _toUpperSnakeCase(String variableName) {
     return variableName
         .replaceAllMapped(
           RegExp(r'[A-Z]'),
@@ -878,6 +1069,9 @@ String _generateYaml(
     for (final param in params.values) {
       buffer.writeln('  - name: "${param.name}"');
       buffer.writeln('    type: "${param.type}"');
+      if (param.format != null) {
+        buffer.writeln('    format: "${param.format}"');
+      }
       if (param.options?.defaultValue != null) {
         buffer.writeln(
           '    default: ${_yamlValue(param.options!.defaultValue)}',
@@ -924,36 +1118,40 @@ String _generateYaml(
 
       // Add memory if specified
       if (options.containsKey('availableMemoryMb')) {
-        buffer
-            .writeln('    availableMemoryMb: ${options['availableMemoryMb']}');
+        buffer.writeln(
+          '    availableMemoryMb: ${_formatOptionValue(options['availableMemoryMb'])}',
+        );
       }
 
       // Add CPU if specified
       if (options.containsKey('cpu')) {
-        final cpu = options['cpu'];
-        if (cpu is String) {
-          buffer.writeln('    cpu: "$cpu"');
-        } else {
-          buffer.writeln('    cpu: $cpu');
-        }
+        buffer.writeln('    cpu: ${_formatOptionValue(options['cpu'])}');
       }
 
       // Add timeout if specified
       if (options.containsKey('timeoutSeconds')) {
-        buffer.writeln('    timeoutSeconds: ${options['timeoutSeconds']}');
+        buffer.writeln(
+          '    timeoutSeconds: ${_formatOptionValue(options['timeoutSeconds'])}',
+        );
       }
 
       // Add concurrency if specified
       if (options.containsKey('concurrency')) {
-        buffer.writeln('    concurrency: ${options['concurrency']}');
+        buffer.writeln(
+          '    concurrency: ${_formatOptionValue(options['concurrency'])}',
+        );
       }
 
       // Add min/max instances
       if (options.containsKey('minInstances')) {
-        buffer.writeln('    minInstances: ${options['minInstances']}');
+        buffer.writeln(
+          '    minInstances: ${_formatOptionValue(options['minInstances'])}',
+        );
       }
       if (options.containsKey('maxInstances')) {
-        buffer.writeln('    maxInstances: ${options['maxInstances']}');
+        buffer.writeln(
+          '    maxInstances: ${_formatOptionValue(options['maxInstances'])}',
+        );
       }
 
       // Add service account if specified (Node.js uses serviceAccountEmail)
@@ -1088,6 +1286,17 @@ String _yamlValue(dynamic value) {
     return value.toString();
   } else if (value is List) {
     return '[${value.map(_yamlValue).join(", ")}]';
+  }
+  return value.toString();
+}
+
+/// Formats an option value for YAML output.
+/// Strings (including CEL expressions) are quoted, numbers/bools are not.
+String _formatOptionValue(dynamic value) {
+  if (value is String) {
+    return '"$value"';
+  } else if (value is num || value is bool) {
+    return value.toString();
   }
   return value.toString();
 }

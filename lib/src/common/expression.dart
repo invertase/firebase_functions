@@ -29,24 +29,28 @@ abstract class Expression<T extends Object> {
 
   /// Creates a conditional expression (ternary operator).
   ///
+  /// This method can only be called on boolean expressions (like BooleanParam
+  /// or comparison results).
+  ///
   /// Example:
   /// ```dart
+  /// final isProduction = defineBoolean('IS_PRODUCTION');
   /// final region = isProduction.when(
-  ///   then: Expression(['us-central1', 'europe-west1']),
-  ///   otherwise: Expression(['us-central1']),
+  ///   then: LiteralExpression(['us-central1', 'europe-west1']),
+  ///   otherwise: LiteralExpression(['us-central1']),
   /// );
   /// ```
-  If<T> when({
-    required Expression<T> then,
-    required Expression<T> otherwise,
+  If<R> when<R extends Object>({
+    required Expression<R> then,
+    required Expression<R> otherwise,
   }) {
-    if (this is! ComparableExpression<Object>) {
+    if (this is! Expression<bool>) {
       throw ArgumentError(
-        'when() can only be called on ComparableExpression',
+        'when() can only be called on Expression<bool>',
       );
     }
     return If(
-      this as ComparableExpression<Object>,
+      this as Expression<bool>,
       then: then,
       otherwise: otherwise,
     );
@@ -62,10 +66,26 @@ abstract class Expression<T extends Object> {
 /// A conditional expression (ternary operator).
 ///
 /// Evaluates [test] and returns [then] if true, [otherwise] if false.
+///
+/// Example:
+/// ```dart
+/// final isProduction = defineBoolean('IS_PRODUCTION');
+/// final memory = If<int>(
+///   isProduction,
+///   then: LiteralExpression(2048),
+///   otherwise: LiteralExpression(512),
+/// );
+/// ```
 final class If<T extends Object> extends Expression<T> {
   const If(this.test, {required this.then, required this.otherwise});
-  final ComparableExpression<Object> test;
+
+  /// The test expression that evaluates to a boolean.
+  final Expression<bool> test;
+
+  /// The expression to evaluate if [test] is true.
   final Expression<T> then;
+
+  /// The expression to evaluate if [test] is false.
   final Expression<T> otherwise;
 
   @override

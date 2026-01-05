@@ -1,11 +1,67 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
+// =============================================================================
+// Parameterized Configuration Examples
+// =============================================================================
+
+// Define parameters - these are read from environment variables at runtime
+// and can be configured at deploy time via .env files or CLI prompts.
+final welcomeMessage = defineString(
+  'WELCOME_MESSAGE',
+  ParamOptions(
+    defaultValue: 'Hello from Dart Functions!',
+    label: 'Welcome Message',
+    description: 'The greeting message returned by the helloWorld function',
+  ),
+);
+
+final minInstances = defineInt(
+  'MIN_INSTANCES',
+  ParamOptions(
+    defaultValue: 0,
+    label: 'Minimum Instances',
+    description: 'Minimum number of instances to keep warm',
+  ),
+);
+
+final isProduction = defineBoolean(
+  'IS_PRODUCTION',
+  ParamOptions(
+    defaultValue: false,
+    description: 'Whether this is a production deployment',
+  ),
+);
+
 void main(List<String> args) {
   fireUp(args, (firebase) {
-    // HTTPS onRequest example
+    // HTTPS onRequest example - using parameterized configuration
     firebase.https.onRequest(
       name: 'helloWorld',
-      (request) async => Response.ok('Hello from Dart Functions!'),
+      // ignore: non_const_argument_for_const_parameter
+      options: HttpsOptions(
+        // Use parameters in options - evaluated at deploy time
+        minInstances: DeployOption.param(minInstances),
+      ),
+      (request) async {
+        // Access parameter value at runtime
+        return Response.ok(welcomeMessage.value());
+      },
+    );
+
+    // Conditional configuration based on boolean parameter
+    firebase.https.onRequest(
+      name: 'configuredEndpoint',
+      // ignore: non_const_argument_for_const_parameter
+      options: HttpsOptions(
+        // Use thenElse for conditional configuration at deploy time
+        // isProduction.thenElse(trueValue, falseValue) returns an expression
+        memory: Memory.expression(isProduction.thenElse(2048, 512)),
+      ),
+      (request) async {
+        // Access parameter value at runtime
+        final env = isProduction.value() ? 'production' : 'development';
+        return Response.ok('Running in $env mode');
+      },
     );
 
     // Pub/Sub trigger example

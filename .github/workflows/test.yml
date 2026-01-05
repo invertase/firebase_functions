@@ -296,6 +296,15 @@ jobs:
           fi
           echo "✓ functions.yaml exists"
 
+      - name: Create .env.local for params
+        run: |
+          cat > example/basic/.env.local << 'EOF'
+          WELCOME_MESSAGE=Hello from Dart Functions!
+          MIN_INSTANCES=0
+          IS_PRODUCTION=false
+          EOF
+          echo "✓ Created .env.local with default param values"
+
       - name: Run E2E tests
         run: dart test test/e2e/e2e_test.dart --reporter=expanded
         timeout-minutes: 5

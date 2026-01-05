@@ -55,6 +55,7 @@ class EmulatorHelper {
         'functions,pubsub,firestore',
         '--project',
         'demo-test',
+        '--non-interactive',
       ],
       workingDirectory: projectPath,
       environment: {
