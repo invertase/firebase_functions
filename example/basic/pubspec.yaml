@@ -1,0 +1,16 @@
+name: basic_example
+description: Basic example of Firebase Functions for Dart
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  firebase_functions:
+    path: ../../
+  shelf: ^1.4.0
+
+dev_dependencies:
+  build_runner: ^2.4.0
+  lints: ^4.0.0

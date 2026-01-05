@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      firebase_functions|spec:
+        enabled: true
+        generate_for:
+          - lib/**

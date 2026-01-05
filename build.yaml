@@ -1,0 +1,10 @@
+builders:
+  spec_builder:
+    import: "package:firebase_functions/builder.dart"
+    builder_factories: ["specBuilder"]
+    build_extensions:
+      "$package$":
+        - ".dart_tool/firebase/functions.yaml"
+    auto_apply: root_package
+    build_to: source
+    runs_before: []

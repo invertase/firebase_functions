@@ -1,0 +1,26 @@
+# Dart
+.dart_tool/
+.packages
+build/
+
+# Generated files from build_runner
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# Firebase Functions generated manifest
+# We keep this in git for snapshot testing, but you might want to ignore it in production
+# .dart_tool/firebase/functions.yaml
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+
+# Logs
+*.log

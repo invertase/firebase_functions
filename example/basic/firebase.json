@@ -1,0 +1,20 @@
+{
+  "functions": [
+    {
+      "source": ".",
+      "codebase": "default",
+      "runtime": "dart3"
+    }
+  ],
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "pubsub": {
+      "port": 8085
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}
