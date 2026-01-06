@@ -164,6 +164,25 @@ EmulatorDocumentSnapshot? _parseFirestoreDocument(Uint8List bytes) {
 }
 
 /// Parses a google.firestore.v1.Value from protobuf bytes.
+///
+/// Firestore Value protobuf field numbers:
+/// ```protobuf
+/// message Value {
+///   oneof value_type {
+///     bool boolean_value = 1;
+///     int64 integer_value = 2;
+///     double double_value = 3;
+///     string reference_value = 5;
+///     MapValue map_value = 6;
+///     LatLng geo_point_value = 8;
+///     ArrayValue array_value = 9;
+///     Timestamp timestamp_value = 10;
+///     NullValue null_value = 11;
+///     string string_value = 17;
+///     bytes bytes_value = 18;
+///   }
+/// }
+/// ```
 dynamic _parseFirestoreValue(Uint8List bytes) {
   try {
     final input = CodedBufferReader(bytes);
@@ -174,26 +193,33 @@ dynamic _parseFirestoreValue(Uint8List bytes) {
 
       // Value is a oneof, so only one field will be set
       switch (fieldNumber) {
-        case 11: // string_value
-          return input.readString();
+        case 1: // boolean_value
+          return input.readBool();
         case 2: // integer_value
           return input.readInt64();
         case 3: // double_value
           return input.readDouble();
-        case 1: // boolean_value
-          return input.readBool();
-        case 10: // timestamp_value
-          final timestampBytes = input.readBytes();
-          return _parseTimestamp(timestampBytes);
-        case 17: // null_value
-          input.readEnum();
-          return null;
+        case 5: // reference_value (document reference path)
+          return input.readString();
         case 6: // map_value
           final mapBytes = input.readBytes();
           return _parseMapValue(mapBytes);
+        case 8: // geo_point_value
+          final geoBytes = input.readBytes();
+          return _parseGeoPoint(geoBytes);
         case 9: // array_value
           final arrayBytes = input.readBytes();
           return _parseArrayValue(arrayBytes);
+        case 10: // timestamp_value
+          final timestampBytes = input.readBytes();
+          return _parseTimestamp(timestampBytes);
+        case 11: // null_value
+          input.readEnum();
+          return null;
+        case 17: // string_value
+          return input.readString();
+        case 18: // bytes_value
+          return input.readBytes();
         default:
           input.skipField(tag);
       }
@@ -299,6 +325,44 @@ DateTime? _parseTimestamp(Uint8List bytes) {
     return null;
   } catch (e) {
     print('Error parsing Timestamp: $e');
+    return null;
+  }
+}
+
+/// Parses a google.type.LatLng (geo point).
+///
+/// ```protobuf
+/// message LatLng {
+///   double latitude = 1;
+///   double longitude = 2;
+/// }
+/// ```
+Map<String, double>? _parseGeoPoint(Uint8List bytes) {
+  try {
+    final input = CodedBufferReader(bytes);
+    double? latitude;
+    double? longitude;
+
+    while (!input.isAtEnd()) {
+      final tag = input.readTag();
+      final fieldNumber = tag >>> 3;
+
+      if (fieldNumber == 1) {
+        latitude = input.readDouble();
+      } else if (fieldNumber == 2) {
+        longitude = input.readDouble();
+      } else {
+        input.skipField(tag);
+      }
+    }
+
+    if (latitude != null && longitude != null) {
+      return {'latitude': latitude, 'longitude': longitude};
+    }
+
+    return null;
+  } catch (e) {
+    print('Error parsing GeoPoint: $e');
     return null;
   }
 }
