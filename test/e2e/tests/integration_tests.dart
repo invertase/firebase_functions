@@ -26,7 +26,9 @@ void runIntegrationTests(String Function() getExamplePath) {
 
       if (dartToolDir.existsSync()) {
         final firebaseDir = Directory('$examplePath/.dart_tool/firebase');
-        print('DEBUG: .dart_tool/firebase exists = ${firebaseDir.existsSync()}');
+        print(
+          'DEBUG: .dart_tool/firebase exists = ${firebaseDir.existsSync()}',
+        );
 
         if (firebaseDir.existsSync()) {
           print('DEBUG: Contents of .dart_tool/firebase:');
