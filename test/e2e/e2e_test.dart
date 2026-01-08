@@ -25,8 +25,13 @@ void main() {
   late FirestoreClient firestoreClient;
   late DatabaseClient databaseClient;
 
+  // Debug: Show Directory.current.path at module load time
+  print('DEBUG e2e_test: Directory.current.path = ${Directory.current.path}');
+
   final examplePath =
       '${Directory.current.path}/example/basic'.replaceAll('/test/e2e', '');
+
+  print('DEBUG e2e_test: examplePath = $examplePath');
 
   setUpAll(() async {
     print('');
@@ -48,6 +53,15 @@ void main() {
     }
 
     print('✓ Functions built successfully');
+
+    // Debug: Check if functions.yaml exists after build
+    final functionsYamlPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+    final functionsYamlFile = File(functionsYamlPath);
+    print(
+      'DEBUG: After build, functions.yaml exists = ${functionsYamlFile.existsSync()}',
+    );
+    print('DEBUG: functionsYamlPath = $functionsYamlPath');
+
     print('');
 
     // Start the emulator
