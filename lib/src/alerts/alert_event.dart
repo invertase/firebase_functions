@@ -31,7 +31,8 @@ class AlertData<T extends Object?> {
   final T payload;
 
   Map<String, dynamic> toJson(
-          Map<String, dynamic> Function(T) payloadEncoder) =>
+    Map<String, dynamic> Function(T) payloadEncoder,
+  ) =>
       {
         'createTime': createTime.toIso8601String(),
         if (endTime != null) 'endTime': endTime!.toIso8601String(),

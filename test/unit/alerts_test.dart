@@ -144,7 +144,7 @@ void main() {
 
       expect(payload.type, 'fatal');
       expect(payload.issue.id, 'regression-123');
-      expect(payload.resolveTime, DateTime.utc(2024, 1, 1, 12, 0, 0));
+      expect(payload.resolveTime, DateTime.utc(2024, 1, 1, 12));
     });
 
     test('StabilityDigestPayload.fromJson parses correctly', () {
@@ -345,8 +345,8 @@ void main() {
         PlanUpdatePayload.fromJson,
       );
 
-      expect(alertData.createTime, DateTime.utc(2024, 1, 1, 12, 0, 0));
-      expect(alertData.endTime, DateTime.utc(2024, 1, 1, 13, 0, 0));
+      expect(alertData.createTime, DateTime.utc(2024, 1, 1, 12));
+      expect(alertData.endTime, DateTime.utc(2024, 1, 1, 13));
       expect(alertData.payload.billingPlan, 'Blaze');
     });
 
@@ -365,7 +365,7 @@ void main() {
         PlanUpdatePayload.fromJson,
       );
 
-      expect(alertData.createTime, DateTime.utc(2024, 1, 1, 12, 0, 0));
+      expect(alertData.createTime, DateTime.utc(2024, 1, 1, 12));
       expect(alertData.endTime, isNull);
     });
   });

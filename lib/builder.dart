@@ -497,7 +497,9 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts Crashlytics alert function declarations.
   void _extractCrashlyticsAlertFunction(
-      MethodInvocation node, String methodName) {
+    MethodInvocation node,
+    String methodName,
+  ) {
     // Map method names to alert types
     final alertType = switch (methodName) {
       'onNewFatalIssuePublished' => 'crashlytics.newFatalIssue',
