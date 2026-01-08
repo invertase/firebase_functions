@@ -58,9 +58,9 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(13),
+        equals(16),
         reason:
-            'Should discover 13 functions (2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database)',
+            'Should discover 16 functions (2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts)',
       );
     });
 
@@ -365,6 +365,68 @@ void main() {
 
       expect(dartTrigger['retry'], equals(false));
       expect(nodejsTrigger['retry'], equals(false));
+    });
+
+    test('should have Crashlytics newFatalIssue alert trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onAlertPublished_crashlytics_newFatalIssue',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.firebasealerts.alerts.v1.published'),
+      );
+      expect(dartTrigger['eventFilters'], isNotNull);
+
+      final filters = dartTrigger['eventFilters'] as Map;
+      expect(filters['alerttype'], equals('crashlytics.newFatalIssue'));
+      expect(filters['appid'], isNull); // No appId filter
+
+      expect(dartTrigger['retry'], equals(false));
+    });
+
+    test('should have Billing planUpdate alert trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onAlertPublished_billing_planUpdate',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.firebasealerts.alerts.v1.published'),
+      );
+
+      final filters = dartTrigger['eventFilters'] as Map;
+      expect(filters['alerttype'], equals('billing.planUpdate'));
+    });
+
+    test('should have Performance threshold alert with appId filter', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onAlertPublished_performance_threshold',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.firebasealerts.alerts.v1.published'),
+      );
+
+      final filters = dartTrigger['eventFilters'] as Map;
+      expect(filters['alerttype'], equals('performance.threshold'));
+      expect(filters['appid'], equals('1:123456789:ios:abcdef'));
     });
   });
 

@@ -139,6 +139,11 @@ FutureOr<Response> _routeRequest(
   print('DEBUG: Headers: ${request.headers}');
 
   // Handle special Node.js-compatible endpoints
+  if (requestPath == '__/health') {
+    // Health check endpoint (used by Firebase emulator)
+    return Response.ok('OK');
+  }
+
   if (requestPath == '__/quitquitquit') {
     // Graceful shutdown endpoint (used by Cloud Run)
     return _handleQuitQuitQuit(request);

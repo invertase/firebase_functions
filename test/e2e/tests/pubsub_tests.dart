@@ -27,6 +27,13 @@ void runPubSubTests(
       final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
       final manifestFile = File(manifestPath);
 
+      // Debug output
+      print('DEBUG pubsub: examplePath = $examplePath');
+      print('DEBUG pubsub: manifestPath = $manifestPath');
+      print(
+        'DEBUG pubsub: manifestFile.existsSync() = ${manifestFile.existsSync()}',
+      );
+
       expect(
         manifestFile.existsSync(),
         isTrue,

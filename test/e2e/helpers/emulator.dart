@@ -200,12 +200,18 @@ class EmulatorHelper {
     // Start from current directory and traverse up looking for firebase-tools
     var dir = Directory.current;
 
+    // Check both possible directory names:
+    // - 'firebase-tools' (local development)
+    // - 'custom-firebase-tools' (CI environment)
+    const possibleDirNames = ['firebase-tools', 'custom-firebase-tools'];
+
     for (var i = 0; i < 5; i++) {
       // Only check up to 5 levels
-      final firebaseToolsPath =
-          '${dir.path}/firebase-tools/lib/bin/firebase.js';
-      if (File(firebaseToolsPath).existsSync()) {
-        return firebaseToolsPath;
+      for (final dirName in possibleDirNames) {
+        final firebaseToolsPath = '${dir.path}/$dirName/lib/bin/firebase.js';
+        if (File(firebaseToolsPath).existsSync()) {
+          return firebaseToolsPath;
+        }
       }
 
       final parentDir = dir.parent;
