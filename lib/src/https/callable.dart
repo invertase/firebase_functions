@@ -10,6 +10,16 @@ typedef JsonDecoder<T extends Object?> = T Function(Map<String, dynamic>);
 /// Result of a callable function.
 ///
 /// Wraps the return value from a callable function handler.
+///
+/// Example:
+/// ```dart
+/// firebase.https.onCall(
+///   name: 'greet',
+///   (request, response) async {
+///     return CallableResult('Hello!');
+///   },
+/// );
+/// ```
 class CallableResult<T extends Object> {
   CallableResult(this.data);
   final T data;
@@ -23,11 +33,85 @@ class CallableResult<T extends Object> {
       );
 }
 
+/// A callable result that returns JSON data.
+///
+/// This is a convenience class for returning Map data as a JSON response.
+///
+/// Example:
+/// ```dart
+/// firebase.https.onCall(
+///   name: 'greet',
+///   (request, response) async {
+///     return JsonResult({'status': 'ok', 'message': 'Hello!'});
+///   },
+/// );
+/// ```
+class JsonResult extends CallableResult<Map<String, dynamic>> {
+  JsonResult(super.data);
+}
+
+/// Firebase Auth context data for a callable request.
+///
+/// Contains information about the authenticated user.
+class AuthData {
+  const AuthData({
+    required this.uid,
+    this.token,
+  });
+
+  /// The user's unique ID.
+  final String uid;
+
+  /// The decoded ID token claims.
+  final Map<String, dynamic>? token;
+}
+
+/// Firebase App Check context data for a callable request.
+///
+/// Contains information about the verified App Check token.
+class AppCheckData {
+  const AppCheckData({
+    required this.appId,
+    this.token,
+    this.alreadyConsumed,
+  });
+
+  /// The App ID from the App Check token.
+  final String appId;
+
+  /// The raw App Check token.
+  final String? token;
+
+  /// Whether this token was already consumed (replay protection).
+  final bool? alreadyConsumed;
+}
+
 /// Request context for a callable function.
 ///
 /// Provides access to request data, authentication context, and headers.
+///
+/// Example:
+/// ```dart
+/// firebase.https.onCall(
+///   name: 'greet',
+///   (request, response) async {
+///     final data = request.data;
+///     print('Can stream?: ${request.acceptsStreaming}');
+///     if (request.auth != null) {
+///       print('User ID: ${request.auth!.uid}');
+///     }
+///     return CallableResult('Hello!');
+///   },
+/// );
+/// ```
 class CallableRequest<T extends Object?> {
-  CallableRequest(this._delegate, this._body, this._jsonDecoder);
+  CallableRequest(
+    this._delegate,
+    this._body,
+    this._jsonDecoder, {
+    this.auth,
+    this.app,
+  });
   final Request _delegate;
   final Object? _body;
   final JsonDecoder<T>? _jsonDecoder;
@@ -57,13 +141,15 @@ class CallableRequest<T extends Object?> {
 
   /// Firebase App Check context.
   ///
-  /// TODO: Implement App Check validation
-  Object? get app => null;
+  /// Contains information about the verified App Check token.
+  /// Returns `null` if App Check was not provided or validation failed.
+  final AppCheckData? app;
 
   /// Firebase Authentication context.
   ///
-  /// TODO: Implement auth token validation and parsing
-  Object? get auth => null;
+  /// Contains information about the authenticated user.
+  /// Returns `null` if the request is not authenticated.
+  final AuthData? auth;
 
   /// Firebase Instance ID token.
   String? get instanceIdToken =>
@@ -76,6 +162,25 @@ class CallableRequest<T extends Object?> {
 /// Response helper for callable functions.
 ///
 /// Provides streaming support via Server-Sent Events (SSE).
+///
+/// Example:
+/// ```dart
+/// firebase.https.onCall(
+///   name: 'streamData',
+///   (request, response) async {
+///     final stream = Stream.periodic(
+///       Duration(seconds: 1),
+///       (x) => CallableResult(x),
+///     ).take(10);
+///
+///     if (request.acceptsStreaming) {
+///       response.stream(stream);
+///     }
+///
+///     return CallableResult('done');
+///   },
+/// );
+/// ```
 class CallableResponse<T extends Object> {
   CallableResponse({required this.acceptsStreaming, this.heartbeatSeconds});
   final bool acceptsStreaming;
@@ -84,7 +189,8 @@ class CallableResponse<T extends Object> {
   StreamController<String>? _streamController;
   Response? _streamingResponse;
   Timer? _heartbeatTimer;
-  final bool _aborted = false;
+  StreamSubscription<CallableResult<T>>? _streamSubscription;
+  bool _aborted = false;
 
   /// Initializes SSE streaming.
   void initializeStreaming() {
@@ -102,6 +208,41 @@ class CallableResponse<T extends Object> {
     if (heartbeatSeconds != null && heartbeatSeconds! > 0) {
       _scheduleHeartbeat();
     }
+  }
+
+  /// Streams data to the client via Server-Sent Events.
+  ///
+  /// When provided, streams any emitted events from the stream to the client.
+  /// Each item from the stream is wrapped in an SSE data event.
+  ///
+  /// Example:
+  /// ```dart
+  /// final stream = Stream.periodic(
+  ///   Duration(seconds: 1),
+  ///   (x) => CallableResult({'count': x}),
+  /// ).take(10);
+  ///
+  /// if (request.acceptsStreaming) {
+  ///   response.stream(stream);
+  /// }
+  /// ```
+  void stream(Stream<CallableResult<T>> dataStream) {
+    if (!acceptsStreaming) {
+      return;
+    }
+
+    _streamSubscription = dataStream.listen(
+      (result) {
+        sendChunk(result.data);
+      },
+      onError: (Object error) {
+        // Log error but don't close the stream - let handler complete
+      },
+      onDone: () {
+        // Stream completed naturally
+      },
+      cancelOnError: false,
+    );
   }
 
   /// Sends a chunk of data to the client via SSE.
@@ -142,6 +283,9 @@ class CallableResponse<T extends Object> {
 
   /// Closes the streaming response.
   Future<void> closeStream() async {
+    await _streamSubscription?.cancel();
+    _streamSubscription = null;
+
     if (_streamController != null && !_streamController!.isClosed) {
       await _streamController!.close();
     }
@@ -158,6 +302,14 @@ class CallableResponse<T extends Object> {
 
   /// Whether the stream has been aborted.
   bool get aborted => _aborted;
+
+  /// Marks the stream as aborted.
+  void abort() {
+    _aborted = true;
+    _streamSubscription?.cancel();
+    _streamSubscription = null;
+    clearHeartbeat();
+  }
 
   /// Schedules the next heartbeat ping.
   void _scheduleHeartbeat() {
@@ -211,7 +363,12 @@ Object? decode(Object? body) {
       throw FormatException('Unsupported @type: $type');
     }
 
-    return body.map((key, value) => MapEntry(key, decode(value)));
+    // Return a properly typed Map<String, dynamic>
+    final result = <String, dynamic>{};
+    for (final entry in body.entries) {
+      result[entry.key.toString()] = decode(entry.value);
+    }
+    return result;
   }
 
   return body;

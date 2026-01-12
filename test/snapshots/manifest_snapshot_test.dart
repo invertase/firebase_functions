@@ -58,10 +58,68 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(16),
+        equals(20),
         reason:
-            'Should discover 16 functions (2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts)',
+            'Should discover 20 functions (4 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts)',
       );
+    });
+
+    // =========================================================================
+    // Callable Functions Tests
+    // =========================================================================
+
+    test('should have basic callable function (greet)', () {
+      final dartFunc = _getEndpoint(dartManifest, 'greet');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'greet');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['entryPoint'], equals('greet'));
+      expect(dartFunc['platform'], equals('gcfv2'));
+      expect(dartFunc['callableTrigger'], isNotNull);
+      expect(nodejsFunc!['callableTrigger'], isNotNull);
+
+      // Callable functions should NOT have httpsTrigger
+      expect(dartFunc['httpsTrigger'], isNull);
+      expect(nodejsFunc['httpsTrigger'], isNull);
+    });
+
+    test('should have typed callable function (greetTyped)', () {
+      final dartFunc = _getEndpoint(dartManifest, 'greetTyped');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'greetTyped');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['entryPoint'], equals('greetTyped'));
+      expect(dartFunc['callableTrigger'], isNotNull);
+      expect(nodejsFunc!['callableTrigger'], isNotNull);
+    });
+
+    test('should have callable function with error handling (divide)', () {
+      final dartFunc = _getEndpoint(dartManifest, 'divide');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'divide');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['callableTrigger'], isNotNull);
+      expect(nodejsFunc!['callableTrigger'], isNotNull);
+    });
+
+    test('should have callable function with streaming (countdown)', () {
+      final dartFunc = _getEndpoint(dartManifest, 'countdown');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'countdown');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['callableTrigger'], isNotNull);
+      expect(nodejsFunc!['callableTrigger'], isNotNull);
+
+      // heartbeatSeconds is a runtime option, NOT in manifest
+      expect(dartFunc['heartbeatSeconds'], isNull);
     });
 
     test('should have matching HTTPS onRequest function', () {

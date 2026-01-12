@@ -42,18 +42,15 @@ class HttpsNamespace extends FunctionsNamespace {
           return await handler(request);
         } on HttpsError catch (e) {
           return Response(
-            400,
+            e.httpStatusCode,
             body: jsonEncode(e.toErrorResponse()),
             headers: {'Content-Type': 'application/json'},
           );
         } catch (e) {
           // Unexpected error - return internal error
-          final error = HttpsError(
-            FunctionsErrorCode.internal,
-            e.toString(),
-          );
+          final error = InternalError(e.toString());
           return Response(
-            500,
+            error.httpStatusCode,
             body: jsonEncode(error.toErrorResponse()),
             headers: {'Content-Type': 'application/json'},
           );
@@ -92,8 +89,15 @@ class HttpsNamespace extends FunctionsNamespace {
       name,
       (request) async {
         final bodyString = await request.change().readAsString();
-        final body = jsonDecode(bodyString) as Map<String, dynamic>;
-        final callableRequest = CallableRequest(request, body['data'], null);
+        Map<String, dynamic>? body;
+        if (bodyString.isNotEmpty) {
+          try {
+            body = jsonDecode(bodyString) as Map<String, dynamic>;
+          } catch (_) {
+            // Invalid JSON - body stays null, validation will fail
+          }
+        }
+        final callableRequest = CallableRequest(request, body?['data'], null);
 
         return _handleCallable<Object?, T, CallableResult<T>>(
           request,
@@ -183,14 +187,11 @@ class HttpsNamespace extends FunctionsNamespace {
     dynamic Function(Res result) extractResultData,
     Response Function(Res result) createNonStreamingResponse,
   ) async {
-    // Validate request
-    if (!await request.isValidRequest(body)) {
-      final error = HttpsError(
-        FunctionsErrorCode.invalidArgument,
-        'Invalid callable request',
-      );
+    // Validate request - pass empty map if body is null to avoid double-read
+    if (!await request.isValidRequest(body ?? {})) {
+      final error = InvalidArgumentError('Invalid callable request');
       return Response(
-        400,
+        error.httpStatusCode,
         body: jsonEncode(error.toErrorResponse()),
         headers: {'Content-Type': 'application/json'},
       );
@@ -230,16 +231,13 @@ class HttpsNamespace extends FunctionsNamespace {
       }
 
       return Response(
-        400,
+        e.httpStatusCode,
         body: jsonEncode(e.toErrorResponse()),
         headers: {'Content-Type': 'application/json'},
       );
     } catch (e) {
       // Unexpected error
-      final error = HttpsError(
-        FunctionsErrorCode.internal,
-        e.toString(),
-      );
+      final error = InternalError(e.toString());
 
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         callableResponse.writeSSE(error.toErrorResponse());
@@ -248,7 +246,7 @@ class HttpsNamespace extends FunctionsNamespace {
       }
 
       return Response(
-        500,
+        error.httpStatusCode,
         body: jsonEncode(error.toErrorResponse()),
         headers: {'Content-Type': 'application/json'},
       );
