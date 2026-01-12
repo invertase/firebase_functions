@@ -4,7 +4,7 @@
  * generates compatible functions.yaml output.
  */
 
-const { onRequest } = require("firebase-functions/v2/https");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
 const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onValueCreated, onValueUpdated, onValueDeleted, onValueWritten } = require("firebase-functions/v2/database");
@@ -32,6 +32,53 @@ const isProduction = defineBoolean("IS_PRODUCTION", {
   default: false,
   description: "Whether this is a production deployment",
 });
+
+// =============================================================================
+// HTTPS Callable Functions (onCall)
+// =============================================================================
+
+// Basic callable function - untyped data
+exports.greet = onCall((request) => {
+  const name = request.data?.name ?? "World";
+  return { message: `Hello, ${name}!` };
+});
+
+// Callable function with typed data (same manifest structure as untyped)
+exports.greetTyped = onCall((request) => {
+  const name = request.data?.name ?? "World";
+  return { message: `Hello, ${name}!` };
+});
+
+// Callable function demonstrating error handling
+exports.divide = onCall((request) => {
+  const a = request.data?.a;
+  const b = request.data?.b;
+
+  if (a === undefined || b === undefined) {
+    throw new HttpsError("invalid-argument", 'Both "a" and "b" are required');
+  }
+
+  if (b === 0) {
+    throw new HttpsError("failed-precondition", "Cannot divide by zero");
+  }
+
+  return { result: a / b };
+});
+
+// Callable function with streaming support
+exports.countdown = onCall(
+  {
+    // heartbeatSeconds is a runtime option, not in manifest
+  },
+  (request) => {
+    // Streaming is handled at runtime, not in manifest
+    return { message: "Countdown complete!" };
+  }
+);
+
+// =============================================================================
+// HTTPS onRequest Functions
+// =============================================================================
 
 // HTTPS onRequest example - using parameterized configuration
 exports.helloWorld = onRequest(
