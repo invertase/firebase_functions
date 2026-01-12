@@ -267,9 +267,9 @@ void main() {
         'metadata': {
           'creation_time': 1705320000000,
         },
-        'provider_data': [],
+        'provider_data': <Map<String, dynamic>>[],
         'multi_factor': {
-          'enrolled_factors': [],
+          'enrolled_factors': <Map<String, dynamic>>[],
         },
       };
 
