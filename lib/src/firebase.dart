@@ -9,6 +9,7 @@ import 'alerts/alerts_namespace.dart';
 import 'database/database_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
+import 'identity/identity_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
 
 /// Main Firebase Functions instance.
@@ -81,6 +82,9 @@ class Firebase {
 
   /// Firebase Alerts namespace.
   AlertsNamespace get alerts => AlertsNamespace(this);
+
+  /// Identity Platform namespace.
+  IdentityNamespace get identity => IdentityNamespace(this);
 }
 
 /// Extension for internal function registration.

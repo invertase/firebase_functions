@@ -77,6 +77,8 @@ export 'src/firebase.dart' show Firebase;
 export 'src/firestore/firestore.dart';
 // HTTPS triggers
 export 'src/https/https.dart';
+// Identity triggers
+export 'src/identity/identity.dart';
 // Pub/Sub triggers
 export 'src/pubsub/pubsub.dart';
 // Core runtime
