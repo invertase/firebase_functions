@@ -535,7 +535,8 @@ void main() {
       expect(event.credential!.accessToken, 'token-xyz');
     });
 
-    test('fromDecodedPayload parses beforeSendEmail event (no user record)', () {
+    test('fromDecodedPayload parses beforeSendEmail event (no user record)',
+        () {
       final decoded = {
         'event_type': 'beforeSendEmail',
         'ip_address': '10.0.0.3',

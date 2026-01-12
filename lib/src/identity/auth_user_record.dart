@@ -58,7 +58,8 @@ class AuthUserMetadata {
 
   factory AuthUserMetadata.fromJson(Map<String, dynamic> json) {
     final creationTimeRaw = json['creationTime'] ?? json['creation_time'];
-    final lastSignInTimeRaw = json['lastSignInTime'] ?? json['last_sign_in_time'];
+    final lastSignInTimeRaw =
+        json['lastSignInTime'] ?? json['last_sign_in_time'];
 
     return AuthUserMetadata(
       creationTime: _parseDateTime(creationTimeRaw),
@@ -103,14 +104,18 @@ class AuthMultiFactorInfo {
   factory AuthMultiFactorInfo.fromJson(Map<String, dynamic> json) =>
       AuthMultiFactorInfo(
         uid: json['uid'] as String,
-        displayName: json['displayName'] as String? ?? json['display_name'] as String?,
-        factorId: json['factorId'] as String? ?? json['factor_id'] as String? ?? 'phone',
+        displayName:
+            json['displayName'] as String? ?? json['display_name'] as String?,
+        factorId: json['factorId'] as String? ??
+            json['factor_id'] as String? ??
+            'phone',
         enrollmentTime: json['enrollmentTime'] != null
             ? DateTime.parse(json['enrollmentTime'] as String)
             : json['enrollment_time'] != null
                 ? DateTime.parse(json['enrollment_time'] as String)
                 : null,
-        phoneNumber: json['phoneNumber'] as String? ?? json['phone_number'] as String?,
+        phoneNumber:
+            json['phoneNumber'] as String? ?? json['phone_number'] as String?,
       );
 
   /// The ID of the enrolled second factor. This ID is unique to the user.
@@ -185,19 +190,21 @@ class AuthUserRecord {
   });
 
   factory AuthUserRecord.fromJson(Map<String, dynamic> json) {
-    final providerDataList =
-        json['providerData'] as List<dynamic>? ??
-            json['provider_data'] as List<dynamic>? ??
-            [];
+    final providerDataList = json['providerData'] as List<dynamic>? ??
+        json['provider_data'] as List<dynamic>? ??
+        [];
 
     return AuthUserRecord(
       uid: json['uid'] as String,
       email: json['email'] as String?,
-      emailVerified:
-          json['emailVerified'] as bool? ?? json['email_verified'] as bool? ?? false,
-      displayName: json['displayName'] as String? ?? json['display_name'] as String?,
+      emailVerified: json['emailVerified'] as bool? ??
+          json['email_verified'] as bool? ??
+          false,
+      displayName:
+          json['displayName'] as String? ?? json['display_name'] as String?,
       photoURL: json['photoURL'] as String? ?? json['photo_url'] as String?,
-      phoneNumber: json['phoneNumber'] as String? ?? json['phone_number'] as String?,
+      phoneNumber:
+          json['phoneNumber'] as String? ?? json['phone_number'] as String?,
       disabled: json['disabled'] as bool? ?? false,
       metadata: json['metadata'] != null
           ? AuthUserMetadata.fromJson(json['metadata'] as Map<String, dynamic>)
@@ -206,8 +213,10 @@ class AuthUserRecord {
           .cast<Map<String, dynamic>>()
           .map(AuthUserInfo.fromJson)
           .toList(),
-      passwordHash: json['passwordHash'] as String? ?? json['password_hash'] as String?,
-      passwordSalt: json['passwordSalt'] as String? ?? json['password_salt'] as String?,
+      passwordHash:
+          json['passwordHash'] as String? ?? json['password_hash'] as String?,
+      passwordSalt:
+          json['passwordSalt'] as String? ?? json['password_salt'] as String?,
       customClaims: json['customClaims'] as Map<String, dynamic>? ??
           json['custom_claims'] as Map<String, dynamic>?,
       tenantId: json['tenantId'] as String? ?? json['tenant_id'] as String?,
