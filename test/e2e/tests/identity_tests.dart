@@ -54,17 +54,10 @@ void runIdentityTests(
         // Wait for logs to be captured
         await Future<void>.delayed(const Duration(milliseconds: 500));
 
-        // Verify the blocking function was executed
-        final executionLogged = emulator.verifyFunctionExecution(
-          'us-central1-beforeCreate',
-        );
-        expect(
-          executionLogged,
-          isTrue,
-          reason: 'beforeUserCreated function should have been triggered',
-        );
-
         // Verify Dart runtime processed the request
+        // Note: We use verifyDartRuntimeRequest instead of verifyFunctionExecution
+        // because Dart uses a shared worker process, so the emulator logs the
+        // worker name (helloWorld) rather than the actual function being called.
         final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
           'POST',
           200,
@@ -94,15 +87,17 @@ void runIdentityTests(
         // Wait for logs to be captured
         await Future<void>.delayed(const Duration(milliseconds: 500));
 
-        // Verify the blocking function was executed
-        final executionLogged = emulator.verifyFunctionExecution(
-          'us-central1-beforeCreate',
+        // Verify Dart runtime processed the request and returned 403 (blocked)
+        final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
+          'POST',
+          403,
+          '/beforeCreate',
         );
         expect(
-          executionLogged,
+          dartRuntimeLogged,
           isTrue,
           reason:
-              'beforeUserCreated function should have been triggered even when blocking',
+              'Dart runtime should have processed and blocked beforeCreate request',
         );
       });
 
@@ -126,11 +121,13 @@ void runIdentityTests(
 
         // The blocking function ran and should have set custom claims
         // We can't easily verify the claims without decoding the token,
-        // but we can verify the function executed
-        final executionLogged = emulator.verifyFunctionExecution(
-          'us-central1-beforeCreate',
+        // but we can verify the function executed via Dart runtime logs
+        final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
+          'POST',
+          200,
+          '/beforeCreate',
         );
-        expect(executionLogged, isTrue);
+        expect(dartRuntimeLogged, isTrue);
 
         // Clean up
         await authClient.deleteAccount(response.idToken);
@@ -166,16 +163,6 @@ void runIdentityTests(
 
         // Wait for logs
         await Future<void>.delayed(const Duration(milliseconds: 500));
-
-        // Verify the blocking function was executed
-        final executionLogged = emulator.verifyFunctionExecution(
-          'us-central1-beforeSignIn',
-        );
-        expect(
-          executionLogged,
-          isTrue,
-          reason: 'beforeUserSignedIn function should have been triggered',
-        );
 
         // Verify Dart runtime processed the request
         final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
@@ -219,11 +206,13 @@ void runIdentityTests(
         // Wait for logs
         await Future<void>.delayed(const Duration(milliseconds: 500));
 
-        // Verify function executed
-        final executionLogged = emulator.verifyFunctionExecution(
-          'us-central1-beforeSignIn',
+        // Verify function executed via Dart runtime logs
+        final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
+          'POST',
+          200,
+          '/beforeSignIn',
         );
-        expect(executionLogged, isTrue);
+        expect(dartRuntimeLogged, isTrue);
 
         // Clean up
         await authClient.deleteAccount(signInResponse.idToken);
@@ -246,9 +235,9 @@ void runIdentityTests(
         // Wait for logs
         await Future<void>.delayed(const Duration(milliseconds: 500));
 
-        // Verify beforeUserCreated was triggered
+        // Verify beforeUserCreated was triggered via Dart runtime logs
         expect(
-          emulator.verifyFunctionExecution('us-central1-beforeCreate'),
+          emulator.verifyDartRuntimeRequest('POST', 200, '/beforeCreate'),
           isTrue,
           reason: 'beforeUserCreated should trigger on signup',
         );
@@ -266,9 +255,9 @@ void runIdentityTests(
         // Wait for logs
         await Future<void>.delayed(const Duration(milliseconds: 500));
 
-        // Verify beforeUserSignedIn was triggered
+        // Verify beforeUserSignedIn was triggered via Dart runtime logs
         expect(
-          emulator.verifyFunctionExecution('us-central1-beforeSignIn'),
+          emulator.verifyDartRuntimeRequest('POST', 200, '/beforeSignIn'),
           isTrue,
           reason: 'beforeUserSignedIn should trigger on sign-in',
         );
