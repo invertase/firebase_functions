@@ -21,10 +21,8 @@ void runIdentityTests(
   AuthClient Function() getAuthClient,
   EmulatorHelper Function() getEmulator,
 ) {
-  group(
-    'Identity Platform (Auth Blocking)',
-    skip: 'Auth emulator only supports beforeCreate/beforeSignIn',
-    () {
+  group('Identity Platform (Auth Blocking)',
+      skip: 'Auth emulator only supports beforeCreate/beforeSignIn', () {
     late AuthClient authClient;
     late EmulatorHelper emulator;
 
