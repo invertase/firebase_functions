@@ -13,12 +13,18 @@ class AuthUserInfo {
   });
 
   factory AuthUserInfo.fromJson(Map<String, dynamic> json) => AuthUserInfo(
-        uid: json['uid'] as String,
-        displayName: json['displayName'] as String? ?? '',
+        uid: json['uid'] as String? ?? json['raw_id'] as String? ?? '',
+        displayName: json['displayName'] as String? ??
+            json['display_name'] as String? ??
+            '',
         email: json['email'] as String? ?? '',
-        photoURL: json['photoURL'] as String? ?? '',
-        providerId: json['providerId'] as String,
-        phoneNumber: json['phoneNumber'] as String?,
+        photoURL:
+            json['photoURL'] as String? ?? json['photo_url'] as String? ?? '',
+        providerId: json['providerId'] as String? ??
+            json['provider_id'] as String? ??
+            '',
+        phoneNumber:
+            json['phoneNumber'] as String? ?? json['phone_number'] as String?,
       );
 
   /// The user identifier for the linked provider.
@@ -73,6 +79,12 @@ class AuthUserMetadata {
       return DateTime.fromMillisecondsSinceEpoch(value);
     }
     if (value is String) {
+      // Try parsing as integer first (milliseconds since epoch)
+      final asInt = int.tryParse(value);
+      if (asInt != null) {
+        return DateTime.fromMillisecondsSinceEpoch(asInt);
+      }
+      // Otherwise parse as ISO string
       return DateTime.parse(value);
     }
     throw ArgumentError('Invalid date format: $value');

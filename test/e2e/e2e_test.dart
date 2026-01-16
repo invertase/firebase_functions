@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'helpers/auth_client.dart';
 import 'helpers/database_client.dart';
 import 'helpers/emulator.dart';
 import 'helpers/firestore_client.dart';
@@ -15,6 +16,7 @@ import 'helpers/pubsub_client.dart';
 import 'tests/database_tests.dart';
 import 'tests/firestore_tests.dart';
 import 'tests/https_onrequest_tests.dart';
+import 'tests/identity_tests.dart';
 import 'tests/integration_tests.dart';
 import 'tests/pubsub_tests.dart';
 
@@ -24,6 +26,7 @@ void main() {
   late PubSubClient pubsubClient;
   late FirestoreClient firestoreClient;
   late DatabaseClient databaseClient;
+  late AuthClient authClient;
 
   // Debug: Show Directory.current.path at module load time
   print('DEBUG e2e_test: Directory.current.path = ${Directory.current.path}');
@@ -80,6 +83,9 @@ void main() {
     // Create Database client
     databaseClient = DatabaseClient(emulator.databaseUrl, 'demo-test');
 
+    // Create Auth client
+    authClient = AuthClient(emulator.authUrl, 'demo-test');
+
     // Give emulator a moment to fully initialize
     await Future<void>.delayed(const Duration(seconds: 2));
   });
@@ -95,6 +101,7 @@ void main() {
     pubsubClient.close();
     firestoreClient.close();
     databaseClient.close();
+    authClient.close();
     await emulator.stop();
   });
 
@@ -104,4 +111,5 @@ void main() {
   runPubSubTests(() => examplePath, () => pubsubClient, () => emulator);
   runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
   runDatabaseTests(() => examplePath, () => databaseClient, () => emulator);
+  runIdentityTests(() => examplePath, () => authClient, () => emulator);
 }
