@@ -13,6 +13,7 @@ dependencies:
   protobuf: ^3.1.0
   http: ^1.1.0
   googleapis: ^15.0.0
+  crypto: ^3.0.0
   # Required for builder
   build: ^2.4.0
   source_gen: ^1.5.0
