@@ -373,44 +373,6 @@ void main(List<String> args) {
       },
     );
 
-    // Before email sent - runs before password reset or sign-in emails
-    firebase.identity.beforeEmailSent(
-      (AuthBlockingEvent event) async {
-        print('Before email sent:');
-        print('  Email Type: ${event.emailType?.value}');
-        print('  IP Address: ${event.ipAddress}');
-
-        // Example: Rate limit password reset emails
-        // In production, you'd check against a database
-        if (event.emailType == EmailType.passwordReset) {
-          // Could return BeforeEmailResponse(
-          //   recaptchaActionOverride: RecaptchaActionOptions.block,
-          // ) to block suspicious requests
-        }
-
-        return null;
-      },
-    );
-
-    // Before SMS sent - runs before MFA or sign-in SMS messages
-    firebase.identity.beforeSmsSent(
-      (AuthBlockingEvent event) async {
-        print('Before SMS sent:');
-        print('  SMS Type: ${event.smsType?.value}');
-        print('  Phone: ${event.additionalUserInfo?.phoneNumber}');
-
-        // Example: Block SMS to certain country codes
-        final phone = event.additionalUserInfo?.phoneNumber;
-        if (phone != null && phone.startsWith('+1900')) {
-          return const BeforeSmsResponse(
-            recaptchaActionOverride: RecaptchaActionOptions.block,
-          );
-        }
-
-        return null;
-      },
-    );
-
     print('Functions registered successfully!');
   });
 }
