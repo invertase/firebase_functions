@@ -36,6 +36,8 @@ class _TypeCheckers {
       TypeChecker.fromRuntime(ff.AppDistributionNamespace);
   static final performanceNamespace =
       TypeChecker.fromRuntime(ff.PerformanceNamespace);
+  static final identityNamespace =
+      TypeChecker.fromRuntime(ff.IdentityNamespace);
 }
 
 /// The main builder that generates functions.yaml.
@@ -177,6 +179,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     // Check for Performance alert declarations
     if (target != null && _isPerformanceNamespace(target)) {
       _extractPerformanceAlertFunction(node, methodName);
+    }
+
+    // Check for Identity function declarations
+    if (target != null && _isIdentityNamespace(target)) {
+      _extractIdentityFunction(node, methodName);
     }
 
     // Check for parameter definitions (top-level function calls with no target)
@@ -323,6 +330,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final staticType = target.staticType;
     if (staticType == null) return false;
     return _TypeCheckers.performanceNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.identity.
+  bool _isIdentityNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.identityNamespace.isExactlyType(staticType);
   }
 
   /// Checks if this is a parameter definition function.
@@ -585,6 +599,60 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     );
   }
 
+  /// Extracts an Identity function declaration.
+  void _extractIdentityFunction(MethodInvocation node, String methodName) {
+    // Map method names to event types
+    final eventType = switch (methodName) {
+      'beforeUserCreated' => 'beforeCreate',
+      'beforeUserSignedIn' => 'beforeSignIn',
+      'beforeEmailSent' => 'beforeSendEmail',
+      'beforeSmsSent' => 'beforeSendSms',
+      _ => null,
+    };
+
+    if (eventType == null) return;
+
+    // Extract options if present
+    final optionsArg = _findNamedArg(node, 'options');
+    bool? idToken;
+    bool? accessToken;
+    bool? refreshToken;
+
+    if (optionsArg is InstanceCreationExpression) {
+      idToken = _extractBoolField(optionsArg, 'idToken');
+      accessToken = _extractBoolField(optionsArg, 'accessToken');
+      refreshToken = _extractBoolField(optionsArg, 'refreshToken');
+    }
+
+    // Function name is the event type
+    final functionName = eventType;
+
+    endpoints[functionName] = _EndpointSpec(
+      name: functionName,
+      type: 'blocking',
+      blockingEventType: eventType,
+      idToken: idToken,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts a boolean field from an InstanceCreationExpression.
+  bool? _extractBoolField(InstanceCreationExpression node, String fieldName) {
+    final arg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == fieldName)
+        .map((e) => e.expression)
+        .firstOrNull;
+
+    if (arg is BooleanLiteral) {
+      return arg.value;
+    }
+    return null;
+  }
+
   /// Extracts alert type value from an expression.
   String? _extractAlertTypeValue(Expression expression) {
     if (expression is InstanceCreationExpression) {
@@ -816,11 +884,15 @@ class _EndpointSpec {
     this.instance,
     this.alertType,
     this.appId,
+    this.blockingEventType,
+    this.idToken,
+    this.accessToken,
+    this.refreshToken,
     this.options,
     this.variableToParamName = const {},
   });
   final String name;
-  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert'
+  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking'
   final String type;
   final String? topic; // For Pub/Sub functions
   final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
@@ -832,6 +904,10 @@ class _EndpointSpec {
   final String? instance; // For Database: database instance or '*'
   final String? alertType; // For Alerts: crashlytics.newFatalIssue, etc.
   final String? appId; // For Alerts: optional app ID filter
+  final String? blockingEventType; // For Identity: beforeCreate, etc.
+  final bool? idToken; // For Identity: pass ID token
+  final bool? accessToken; // For Identity: pass access token
+  final bool? refreshToken; // For Identity: pass refresh token
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 
@@ -1375,6 +1451,13 @@ String _generateYaml(
   buffer.writeln('requiredAPIs:');
   buffer.writeln('  - api: "cloudfunctions.googleapis.com"');
   buffer.writeln('    reason: "Required for Cloud Functions"');
+  // Add identitytoolkit API if there are blocking functions
+  final hasBlockingFunctions =
+      endpoints.values.any((e) => e.type == 'blocking');
+  if (hasBlockingFunctions) {
+    buffer.writeln('  - api: "identitytoolkit.googleapis.com"');
+    buffer.writeln('    reason: "Needed for auth blocking functions"');
+  }
   buffer.writeln();
 
   // Generate endpoints section
@@ -1578,6 +1661,30 @@ String _generateYaml(
           buffer.writeln('        appid: "${endpoint.appId}"');
         }
         buffer.writeln('      retry: false');
+      } else if (endpoint.type == 'blocking' &&
+          endpoint.blockingEventType != null) {
+        buffer.writeln('    blockingTrigger:');
+        buffer.writeln(
+          '      eventType: "providers/cloud.auth/eventTypes/user.${endpoint.blockingEventType}"',
+        );
+
+        // Only include token options for beforeCreate and beforeSignIn
+        final isAuthEvent = endpoint.blockingEventType == 'beforeCreate' ||
+            endpoint.blockingEventType == 'beforeSignIn';
+        if (isAuthEvent) {
+          buffer.writeln('      options:');
+          if (endpoint.idToken ?? false) {
+            buffer.writeln('        idToken: true');
+          }
+          if (endpoint.accessToken ?? false) {
+            buffer.writeln('        accessToken: true');
+          }
+          if (endpoint.refreshToken ?? false) {
+            buffer.writeln('        refreshToken: true');
+          }
+        } else {
+          buffer.writeln('      options: {}');
+        }
       }
     }
   }

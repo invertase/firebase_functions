@@ -58,9 +58,9 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(20),
+        equals(24),
         reason:
-            'Should discover 20 functions (4 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts)',
+            'Should discover 24 functions (4 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity)',
       );
     });
 
@@ -485,6 +485,91 @@ void main() {
       final filters = dartTrigger['eventFilters'] as Map;
       expect(filters['alerttype'], equals('performance.threshold'));
       expect(filters['appid'], equals('1:123456789:ios:abcdef'));
+    });
+
+    // =========================================================================
+    // Identity Platform (Auth Blocking) Tests
+    // =========================================================================
+
+    test('should have beforeCreate blocking trigger with token options', () {
+      final dartFunc = _getEndpoint(dartManifest, 'beforeCreate');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['blockingTrigger'], isNotNull);
+
+      final trigger = dartFunc['blockingTrigger'] as Map;
+      expect(
+        trigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeCreate'),
+      );
+
+      final options = trigger['options'] as Map;
+      expect(options['idToken'], isTrue);
+      expect(options['accessToken'], isTrue);
+    });
+
+    test('should have beforeSignIn blocking trigger with idToken only', () {
+      final dartFunc = _getEndpoint(dartManifest, 'beforeSignIn');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['blockingTrigger'], isNotNull);
+
+      final trigger = dartFunc['blockingTrigger'] as Map;
+      expect(
+        trigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeSignIn'),
+      );
+
+      final options = trigger['options'] as Map;
+      expect(options['idToken'], isTrue);
+      expect(options.containsKey('accessToken'), isFalse);
+    });
+
+    test('should have beforeSendEmail blocking trigger with empty options', () {
+      final dartFunc = _getEndpoint(dartManifest, 'beforeSendEmail');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['blockingTrigger'], isNotNull);
+
+      final trigger = dartFunc['blockingTrigger'] as Map;
+      expect(
+        trigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeSendEmail'),
+      );
+
+      final options = trigger['options'] as Map;
+      expect(options, isEmpty);
+    });
+
+    test('should have beforeSendSms blocking trigger with empty options', () {
+      final dartFunc = _getEndpoint(dartManifest, 'beforeSendSms');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['blockingTrigger'], isNotNull);
+
+      final trigger = dartFunc['blockingTrigger'] as Map;
+      expect(
+        trigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeSendSms'),
+      );
+
+      final options = trigger['options'] as Map;
+      expect(options, isEmpty);
+    });
+
+    test('should include identitytoolkit API in requiredAPIs', () {
+      final requiredAPIs = dartManifest['requiredAPIs'] as List;
+
+      final identityApi = requiredAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'identitytoolkit.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(identityApi, isNotNull);
+      expect(
+        (identityApi as Map)['reason'],
+        equals('Needed for auth blocking functions'),
+      );
     });
   });
 
