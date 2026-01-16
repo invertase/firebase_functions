@@ -176,8 +176,8 @@ class AuthBlockingTokenVerifier {
     }
 
     // Parse certificates
-    final certs =
-        (jsonDecode(response.body) as Map<String, dynamic>).cast<String, String>();
+    final certs = (jsonDecode(response.body) as Map<String, dynamic>)
+        .cast<String, String>();
 
     // Cache with expiration from Cache-Control header or default
     final cacheControl = response.headers['cache-control'];
@@ -509,7 +509,8 @@ class AuthBlockingTokenVerifier {
       audienceValid = aud == expectedAudience || aud.contains(expectedAudience);
     } else if (aud is List) {
       audienceValid = aud.any(
-        (a) => a == expectedAudience || (a as String).contains(expectedAudience),
+        (a) =>
+            a == expectedAudience || (a as String).contains(expectedAudience),
       );
     } else {
       audienceValid = false;

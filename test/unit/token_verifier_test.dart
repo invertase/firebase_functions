@@ -18,18 +18,27 @@ void main() {
       test('decodes valid JWT without verification', () async {
         // Create a test JWT (header.payload.signature)
         final header = base64Url
-            .encode(utf8.encode(jsonEncode({'alg': 'RS256', 'kid': 'test-key'})))
+            .encode(
+              utf8.encode(jsonEncode({'alg': 'RS256', 'kid': 'test-key'})),
+            )
             .replaceAll('=', '');
         final payload = base64Url
-            .encode(utf8.encode(jsonEncode({
-              'iss': 'https://securetoken.google.com/demo-test',
-              'aud': 'demo-test.cloudfunctions.net/',
-              'sub': 'user-123',
-              'exp': (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600,
-              'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-              'event_type': 'beforeCreate',
-              'user_record': {'uid': 'user-123', 'email': 'test@example.com'},
-            })))
+            .encode(
+              utf8.encode(
+                jsonEncode({
+                  'iss': 'https://securetoken.google.com/demo-test',
+                  'aud': 'demo-test.cloudfunctions.net/',
+                  'sub': 'user-123',
+                  'exp': (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600,
+                  'iat': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                  'event_type': 'beforeCreate',
+                  'user_record': {
+                    'uid': 'user-123',
+                    'email': 'test@example.com',
+                  },
+                }),
+              ),
+            )
             .replaceAll('=', '');
         final jwt = '$header.$payload.fake-signature';
 
@@ -45,10 +54,14 @@ void main() {
             .encode(utf8.encode(jsonEncode({'alg': 'none'})))
             .replaceAll('=', '');
         final payload = base64Url
-            .encode(utf8.encode(jsonEncode({
-              'sub': 'test-user',
-              'event_type': 'beforeSignIn',
-            })))
+            .encode(
+              utf8.encode(
+                jsonEncode({
+                  'sub': 'test-user',
+                  'event_type': 'beforeSignIn',
+                }),
+              ),
+            )
             .replaceAll('=', '');
         final jwt = '$header.$payload.invalid-sig';
 
@@ -163,9 +176,8 @@ String _createTestJwt(Map<String, dynamic> payload) {
   final header = base64Url
       .encode(utf8.encode(jsonEncode({'alg': 'RS256', 'kid': 'test'})))
       .replaceAll('=', '');
-  final payloadEncoded = base64Url
-      .encode(utf8.encode(jsonEncode(payload)))
-      .replaceAll('=', '');
+  final payloadEncoded =
+      base64Url.encode(utf8.encode(jsonEncode(payload))).replaceAll('=', '');
   return '$header.$payloadEncoded.fake-signature';
 }
 

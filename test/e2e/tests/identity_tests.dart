@@ -36,7 +36,8 @@ void runIdentityTests(
 
     group('beforeUserCreated', () {
       test('blocking function is triggered on user signup', () async {
-        final email = 'test-${DateTime.now().millisecondsSinceEpoch}@example.com';
+        final email =
+            'test-${DateTime.now().millisecondsSinceEpoch}@example.com';
         final password = 'TestPassword123!';
 
         // Sign up a new user - this should trigger beforeUserCreated
@@ -230,8 +231,7 @@ void runIdentityTests(
     });
 
     group('multiple blocking functions', () {
-      test(
-          'both beforeUserCreated and beforeUserSignedIn trigger in sequence',
+      test('both beforeUserCreated and beforeUserSignedIn trigger in sequence',
           () async {
         final email =
             'sequence-${DateTime.now().millisecondsSinceEpoch}@example.com';
