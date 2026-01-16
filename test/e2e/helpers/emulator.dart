@@ -11,7 +11,7 @@ class EmulatorHelper {
     this.firestorePort = 8080,
     this.databasePort = 9000,
     this.authPort = 9099,
-    this.startupTimeout = const Duration(seconds: 30),
+    this.startupTimeout = const Duration(seconds: 90),
   });
   Process? _process;
   final String projectPath;
