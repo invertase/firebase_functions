@@ -2,10 +2,9 @@
 library;
 
 import 'dart:convert';
-import 'dart:typed_data';
 
-import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:jose/jose.dart';
 
 import '../https/error.dart';
 
@@ -34,8 +33,8 @@ class AuthBlockingTokenVerifier {
   final bool isEmulator;
   final http.Client _httpClient;
 
-  /// Cached Google public certificates.
-  static Map<String, String>? _cachedCerts;
+  /// Cached JsonWebKeyStore with Google's public certificates.
+  static JsonWebKeyStore? _cachedKeyStore;
 
   /// When the cached certificates expire.
   static DateTime? _certsExpireAt;
@@ -61,47 +60,23 @@ class AuthBlockingTokenVerifier {
       return _unsafeDecode(token);
     }
 
-    // Parse JWT parts
-    final parts = token.split('.');
-    if (parts.length != 3) {
-      throw UnauthenticatedError('Invalid JWT format');
-    }
+    // Get the key store with Google's certificates
+    final keyStore = await _getGoogleKeyStore();
 
-    final headerJson = _decodeBase64Url(parts[0]);
-    final payloadJson = _decodeBase64Url(parts[1]);
-    final signature = parts[2];
-
-    Map<String, dynamic> header;
-    Map<String, dynamic> payload;
-
+    // Verify the token using jose
+    JsonWebToken jwt;
     try {
-      header = jsonDecode(headerJson) as Map<String, dynamic>;
-      payload = jsonDecode(payloadJson) as Map<String, dynamic>;
-    } on FormatException {
-      throw UnauthenticatedError('Invalid JWT encoding');
+      jwt = await JsonWebToken.decodeAndVerify(token, keyStore);
+    } on JoseException catch (e) {
+      throw UnauthenticatedError('Invalid JWT: ${e.message}');
+    } catch (e) {
+      throw UnauthenticatedError('Invalid JWT: $e');
     }
 
-    // Validate header
-    final alg = header['alg'] as String?;
-    if (alg != 'RS256') {
-      throw UnauthenticatedError(
-        'Invalid JWT algorithm. Expected RS256, got $alg',
-      );
-    }
+    // Extract the payload as a map
+    final payload = jwt.claims.toJson();
 
-    final kid = header['kid'] as String?;
-    if (kid == null) {
-      throw UnauthenticatedError('Missing key ID (kid) in JWT header');
-    }
-
-    // Verify signature
-    await _verifySignature(
-      data: '${parts[0]}.${parts[1]}',
-      signature: signature,
-      kid: kid,
-    );
-
-    // Validate claims
+    // Validate Firebase-specific claims
     _validateClaims(payload, audience);
 
     return payload;
@@ -124,46 +99,13 @@ class AuthBlockingTokenVerifier {
     return utf8.decode(base64Url.decode(normalized));
   }
 
-  /// Verifies the JWT signature against Google's public certificates.
-  Future<void> _verifySignature({
-    required String data,
-    required String signature,
-    required String kid,
-  }) async {
-    // Fetch certificates
-    final certs = await _getGoogleCertificates();
-
-    // Find the certificate for this key ID
-    final certPem = certs[kid];
-    if (certPem == null) {
-      throw UnauthenticatedError(
-        'No certificate found for key ID: $kid. '
-        'Token may be expired or from a different issuer.',
-      );
-    }
-
-    // Decode signature from base64url
-    final signatureBytes = base64Url.decode(base64Url.normalize(signature));
-
-    // Verify using RSA
-    final isValid = await _verifyRS256(
-      data: utf8.encode(data),
-      signature: signatureBytes,
-      certPem: certPem,
-    );
-
-    if (!isValid) {
-      throw UnauthenticatedError('Invalid JWT signature');
-    }
-  }
-
-  /// Fetches Google's public certificates with caching.
-  Future<Map<String, String>> _getGoogleCertificates() async {
-    // Return cached certs if still valid
-    if (_cachedCerts != null &&
+  /// Fetches Google's public certificates and creates a JsonWebKeyStore.
+  Future<JsonWebKeyStore> _getGoogleKeyStore() async {
+    // Return cached key store if still valid
+    if (_cachedKeyStore != null &&
         _certsExpireAt != null &&
         DateTime.now().isBefore(_certsExpireAt!)) {
-      return _cachedCerts!;
+      return _cachedKeyStore!;
     }
 
     // Fetch new certificates
@@ -176,8 +118,27 @@ class AuthBlockingTokenVerifier {
     }
 
     // Parse certificates
-    final certs = (jsonDecode(response.body) as Map<String, dynamic>)
-        .cast<String, String>();
+    final certsJson = jsonDecode(response.body) as Map<String, dynamic>;
+    final certs = certsJson.cast<String, String>();
+
+    // Create a JsonWebKeyStore and add each certificate as a JWK
+    final keyStore = JsonWebKeyStore();
+
+    for (final entry in certs.entries) {
+      final kid = entry.key;
+      final pemCert = entry.value;
+
+      try {
+        // Convert PEM certificate to JWK
+        final jwk = _pemToJwk(pemCert, kid);
+        if (jwk != null) {
+          keyStore.addKey(jwk);
+        }
+      } catch (e) {
+        // Skip certificates that fail to parse
+        continue;
+      }
+    }
 
     // Cache with expiration from Cache-Control header or default
     final cacheControl = response.headers['cache-control'];
@@ -190,23 +151,16 @@ class AuthBlockingTokenVerifier {
       }
     }
 
-    _cachedCerts = certs;
+    _cachedKeyStore = keyStore;
     _certsExpireAt = DateTime.now().add(cacheDuration);
 
-    return certs;
+    return keyStore;
   }
 
-  /// Verifies an RS256 signature using the given PEM certificate.
-  Future<bool> _verifyRS256({
-    required List<int> data,
-    required Uint8List signature,
-    required String certPem,
-  }) async {
-    // Extract the public key from the PEM certificate
-    // The PEM contains an X.509 certificate, we need to extract the public key
-
+  /// Converts a PEM X.509 certificate to a JsonWebKey.
+  JsonWebKey? _pemToJwk(String pemCert, String kid) {
     // Remove PEM headers and decode base64
-    final certBase64 = certPem
+    final certBase64 = pemCert
         .replaceAll('-----BEGIN CERTIFICATE-----', '')
         .replaceAll('-----END CERTIFICATE-----', '')
         .replaceAll('\n', '')
@@ -214,52 +168,25 @@ class AuthBlockingTokenVerifier {
 
     final certBytes = base64.decode(certBase64);
 
-    // Use dart:io's SecureSocket/SecurityContext for RSA verification
-    // Since Dart doesn't have built-in RSA verification, we'll use a
-    // workaround with Process to call openssl, or use the crypto package
-
-    // For now, we'll use the pointycastle package approach via dart_firebase_admin
-    // which already has this capability as a transitive dependency
-
-    try {
-      return _verifyWithPointyCastle(
-        data: Uint8List.fromList(data),
-        signature: signature,
-        certDer: certBytes,
-      );
-    } catch (e) {
-      // If verification fails for any reason, the signature is invalid
-      return false;
-    }
-  }
-
-  /// Verifies RS256 signature using PointyCastle (via dart_firebase_admin).
-  bool _verifyWithPointyCastle({
-    required Uint8List data,
-    required Uint8List signature,
-    required Uint8List certDer,
-  }) {
     // Parse the X.509 certificate to extract the RSA public key
-    // The certificate is in DER format (ASN.1)
-
-    // For simplicity and to avoid adding more dependencies, we'll parse
-    // the ASN.1 structure manually to extract the public key
-
-    final publicKey = _extractRsaPublicKeyFromCert(certDer);
+    final publicKey = _extractRsaPublicKeyFromCert(certBytes);
     if (publicKey == null) {
-      return false;
+      return null;
     }
 
-    // Verify the signature using RSA-SHA256
-    return _rsaVerify(
-      publicKey: publicKey,
-      data: data,
-      signature: signature,
-    );
+    // Create JWK from the RSA public key components
+    return JsonWebKey.fromJson({
+      'kty': 'RSA',
+      'kid': kid,
+      'use': 'sig',
+      'alg': 'RS256',
+      'n': _bigIntToBase64Url(publicKey.n),
+      'e': _bigIntToBase64Url(publicKey.e),
+    });
   }
 
   /// Extracts RSA public key (n, e) from an X.509 certificate in DER format.
-  ({BigInt n, BigInt e})? _extractRsaPublicKeyFromCert(Uint8List certDer) {
+  ({BigInt n, BigInt e})? _extractRsaPublicKeyFromCert(List<int> certDer) {
     try {
       // X.509 certificate structure (simplified):
       // SEQUENCE {
@@ -326,7 +253,7 @@ class AuthBlockingTokenVerifier {
   }
 
   /// Parses RSA public key from SubjectPublicKeyInfo structure.
-  ({BigInt n, BigInt e})? _parseRsaPublicKey(Uint8List spki) {
+  ({BigInt n, BigInt e})? _parseRsaPublicKey(List<int> spki) {
     try {
       var offset = 0;
 
@@ -339,7 +266,7 @@ class AuthBlockingTokenVerifier {
       // BIT STRING (public key)
       if (spki[offset] != 0x03) return null;
       offset++;
-      final (bitStringLen, bitStringLenBytes) = _parseAsn1Length(spki, offset);
+      final (_, bitStringLenBytes) = _parseAsn1Length(spki, offset);
       offset += bitStringLenBytes;
 
       // Skip unused bits byte
@@ -377,7 +304,7 @@ class AuthBlockingTokenVerifier {
 
   /// Parses ASN.1 length field.
   /// Returns (length, bytesConsumed).
-  (int, int) _parseAsn1Length(Uint8List data, int offset) {
+  (int, int) _parseAsn1Length(List<int> data, int offset) {
     final firstByte = data[offset];
 
     if (firstByte < 0x80) {
@@ -395,7 +322,7 @@ class AuthBlockingTokenVerifier {
   }
 
   /// Converts bytes to BigInt (big-endian, potentially with leading zero for sign).
-  BigInt _bytesToBigInt(Uint8List bytes) {
+  BigInt _bytesToBigInt(List<int> bytes) {
     var result = BigInt.zero;
     for (final byte in bytes) {
       result = (result << 8) | BigInt.from(byte);
@@ -403,91 +330,23 @@ class AuthBlockingTokenVerifier {
     return result;
   }
 
-  /// Verifies RSA-SHA256 signature.
-  bool _rsaVerify({
-    required ({BigInt n, BigInt e}) publicKey,
-    required Uint8List data,
-    required Uint8List signature,
-  }) {
-    // Compute SHA-256 hash of data
-    final hash = _sha256(data);
+  /// Converts BigInt to base64url string (for JWK format).
+  String _bigIntToBase64Url(BigInt value) {
+    // Convert BigInt to bytes (big-endian, no leading zeros except for sign)
+    final hexString = value.toRadixString(16);
+    final paddedHex = hexString.length.isOdd ? '0$hexString' : hexString;
+    final bytes = <int>[];
 
-    // RSA verification: signature^e mod n
-    final signatureInt = _bytesToBigInt(signature);
-    final decrypted = signatureInt.modPow(publicKey.e, publicKey.n);
-
-    // Convert decrypted value to bytes
-    final decryptedBytes = _bigIntToBytes(decrypted, signature.length);
-
-    // PKCS#1 v1.5 signature format:
-    // 0x00 0x01 [padding 0xFF bytes] 0x00 [DigestInfo] [hash]
-    // DigestInfo for SHA-256: 30 31 30 0d 06 09 60 86 48 01 65 03 04 02 01 05 00 04 20
-
-    const sha256DigestInfo = [
-      0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, //
-      0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00, 0x04, 0x20,
-    ];
-
-    // Verify PKCS#1 v1.5 padding
-    if (decryptedBytes.length < 11 + sha256DigestInfo.length + hash.length) {
-      return false;
+    for (var i = 0; i < paddedHex.length; i += 2) {
+      bytes.add(int.parse(paddedHex.substring(i, i + 2), radix: 16));
     }
 
-    var offset = 0;
+    // Remove leading zero byte if present (from positive number encoding)
+    final trimmedBytes = bytes.isNotEmpty && bytes[0] == 0
+        ? bytes.sublist(1)
+        : bytes;
 
-    // Check 0x00 0x01
-    if (decryptedBytes[offset++] != 0x00) return false;
-    if (decryptedBytes[offset++] != 0x01) return false;
-
-    // Skip padding (0xFF bytes)
-    while (offset < decryptedBytes.length && decryptedBytes[offset] == 0xFF) {
-      offset++;
-    }
-
-    // Check separator 0x00
-    if (offset >= decryptedBytes.length || decryptedBytes[offset++] != 0x00) {
-      return false;
-    }
-
-    // Check DigestInfo
-    for (var i = 0; i < sha256DigestInfo.length; i++) {
-      if (offset + i >= decryptedBytes.length ||
-          decryptedBytes[offset + i] != sha256DigestInfo[i]) {
-        return false;
-      }
-    }
-    offset += sha256DigestInfo.length;
-
-    // Compare hash
-    if (offset + hash.length > decryptedBytes.length) {
-      return false;
-    }
-
-    for (var i = 0; i < hash.length; i++) {
-      if (decryptedBytes[offset + i] != hash[i]) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /// Converts BigInt to fixed-length bytes (big-endian).
-  Uint8List _bigIntToBytes(BigInt value, int length) {
-    final result = Uint8List(length);
-    var v = value;
-    for (var i = length - 1; i >= 0; i--) {
-      result[i] = (v & BigInt.from(0xFF)).toInt();
-      v = v >> 8;
-    }
-    return result;
-  }
-
-  /// Computes SHA-256 hash using dart:io.
-  Uint8List _sha256(Uint8List data) {
-    // Use dart:io's built-in SHA-256
-    final digest = sha256.convert(data);
-    return Uint8List.fromList(digest.bytes);
+    return base64Url.encode(trimmedBytes).replaceAll('=', '');
   }
 
   /// Validates JWT claims.
@@ -558,7 +417,7 @@ class AuthBlockingTokenVerifier {
 
   /// Clears the certificate cache (useful for testing).
   static void clearCertificateCache() {
-    _cachedCerts = null;
+    _cachedKeyStore = null;
     _certsExpireAt = null;
   }
 }
