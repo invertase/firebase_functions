@@ -3,6 +3,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
@@ -12,6 +13,7 @@ import '../https/error.dart';
 import 'auth_blocking_event.dart';
 import 'options.dart';
 import 'responses.dart';
+import 'token_verifier.dart';
 
 /// Identity Platform namespace.
 ///
@@ -221,8 +223,8 @@ class IdentityNamespace extends FunctionsNamespace {
             throw InvalidArgumentError('Missing JWT in request body');
           }
 
-          // Decode JWT payload (in production, this would be verified)
-          final decodedPayload = _decodeJwtPayload(jwt);
+          // Decode and verify JWT payload
+          final decodedPayload = await _decodeAndVerifyJwt(jwt);
 
           // Parse the event
           final event = AuthBlockingEvent.fromDecodedPayload(decodedPayload);
@@ -274,20 +276,48 @@ class IdentityNamespace extends FunctionsNamespace {
     return true;
   }
 
-  /// Decodes the JWT payload without verification.
+  /// Decodes and verifies the JWT payload.
   ///
-  /// In production, the JWT should be verified using the Firebase Admin SDK.
-  /// This is a simplified implementation for the emulator.
-  Map<String, dynamic> _decodeJwtPayload(String jwt) {
-    final parts = jwt.split('.');
-    if (parts.length != 3) {
-      throw InvalidArgumentError('Invalid JWT format');
-    }
+  /// In production, the JWT signature is verified against Google's public
+  /// certificates. In emulator mode (when FUNCTIONS_EMULATOR=true or
+  /// skipTokenVerification debug feature is enabled), verification is skipped.
+  Future<Map<String, dynamic>> _decodeAndVerifyJwt(String jwt) async {
+    // Get environment configuration
+    final env = Platform.environment;
+    final isEmulator = env['FUNCTIONS_EMULATOR'] == 'true';
+    final skipVerification = _shouldSkipTokenVerification(env);
 
-    final payload = parts[1];
-    final normalized = base64Url.normalize(payload);
-    final decoded = utf8.decode(base64Url.decode(normalized));
-    return jsonDecode(decoded) as Map<String, dynamic>;
+    // Get project ID
+    final projectId = env['GCLOUD_PROJECT'] ??
+        env['GCP_PROJECT'] ??
+        env['FIREBASE_PROJECT'] ??
+        'demo-test';
+
+    // Create verifier
+    final verifier = AuthBlockingTokenVerifier(
+      projectId: projectId,
+      isEmulator: isEmulator || skipVerification,
+    );
+
+    // Determine audience based on platform
+    // Cloud Run uses "run.app", GCF v1 uses default
+    final kService = env['K_SERVICE']; // Cloud Run service name
+    final audience = kService != null ? 'run.app' : null;
+
+    return verifier.verifyToken(jwt, audience: audience);
+  }
+
+  /// Checks if token verification should be skipped based on debug features.
+  bool _shouldSkipTokenVerification(Map<String, String> env) {
+    final debugFeatures = env['FIREBASE_DEBUG_FEATURES'];
+    if (debugFeatures == null) return false;
+
+    try {
+      final features = jsonDecode(debugFeatures) as Map<String, dynamic>;
+      return features['skipTokenVerification'] as bool? ?? false;
+    } on FormatException {
+      return false;
+    }
   }
 
   /// Validates the auth response for invalid claims.

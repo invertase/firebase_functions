@@ -374,6 +374,9 @@ void main(List<String> args) {
     );
 
     // Before email sent - runs before password reset or sign-in emails
+    // NOTE: The Auth emulator only supports beforeCreate and beforeSignIn.
+    // This function is included for manifest snapshot testing but cannot be
+    // tested with the emulator.
     firebase.identity.beforeEmailSent(
       (AuthBlockingEvent event) async {
         print('Before email sent:');
@@ -393,6 +396,9 @@ void main(List<String> args) {
     );
 
     // Before SMS sent - runs before MFA or sign-in SMS messages
+    // NOTE: The Auth emulator only supports beforeCreate and beforeSignIn.
+    // This function is included for manifest snapshot testing but cannot be
+    // tested with the emulator.
     firebase.identity.beforeSmsSent(
       (AuthBlockingEvent event) async {
         print('Before SMS sent:');

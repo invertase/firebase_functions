@@ -10,7 +10,8 @@ class EmulatorHelper {
     this.pubsubPort = 8085,
     this.firestorePort = 8080,
     this.databasePort = 9000,
-    this.startupTimeout = const Duration(seconds: 30),
+    this.authPort = 9099,
+    this.startupTimeout = const Duration(seconds: 90),
   });
   Process? _process;
   final String projectPath;
@@ -18,6 +19,7 @@ class EmulatorHelper {
   final int pubsubPort;
   final int firestorePort;
   final int databasePort;
+  final int authPort;
   final Duration startupTimeout;
 
   // Completer to signal when emulator is ready
@@ -54,7 +56,7 @@ class EmulatorHelper {
         'emulators:start',
         '--debug',
         '--only',
-        'functions,pubsub,firestore,database',
+        'functions,pubsub,firestore,database,auth',
         '--project',
         'demo-test',
         '--non-interactive',
@@ -237,6 +239,9 @@ class EmulatorHelper {
 
   /// Gets the base URL for the Realtime Database emulator REST API.
   String get databaseUrl => 'http://localhost:$databasePort';
+
+  /// Gets the base URL for the Auth emulator REST API.
+  String get authUrl => 'http://localhost:$authPort';
 
   /// Verifies that a function was executed in the emulator logs.
   /// Returns true if we find both "Beginning execution" and "Finished" messages.

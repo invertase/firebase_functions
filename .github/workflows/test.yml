@@ -256,7 +256,7 @@ jobs:
       - name: Checkout custom firebase-tools
         uses: actions/checkout@v4
         with:
-          repository: invertase/firebase-functions
+          repository: invertase/firebase-tools
           ref: '@invertase/dart'
           path: custom-firebase-tools
 

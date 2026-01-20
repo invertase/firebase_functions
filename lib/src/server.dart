@@ -239,16 +239,22 @@ FutureOr<Response> _routeByPath(
   List<FirebaseFunctionDeclaration> functions,
   String requestPath,
 ) async {
+  // Use a local variable for the potentially reconstructed request
+  var currentRequest = request;
+
   // For POST requests, check if this is a CloudEvent first (binary or structured mode)
   // CloudEvents have all the routing info in headers, so check those before path parsing
   if (request.method.toUpperCase() == 'POST') {
-    final result = await _tryMatchCloudEventFunction(request, functions);
-    if (result != null) {
+    final (reconstructedRequest, matchedFunction) =
+        await _tryMatchCloudEventFunction(request, functions);
+    if (matchedFunction != null) {
       // Use the recreated request with the body since we consumed the original
       // Wrap with onInit to ensure initialization callback runs before first execution
-      final wrappedHandler = withInit(result.$2.handler);
-      return wrappedHandler(result.$1);
+      final wrappedHandler = withInit(matchedFunction.handler);
+      return wrappedHandler(reconstructedRequest);
     }
+    // Use the reconstructed request for further processing
+    currentRequest = reconstructedRequest;
   }
 
   // Not a CloudEvent, try path-based routing for HTTPS functions
@@ -259,7 +265,7 @@ FutureOr<Response> _routeByPath(
   // Try to find a matching function by name
   for (final function in functions) {
     // Internal functions (events) only accept POST requests
-    if (!function.external && request.method.toUpperCase() != 'POST') {
+    if (!function.external && currentRequest.method.toUpperCase() != 'POST') {
       continue;
     }
 
@@ -267,7 +273,7 @@ FutureOr<Response> _routeByPath(
     if (functionName == function.name) {
       // Wrap with onInit to ensure initialization callback runs before first execution
       final wrappedHandler = withInit(function.handler);
-      return wrappedHandler(request);
+      return wrappedHandler(currentRequest);
     }
   }
 
@@ -284,10 +290,10 @@ FutureOr<Response> _routeByPath(
 /// - Binary content mode: CloudEvent metadata in ce-* headers, protobuf body
 /// - Structured content mode: CloudEvent as JSON body
 ///
-/// Returns a record of (Request, FirebaseFunctionDeclaration) where the Request
-/// is recreated with the body since we consumed the original stream.
-/// Returns null if this is not a CloudEvent request.
-Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
+/// Returns a record of (Request, FirebaseFunctionDeclaration?) where the Request
+/// is recreated with the body if we consumed the original stream.
+/// The FirebaseFunctionDeclaration is null if this is not a CloudEvent request.
+Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
   Request request,
   List<FirebaseFunctionDeclaration> functions,
 ) async {
@@ -310,7 +316,7 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
 
       if (ceType == null || ceSource == null) {
         print('DEBUG: Missing ce-type or ce-source header');
-        return null;
+        return (request, null);
       }
 
       type = ceType;
@@ -325,7 +331,7 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
           contentType?.contains('application/cloudevents') ?? false;
       if (!isJson && !isCloudEvent) {
         print('DEBUG: Not a CloudEvent (no ce-* headers and not JSON)');
-        return null;
+        return (request, null);
       }
 
       // Structured content mode - try to parse JSON body
@@ -335,10 +341,11 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
 
       final body = jsonDecode(bodyString) as Map<String, dynamic>;
 
-      // Check if this is a valid CloudEvent
+      // Check if this is a valid CloudEvent - if not, return reconstructed request
       if (!body.containsKey('source') || !body.containsKey('type')) {
         print('DEBUG: Not a CloudEvent (missing source or type in JSON body)');
-        return null;
+        // Return the reconstructed request since we consumed the body
+        return (request.change(body: bodyString), null);
       }
 
       source = body['source'] as String;
@@ -483,10 +490,14 @@ Future<(Request, FirebaseFunctionDeclaration)?> _tryMatchCloudEventFunction(
 
     // TODO: Add support for other CloudEvent types (Storage, Auth, etc.)
 
-    return null;
+    // No CloudEvent function matched - return reconstructed request if we read the body
+    final finalRequest =
+        bodyString != null ? request.change(body: bodyString) : request;
+    return (finalRequest, null);
   } catch (e) {
     print('Failed to parse CloudEvent for function matching: $e');
-    return null;
+    // Return the original request since we likely didn't consume the body on error
+    return (request, null);
   }
 }
 
