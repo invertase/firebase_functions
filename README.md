@@ -29,6 +29,19 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 - **Error Handling**: Built-in typed error classes matching the Node.js SDK
 - **Hot Reload**: Fast development with build_runner watch
 
+## Prerequisites
+
+- Dart SDK >=3.0.0
+- Custom Firebase CLI with Dart runtime support:
+
+```bash
+git clone -b @invertase/dart https://github.com/invertase/firebase-tools.git
+cd firebase-tools
+npm install
+npm run build
+npm link
+```
+
 ## Installation
 
 Add to your `pubspec.yaml`:
@@ -388,12 +401,36 @@ firebase.https.onRequest(
 );
 ```
 
+## Project Configuration
+
+Your `firebase.json` must specify the Dart runtime:
+
+```json
+{
+  "functions": [
+    {
+      "source": ".",
+      "codebase": "default",
+      "runtime": "dart3"
+    }
+  ],
+  "emulators": {
+    "functions": { "port": 5001 },
+    "firestore": { "port": 8080 },
+    "database": { "port": 9000 },
+    "auth": { "port": 9099 },
+    "pubsub": { "port": 8085 },
+    "ui": { "enabled": true, "port": 4000 }
+  }
+}
+```
+
 ## Development
 
 ### Running the Emulator
 
 ```bash
-firebase emulators:start --only functions
+firebase emulators:start
 ```
 
 ### Building
@@ -430,11 +467,6 @@ See [Testing Guide](test/snapshots/README.md) for more details.
 - [HTTPS Triggers](docs/https-triggers.md)
 - [Pub/Sub Triggers](docs/pubsub-triggers.md)
 - [Architecture](docs/architecture.md)
-
-## Requirements
-
-- Dart SDK >=3.0.0
-- Firebase CLI with Dart runtime support
 
 ## License
 
