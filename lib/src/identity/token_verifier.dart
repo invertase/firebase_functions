@@ -342,9 +342,8 @@ class AuthBlockingTokenVerifier {
     }
 
     // Remove leading zero byte if present (from positive number encoding)
-    final trimmedBytes = bytes.isNotEmpty && bytes[0] == 0
-        ? bytes.sublist(1)
-        : bytes;
+    final trimmedBytes =
+        bytes.isNotEmpty && bytes[0] == 0 ? bytes.sublist(1) : bytes;
 
     return base64Url.encode(trimmedBytes).replaceAll('=', '');
   }
