@@ -81,5 +81,7 @@ export 'src/https/https.dart';
 export 'src/identity/identity.dart';
 // Pub/Sub triggers
 export 'src/pubsub/pubsub.dart';
+// Scheduler triggers
+export 'src/scheduler/scheduler.dart';
 // Core runtime
 export 'src/server.dart' show fireUp;

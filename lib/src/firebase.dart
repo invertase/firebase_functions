@@ -11,6 +11,7 @@ import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'identity/identity_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
+import 'scheduler/scheduler_namespace.dart';
 
 /// Main Firebase Functions instance.
 ///
@@ -85,6 +86,9 @@ class Firebase {
 
   /// Identity Platform namespace.
   IdentityNamespace get identity => IdentityNamespace(this);
+
+  /// Scheduler namespace.
+  SchedulerNamespace get scheduler => SchedulerNamespace(this);
 }
 
 /// Extension for internal function registration.
