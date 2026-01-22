@@ -5,8 +5,7 @@
 .dart_tool/
 .packages
 build/
-pubspec.lock  # Uncomment if you're writing an application
-# Keep pubspec.lock for packages, ignore for applications
+pubspec.lock
 
 # Conventional directory for build output
 dist/
