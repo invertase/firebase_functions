@@ -77,8 +77,12 @@ class EmulatorHelper {
           _outputLines.add(line);
 
           // Detect when emulator is ready
-          if (line.contains('All emulators ready!') ||
-              line.contains('All emulators started')) {
+          // Check for various ready indicators since the exact message can vary
+          if (line.contains('All emulators ready') ||
+              line.contains('All emulators started') ||
+              line.contains('It is now safe to connect') ||
+              line.contains('View Emulator UI at') ||
+              line.contains('Firebase Functions serving at')) {
             if (!_readyCompleter!.isCompleted) {
               _readyCompleter!.complete();
             }
@@ -120,23 +124,47 @@ class EmulatorHelper {
     print('✓ Emulator stopped');
   }
 
-  /// Waits for the emulator to be ready by monitoring stdout for readiness message.
+  /// Waits for the emulator to be ready by monitoring stdout and polling the hub.
   Future<void> _waitForReady() async {
-    try {
-      await _readyCompleter!.future.timeout(
-        startupTimeout,
-        onTimeout: () {
-          throw TimeoutException(
-            'Emulator did not start within ${startupTimeout.inSeconds} seconds',
-          );
-        },
-      );
-    } catch (e) {
-      if (e is TimeoutException) {
-        rethrow;
+    final client = HttpClient();
+    final deadline = DateTime.now().add(startupTimeout);
+
+    while (DateTime.now().isBefore(deadline)) {
+      // Check if ready message was received
+      if (_readyCompleter!.isCompleted) {
+        client.close();
+        return;
       }
-      throw TimeoutException('Error waiting for emulator: $e');
+
+      // Poll the functions endpoint as a fallback
+      try {
+        final request = await client
+            .getUrl(Uri.parse('http://127.0.0.1:$functionsPort/'))
+            .timeout(const Duration(seconds: 2));
+        final response = await request.close().timeout(
+          const Duration(seconds: 2),
+        );
+        await response.drain<void>();
+        // If we get any response (even 404), the emulator is ready
+        if (response.statusCode > 0) {
+          print('Emulator responding on port $functionsPort');
+          client.close();
+          if (!_readyCompleter!.isCompleted) {
+            _readyCompleter!.complete();
+          }
+          return;
+        }
+      } catch (e) {
+        // Connection failed, emulator not ready yet
+      }
+
+      await Future<void>.delayed(const Duration(seconds: 1));
     }
+
+    client.close();
+    throw TimeoutException(
+      'Emulator did not start within ${startupTimeout.inSeconds} seconds',
+    );
   }
 
   /// Finds the Firebase CLI executable.
