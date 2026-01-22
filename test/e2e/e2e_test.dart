@@ -19,6 +19,7 @@ import 'tests/https_onrequest_tests.dart';
 import 'tests/identity_tests.dart';
 import 'tests/integration_tests.dart';
 import 'tests/pubsub_tests.dart';
+import 'tests/scheduler_tests.dart';
 
 void main() {
   late EmulatorHelper emulator;
@@ -112,4 +113,9 @@ void main() {
   runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
   runDatabaseTests(() => examplePath, () => databaseClient, () => emulator);
   runIdentityTests(() => examplePath, () => authClient, () => emulator);
+  runSchedulerTests(
+    () => examplePath,
+    () => emulator,
+    () => emulator.functionsPort,
+  );
 }

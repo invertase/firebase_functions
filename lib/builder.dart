@@ -38,6 +38,8 @@ class _TypeCheckers {
       TypeChecker.fromRuntime(ff.PerformanceNamespace);
   static final identityNamespace =
       TypeChecker.fromRuntime(ff.IdentityNamespace);
+  static final schedulerNamespace =
+      TypeChecker.fromRuntime(ff.SchedulerNamespace);
 }
 
 /// The main builder that generates functions.yaml.
@@ -184,6 +186,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     // Check for Identity function declarations
     if (target != null && _isIdentityNamespace(target)) {
       _extractIdentityFunction(node, methodName);
+    }
+
+    // Check for Scheduler function declarations
+    if (target != null && _isSchedulerNamespace(target)) {
+      if (methodName == 'onSchedule') {
+        _extractSchedulerFunction(node);
+      }
     }
 
     // Check for parameter definitions (top-level function calls with no target)
@@ -337,6 +346,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final staticType = target.staticType;
     if (staticType == null) return false;
     return _TypeCheckers.identityNamespace.isExactlyType(staticType);
+  }
+
+  /// Checks if the target is firebase.scheduler.
+  bool _isSchedulerNamespace(Expression target) {
+    final staticType = target.staticType;
+    if (staticType == null) return false;
+    return _TypeCheckers.schedulerNamespace.isExactlyType(staticType);
   }
 
   /// Checks if this is a parameter definition function.
@@ -639,6 +655,101 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     );
   }
 
+  /// Extracts a Scheduler function declaration.
+  void _extractSchedulerFunction(MethodInvocation node) {
+    // Extract schedule from named argument
+    final scheduleArg = _findNamedArg(node, 'schedule');
+    if (scheduleArg == null) return;
+
+    final schedule = _extractStringLiteral(scheduleArg);
+    if (schedule == null) return;
+
+    // Generate function name from schedule (matching runtime behavior)
+    final sanitized = schedule
+        .replaceAll(' ', '_')
+        .replaceAll('*', '')
+        .replaceAll('/', '')
+        .replaceAll('-', '')
+        .replaceAll(',', '');
+    final functionName = 'onSchedule_$sanitized';
+
+    // Extract options if present
+    final optionsArg = _findNamedArg(node, 'options');
+    String? timeZone;
+    Map<String, dynamic>? retryConfig;
+
+    if (optionsArg is InstanceCreationExpression) {
+      timeZone = _extractSchedulerTimeZone(optionsArg);
+      retryConfig = _extractRetryConfig(optionsArg);
+    }
+
+    endpoints[functionName] = _EndpointSpec(
+      name: functionName,
+      type: 'scheduler',
+      schedule: schedule,
+      timeZone: timeZone,
+      retryConfig: retryConfig,
+      options: optionsArg is InstanceCreationExpression ? optionsArg : null,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts timeZone from ScheduleOptions.
+  String? _extractSchedulerTimeZone(InstanceCreationExpression node) {
+    final timeZoneArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'timeZone')
+        .map((e) => e.expression)
+        .firstOrNull;
+
+    if (timeZoneArg is InstanceCreationExpression) {
+      // TimeZone('America/New_York')
+      final args = timeZoneArg.argumentList.arguments;
+      if (args.isNotEmpty && args.first is StringLiteral) {
+        return (args.first as StringLiteral).stringValue;
+      }
+    }
+    return null;
+  }
+
+  /// Extracts RetryConfig from ScheduleOptions.
+  Map<String, dynamic>? _extractRetryConfig(InstanceCreationExpression node) {
+    final retryConfigArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'retryConfig')
+        .map((e) => e.expression)
+        .firstOrNull;
+
+    if (retryConfigArg is! InstanceCreationExpression) return null;
+
+    final config = <String, dynamic>{};
+
+    for (final arg in retryConfigArg.argumentList.arguments) {
+      if (arg is! NamedExpression) continue;
+
+      final fieldName = arg.name.label.name;
+      final value = _extractRetryConfigValue(arg.expression);
+      if (value != null) {
+        config[fieldName] = value;
+      }
+    }
+
+    return config.isEmpty ? null : config;
+  }
+
+  /// Extracts a value from a retry config option.
+  dynamic _extractRetryConfigValue(Expression expression) {
+    if (expression is InstanceCreationExpression) {
+      final args = expression.argumentList.arguments;
+      if (args.isNotEmpty) {
+        final first = args.first;
+        if (first is IntegerLiteral) return first.value;
+        if (first is DoubleLiteral) return first.value;
+      }
+    }
+    return null;
+  }
+
   /// Extracts a boolean field from an InstanceCreationExpression.
   bool? _extractBoolField(InstanceCreationExpression node, String fieldName) {
     final arg = node.argumentList.arguments
@@ -888,11 +999,14 @@ class _EndpointSpec {
     this.idToken,
     this.accessToken,
     this.refreshToken,
+    this.schedule,
+    this.timeZone,
+    this.retryConfig,
     this.options,
     this.variableToParamName = const {},
   });
   final String name;
-  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking'
+  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking', 'scheduler'
   final String type;
   final String? topic; // For Pub/Sub functions
   final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
@@ -908,6 +1022,9 @@ class _EndpointSpec {
   final bool? idToken; // For Identity: pass ID token
   final bool? accessToken; // For Identity: pass access token
   final bool? refreshToken; // For Identity: pass refresh token
+  final String? schedule; // For Scheduler: cron expression
+  final String? timeZone; // For Scheduler: timezone
+  final Map<String, dynamic>? retryConfig; // For Scheduler: retry configuration
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 
@@ -1458,6 +1575,13 @@ String _generateYaml(
     buffer.writeln('  - api: "identitytoolkit.googleapis.com"');
     buffer.writeln('    reason: "Needed for auth blocking functions"');
   }
+  // Add cloudscheduler API if there are scheduler functions
+  final hasSchedulerFunctions =
+      endpoints.values.any((e) => e.type == 'scheduler');
+  if (hasSchedulerFunctions) {
+    buffer.writeln('  - api: "cloudscheduler.googleapis.com"');
+    buffer.writeln('    reason: "Needed for scheduled functions"');
+  }
   buffer.writeln();
 
   // Generate endpoints section
@@ -1684,6 +1808,37 @@ String _generateYaml(
           }
         } else {
           buffer.writeln('      options: {}');
+        }
+      } else if (endpoint.type == 'scheduler' && endpoint.schedule != null) {
+        buffer.writeln('    scheduleTrigger:');
+        buffer.writeln('      schedule: "${endpoint.schedule}"');
+        if (endpoint.timeZone != null) {
+          buffer.writeln('      timeZone: "${endpoint.timeZone}"');
+        }
+        if (endpoint.retryConfig != null && endpoint.retryConfig!.isNotEmpty) {
+          buffer.writeln('      retryConfig:');
+          final config = endpoint.retryConfig!;
+          if (config.containsKey('retryCount')) {
+            buffer.writeln('        retryCount: ${config['retryCount']}');
+          }
+          if (config.containsKey('maxRetrySeconds')) {
+            buffer.writeln(
+              '        maxRetrySeconds: ${config['maxRetrySeconds']}',
+            );
+          }
+          if (config.containsKey('minBackoffSeconds')) {
+            buffer.writeln(
+              '        minBackoffSeconds: ${config['minBackoffSeconds']}',
+            );
+          }
+          if (config.containsKey('maxBackoffSeconds')) {
+            buffer.writeln(
+              '        maxBackoffSeconds: ${config['maxBackoffSeconds']}',
+            );
+          }
+          if (config.containsKey('maxDoublings')) {
+            buffer.writeln('        maxDoublings: ${config['maxDoublings']}');
+          }
         }
       }
     }

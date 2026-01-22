@@ -58,9 +58,9 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(24),
+        equals(26),
         reason:
-            'Should discover 24 functions (4 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity)',
+            'Should discover 26 functions (4 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 2 Scheduler)',
       );
     });
 
@@ -570,6 +570,60 @@ void main() {
         (identityApi as Map)['reason'],
         equals('Needed for auth blocking functions'),
       );
+    });
+
+    // =========================================================================
+    // Scheduler Tests
+    // =========================================================================
+
+    test('should have basic scheduled function', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onSchedule_0_0___');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['scheduleTrigger'], isNotNull);
+
+      final trigger = dartFunc['scheduleTrigger'] as Map;
+      expect(trigger['schedule'], equals('0 0 * * *'));
+    });
+
+    test('should have scheduled function with options', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onSchedule_0_9___15');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['scheduleTrigger'], isNotNull);
+
+      final trigger = dartFunc['scheduleTrigger'] as Map;
+      expect(trigger['schedule'], equals('0 9 * * 1-5'));
+      expect(trigger['timeZone'], equals('America/New_York'));
+      expect(trigger['retryConfig'], isNotNull);
+
+      final retryConfig = trigger['retryConfig'] as Map;
+      expect(retryConfig['retryCount'], equals(3));
+      expect(retryConfig['maxRetrySeconds'], equals(60));
+      expect(retryConfig['minBackoffSeconds'], equals(5));
+      expect(retryConfig['maxBackoffSeconds'], equals(30));
+    });
+
+    test('should include cloudscheduler API in requiredAPIs', () {
+      final requiredAPIs = dartManifest['requiredAPIs'] as List;
+
+      final schedulerApi = requiredAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudscheduler.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(schedulerApi, isNotNull);
+      expect(
+        (schedulerApi as Map)['reason'],
+        equals('Needed for scheduled functions'),
+      );
+    });
+
+    test('scheduled function should have memory option', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onSchedule_0_9___15');
+
+      expect(dartFunc, isNotNull);
+      expect(dartFunc!['availableMemoryMb'], equals(256));
     });
   });
 
