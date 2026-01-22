@@ -13,19 +13,16 @@ class AuthUserInfo {
   });
 
   factory AuthUserInfo.fromJson(Map<String, dynamic> json) => AuthUserInfo(
-        uid: json['uid'] as String? ?? json['raw_id'] as String? ?? '',
-        displayName: json['displayName'] as String? ??
-            json['display_name'] as String? ??
-            '',
-        email: json['email'] as String? ?? '',
-        photoURL:
-            json['photoURL'] as String? ?? json['photo_url'] as String? ?? '',
-        providerId: json['providerId'] as String? ??
-            json['provider_id'] as String? ??
-            '',
-        phoneNumber:
-            json['phoneNumber'] as String? ?? json['phone_number'] as String?,
-      );
+    uid: json['uid'] as String? ?? json['raw_id'] as String? ?? '',
+    displayName:
+        json['displayName'] as String? ?? json['display_name'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    photoURL: json['photoURL'] as String? ?? json['photo_url'] as String? ?? '',
+    providerId:
+        json['providerId'] as String? ?? json['provider_id'] as String? ?? '',
+    phoneNumber:
+        json['phoneNumber'] as String? ?? json['phone_number'] as String?,
+  );
 
   /// The user identifier for the linked provider.
   final String uid;
@@ -46,21 +43,18 @@ class AuthUserInfo {
   final String? phoneNumber;
 
   Map<String, dynamic> toJson() => {
-        'uid': uid,
-        'displayName': displayName,
-        'email': email,
-        'photoURL': photoURL,
-        'providerId': providerId,
-        if (phoneNumber != null) 'phoneNumber': phoneNumber,
-      };
+    'uid': uid,
+    'displayName': displayName,
+    'email': email,
+    'photoURL': photoURL,
+    'providerId': providerId,
+    if (phoneNumber != null) 'phoneNumber': phoneNumber,
+  };
 }
 
 /// Additional metadata about the user.
 class AuthUserMetadata {
-  const AuthUserMetadata({
-    required this.creationTime,
-    this.lastSignInTime,
-  });
+  const AuthUserMetadata({required this.creationTime, this.lastSignInTime});
 
   factory AuthUserMetadata.fromJson(Map<String, dynamic> json) {
     final creationTimeRaw = json['creationTime'] ?? json['creation_time'];
@@ -97,10 +91,10 @@ class AuthUserMetadata {
   final DateTime? lastSignInTime;
 
   Map<String, dynamic> toJson() => {
-        'creationTime': creationTime.toIso8601String(),
-        if (lastSignInTime != null)
-          'lastSignInTime': lastSignInTime!.toIso8601String(),
-      };
+    'creationTime': creationTime.toIso8601String(),
+    if (lastSignInTime != null)
+      'lastSignInTime': lastSignInTime!.toIso8601String(),
+  };
 }
 
 /// Interface representing the common properties of a user-enrolled second factor.
@@ -118,12 +112,14 @@ class AuthMultiFactorInfo {
         uid: json['uid'] as String,
         displayName:
             json['displayName'] as String? ?? json['display_name'] as String?,
-        factorId: json['factorId'] as String? ??
+        factorId:
+            json['factorId'] as String? ??
             json['factor_id'] as String? ??
             'phone',
-        enrollmentTime: json['enrollmentTime'] != null
-            ? DateTime.parse(json['enrollmentTime'] as String)
-            : json['enrollment_time'] != null
+        enrollmentTime:
+            json['enrollmentTime'] != null
+                ? DateTime.parse(json['enrollmentTime'] as String)
+                : json['enrollment_time'] != null
                 ? DateTime.parse(json['enrollment_time'] as String)
                 : null,
         phoneNumber:
@@ -146,30 +142,30 @@ class AuthMultiFactorInfo {
   final String? phoneNumber;
 
   Map<String, dynamic> toJson() => {
-        'uid': uid,
-        if (displayName != null) 'displayName': displayName,
-        'factorId': factorId,
-        if (enrollmentTime != null)
-          'enrollmentTime': enrollmentTime!.toIso8601String(),
-        if (phoneNumber != null) 'phoneNumber': phoneNumber,
-      };
+    'uid': uid,
+    if (displayName != null) 'displayName': displayName,
+    'factorId': factorId,
+    if (enrollmentTime != null)
+      'enrollmentTime': enrollmentTime!.toIso8601String(),
+    if (phoneNumber != null) 'phoneNumber': phoneNumber,
+  };
 }
 
 /// The multi-factor related properties for the current user, if available.
 class AuthMultiFactorSettings {
-  const AuthMultiFactorSettings({
-    required this.enrolledFactors,
-  });
+  const AuthMultiFactorSettings({required this.enrolledFactors});
 
   factory AuthMultiFactorSettings.fromJson(Map<String, dynamic> json) {
-    final factorsList = json['enrolledFactors'] as List<dynamic>? ??
+    final factorsList =
+        json['enrolledFactors'] as List<dynamic>? ??
         json['enrolled_factors'] as List<dynamic>? ??
         [];
     return AuthMultiFactorSettings(
-      enrolledFactors: factorsList
-          .cast<Map<String, dynamic>>()
-          .map(AuthMultiFactorInfo.fromJson)
-          .toList(),
+      enrolledFactors:
+          factorsList
+              .cast<Map<String, dynamic>>()
+              .map(AuthMultiFactorInfo.fromJson)
+              .toList(),
     );
   }
 
@@ -177,8 +173,8 @@ class AuthMultiFactorSettings {
   final List<AuthMultiFactorInfo> enrolledFactors;
 
   Map<String, dynamic> toJson() => {
-        'enrolledFactors': enrolledFactors.map((e) => e.toJson()).toList(),
-      };
+    'enrolledFactors': enrolledFactors.map((e) => e.toJson()).toList(),
+  };
 }
 
 /// The `UserRecord` passed to auth blocking functions from the identity platform.
@@ -202,14 +198,16 @@ class AuthUserRecord {
   });
 
   factory AuthUserRecord.fromJson(Map<String, dynamic> json) {
-    final providerDataList = json['providerData'] as List<dynamic>? ??
+    final providerDataList =
+        json['providerData'] as List<dynamic>? ??
         json['provider_data'] as List<dynamic>? ??
         [];
 
     return AuthUserRecord(
       uid: json['uid'] as String,
       email: json['email'] as String?,
-      emailVerified: json['emailVerified'] as bool? ??
+      emailVerified:
+          json['emailVerified'] as bool? ??
           json['email_verified'] as bool? ??
           false,
       displayName:
@@ -218,35 +216,42 @@ class AuthUserRecord {
       phoneNumber:
           json['phoneNumber'] as String? ?? json['phone_number'] as String?,
       disabled: json['disabled'] as bool? ?? false,
-      metadata: json['metadata'] != null
-          ? AuthUserMetadata.fromJson(json['metadata'] as Map<String, dynamic>)
-          : AuthUserMetadata(creationTime: DateTime.now()),
-      providerData: providerDataList
-          .cast<Map<String, dynamic>>()
-          .map(AuthUserInfo.fromJson)
-          .toList(),
+      metadata:
+          json['metadata'] != null
+              ? AuthUserMetadata.fromJson(
+                json['metadata'] as Map<String, dynamic>,
+              )
+              : AuthUserMetadata(creationTime: DateTime.now()),
+      providerData:
+          providerDataList
+              .cast<Map<String, dynamic>>()
+              .map(AuthUserInfo.fromJson)
+              .toList(),
       passwordHash:
           json['passwordHash'] as String? ?? json['password_hash'] as String?,
       passwordSalt:
           json['passwordSalt'] as String? ?? json['password_salt'] as String?,
-      customClaims: json['customClaims'] as Map<String, dynamic>? ??
+      customClaims:
+          json['customClaims'] as Map<String, dynamic>? ??
           json['custom_claims'] as Map<String, dynamic>?,
       tenantId: json['tenantId'] as String? ?? json['tenant_id'] as String?,
-      tokensValidAfterTime: json['tokensValidAfterTime'] != null
-          ? DateTime.parse(json['tokensValidAfterTime'] as String)
-          : json['tokens_valid_after_time'] != null
+      tokensValidAfterTime:
+          json['tokensValidAfterTime'] != null
+              ? DateTime.parse(json['tokensValidAfterTime'] as String)
+              : json['tokens_valid_after_time'] != null
               ? DateTime.fromMillisecondsSinceEpoch(
-                  (json['tokens_valid_after_time'] as int) * 1000,
-                )
+                (json['tokens_valid_after_time'] as int) * 1000,
+              )
               : null,
-      multiFactor: json['multiFactor'] != null
-          ? AuthMultiFactorSettings.fromJson(
-              json['multiFactor'] as Map<String, dynamic>,
-            )
-          : json['multi_factor'] != null
+      multiFactor:
+          json['multiFactor'] != null
               ? AuthMultiFactorSettings.fromJson(
-                  json['multi_factor'] as Map<String, dynamic>,
-                )
+                json['multiFactor'] as Map<String, dynamic>,
+              )
+              : json['multi_factor'] != null
+              ? AuthMultiFactorSettings.fromJson(
+                json['multi_factor'] as Map<String, dynamic>,
+              )
               : null,
     );
   }
@@ -298,21 +303,21 @@ class AuthUserRecord {
   final AuthMultiFactorSettings? multiFactor;
 
   Map<String, dynamic> toJson() => {
-        'uid': uid,
-        if (email != null) 'email': email,
-        'emailVerified': emailVerified,
-        if (displayName != null) 'displayName': displayName,
-        if (photoURL != null) 'photoURL': photoURL,
-        if (phoneNumber != null) 'phoneNumber': phoneNumber,
-        'disabled': disabled,
-        'metadata': metadata.toJson(),
-        'providerData': providerData.map((e) => e.toJson()).toList(),
-        if (passwordHash != null) 'passwordHash': passwordHash,
-        if (passwordSalt != null) 'passwordSalt': passwordSalt,
-        if (customClaims != null) 'customClaims': customClaims,
-        if (tenantId != null) 'tenantId': tenantId,
-        if (tokensValidAfterTime != null)
-          'tokensValidAfterTime': tokensValidAfterTime!.toIso8601String(),
-        if (multiFactor != null) 'multiFactor': multiFactor!.toJson(),
-      };
+    'uid': uid,
+    if (email != null) 'email': email,
+    'emailVerified': emailVerified,
+    if (displayName != null) 'displayName': displayName,
+    if (photoURL != null) 'photoURL': photoURL,
+    if (phoneNumber != null) 'phoneNumber': phoneNumber,
+    'disabled': disabled,
+    'metadata': metadata.toJson(),
+    'providerData': providerData.map((e) => e.toJson()).toList(),
+    if (passwordHash != null) 'passwordHash': passwordHash,
+    if (passwordSalt != null) 'passwordSalt': passwordSalt,
+    if (customClaims != null) 'customClaims': customClaims,
+    if (tenantId != null) 'tenantId': tenantId,
+    if (tokensValidAfterTime != null)
+      'tokensValidAfterTime': tokensValidAfterTime!.toIso8601String(),
+    if (multiFactor != null) 'multiFactor': multiFactor!.toJson(),
+  };
 }

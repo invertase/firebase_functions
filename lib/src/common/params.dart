@@ -216,10 +216,7 @@ EnumListParam<T> defineEnumList<T extends Enum>(
 /// Converts a camelCase or PascalCase string to UPPER_SNAKE_CASE.
 String _toUpperSnakeCase(String input) {
   return input
-      .replaceAllMapped(
-        RegExp(r'[A-Z]'),
-        (match) => '_${match.group(0)}',
-      )
+      .replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)}')
       .toUpperCase()
       .replaceFirst('_', '');
 }
@@ -303,13 +300,13 @@ class WireParamSpec<T extends Object> {
   final ParamInput<T>? input;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'name': name,
-        if (defaultValue != null) 'default': defaultValue,
-        if (label != null) 'label': label,
-        if (description != null) 'description': description,
-        'type': type,
-        if (input != null) 'input': input,
-      };
+    'name': name,
+    if (defaultValue != null) 'default': defaultValue,
+    if (label != null) 'label': label,
+    if (description != null) 'description': description,
+    'type': type,
+    if (input != null) 'input': input,
+  };
 }
 
 // ============================================================================
@@ -360,13 +357,13 @@ abstract class Param<T extends Object> extends Expression<T> {
 
   /// Converts this parameter to its wire specification for deployment.
   WireParamSpec<T> toSpec() => WireParamSpec<T>(
-        name: name,
-        label: options?.label,
-        description: options?.description,
-        type: _getTypeName(),
-        input: options?.input,
-        defaultValue: options?.defaultValue,
-      );
+    name: name,
+    label: options?.label,
+    description: options?.description,
+    type: _getTypeName(),
+    input: options?.input,
+    defaultValue: options?.defaultValue,
+  );
 
   String _getTypeName() {
     final typeName = runtimeType.toString().replaceAll('Param', '');
@@ -429,10 +426,8 @@ class SecretParam extends Param<String> {
   }
 
   @override
-  WireParamSpec<String> toSpec() => WireParamSpec<String>(
-        name: name,
-        type: 'secret',
-      );
+  WireParamSpec<String> toSpec() =>
+      WireParamSpec<String>(name: name, type: 'secret');
 }
 
 /// A JSON secret parameter that auto-parses the stored value.
@@ -499,10 +494,10 @@ class JsonSecretParam<T> {
 
   /// @internal
   Map<String, dynamic> toSpec() => {
-        'type': 'secret',
-        'name': name,
-        'format': 'json',
-      };
+    'type': 'secret',
+    'name': name,
+    'format': 'json',
+  };
 
   @override
   String toString() => 'params.$name';
@@ -737,8 +732,8 @@ class EnumListParam<T extends Enum> extends Param<List<T>> {
         for (final stringValue in parsed) {
           final enumValue = enumValues.firstWhere(
             (e) => e.name == stringValue,
-            orElse: () =>
-                throw FormatException('Invalid enum value: $stringValue'),
+            orElse:
+                () => throw FormatException('Invalid enum value: $stringValue'),
           );
           result.add(enumValue);
         }
@@ -757,18 +752,20 @@ class EnumListParam<T extends Enum> extends Param<List<T>> {
 
   @override
   WireParamSpec<List<T>> toSpec() => WireParamSpec<List<T>>(
-        name: name,
-        label: options?.label,
-        description: options?.description,
-        type: 'list',
-        input: options?.input ??
-            _EnumSelectParamInput<T>(
-              options: enumValues
+    name: name,
+    label: options?.label,
+    description: options?.description,
+    type: 'list',
+    input:
+        options?.input ??
+        _EnumSelectParamInput<T>(
+          options:
+              enumValues
                   .map((e) => SelectOption(value: e, label: e.name))
                   .toList(),
-            ),
-        defaultValue: options?.defaultValue,
-      );
+        ),
+    defaultValue: options?.defaultValue,
+  );
 }
 
 /// Internal: Select input for enum types.
@@ -810,57 +807,45 @@ sealed class ParamInput<T extends Object> {
 
   // Internal Firebase expressions
 
-  static final databaseURL = InternalExpression._(
-    'DATABASE_URL',
-    (env) {
-      if (!env.containsKey('FIREBASE_CONFIG')) return '';
-      try {
-        final config = jsonDecode(env['FIREBASE_CONFIG']!);
-        return config['databaseURL'] as String? ?? '';
-      } on FormatException {
-        return '';
-      }
-    },
-  );
+  static final databaseURL = InternalExpression._('DATABASE_URL', (env) {
+    if (!env.containsKey('FIREBASE_CONFIG')) return '';
+    try {
+      final config = jsonDecode(env['FIREBASE_CONFIG']!);
+      return config['databaseURL'] as String? ?? '';
+    } on FormatException {
+      return '';
+    }
+  });
 
-  static final projectId = InternalExpression._(
-    'PROJECT_ID',
-    (env) {
-      if (!env.containsKey('FIREBASE_CONFIG')) return '';
-      try {
-        final config = jsonDecode(env['FIREBASE_CONFIG']!);
-        return config['projectId'] as String? ?? '';
-      } on FormatException {
-        return '';
-      }
-    },
-  );
+  static final projectId = InternalExpression._('PROJECT_ID', (env) {
+    if (!env.containsKey('FIREBASE_CONFIG')) return '';
+    try {
+      final config = jsonDecode(env['FIREBASE_CONFIG']!);
+      return config['projectId'] as String? ?? '';
+    } on FormatException {
+      return '';
+    }
+  });
 
-  static final gcloudProject = InternalExpression._(
-    'GCLOUD_PROJECT',
-    (env) {
-      if (!env.containsKey('FIREBASE_CONFIG')) return '';
-      try {
-        final config = jsonDecode(env['FIREBASE_CONFIG']!);
-        return config['projectId'] as String? ?? '';
-      } on FormatException {
-        return '';
-      }
-    },
-  );
+  static final gcloudProject = InternalExpression._('GCLOUD_PROJECT', (env) {
+    if (!env.containsKey('FIREBASE_CONFIG')) return '';
+    try {
+      final config = jsonDecode(env['FIREBASE_CONFIG']!);
+      return config['projectId'] as String? ?? '';
+    } on FormatException {
+      return '';
+    }
+  });
 
-  static final storageBucket = InternalExpression._(
-    'STORAGE_BUCKET',
-    (env) {
-      if (!env.containsKey('FIREBASE_CONFIG')) return '';
-      try {
-        final config = jsonDecode(env['FIREBASE_CONFIG']!);
-        return config['storageBucket'] as String? ?? '';
-      } on FormatException {
-        return '';
-      }
-    },
-  );
+  static final storageBucket = InternalExpression._('STORAGE_BUCKET', (env) {
+    if (!env.containsKey('FIREBASE_CONFIG')) return '';
+    try {
+      final config = jsonDecode(env['FIREBASE_CONFIG']!);
+      return config['storageBucket'] as String? ?? '';
+    } on FormatException {
+      return '';
+    }
+  });
 
   // Factory methods for creating input types
 
@@ -873,12 +858,12 @@ sealed class ParamInput<T extends Object> {
   /// Creates a multi-select input from a map of labels to values.
   static MultiSelectParamInput multiSelectWithLabels(
     Map<String, String> optionsWithLabels,
-  ) =>
-      MultiSelectParamInput(
-        options: optionsWithLabels.entries
+  ) => MultiSelectParamInput(
+    options:
+        optionsWithLabels.entries
             .map((entry) => SelectOption(value: entry.value, label: entry.key))
             .toList(),
-      );
+  );
 
   /// Creates a single-select input from a list of values.
   static SelectParamInput<T> select<T extends Object>(List<T> options) =>
@@ -889,12 +874,12 @@ sealed class ParamInput<T extends Object> {
   /// Creates a single-select input from a map of labels to values.
   static SelectParamInput<T> selectWithLabels<T extends Object>(
     Map<String, T> optionsWithLabels,
-  ) =>
-      SelectParamInput<T>(
-        options: optionsWithLabels.entries
+  ) => SelectParamInput<T>(
+    options:
+        optionsWithLabels.entries
             .map((entry) => SelectOption(value: entry.value, label: entry.key))
             .toList(),
-      );
+  );
 }
 
 /// Text input with optional validation.

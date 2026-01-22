@@ -26,11 +26,9 @@ class CallableResult<T extends Object> {
 
   /// Converts this result to a Shelf Response.
   Response toResponse() => Response.ok(
-        jsonEncode({'result': data}),
-        headers: {
-          HttpHeaders.contentTypeHeader: 'application/json',
-        },
-      );
+    jsonEncode({'result': data}),
+    headers: {HttpHeaders.contentTypeHeader: 'application/json'},
+  );
 }
 
 /// A callable result that returns JSON data.
@@ -54,10 +52,7 @@ class JsonResult extends CallableResult<Map<String, dynamic>> {
 ///
 /// Contains information about the authenticated user.
 class AuthData {
-  const AuthData({
-    required this.uid,
-    this.token,
-  });
+  const AuthData({required this.uid, this.token});
 
   /// The user's unique ID.
   final String uid;
@@ -70,11 +65,7 @@ class AuthData {
 ///
 /// Contains information about the verified App Check token.
 class AppCheckData {
-  const AppCheckData({
-    required this.appId,
-    this.token,
-    this.alreadyConsumed,
-  });
+  const AppCheckData({required this.appId, this.token, this.alreadyConsumed});
 
   /// The App ID from the App Check token.
   final String appId;

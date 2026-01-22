@@ -163,9 +163,7 @@ void runDatabaseTests(
         'bool': true,
         'null': null,
         'nestedMap': {
-          'level2': {
-            'deep': 'value',
-          },
+          'level2': {'deep': 'value'},
         },
         'array': [1, 2, 3, 'four'],
       });

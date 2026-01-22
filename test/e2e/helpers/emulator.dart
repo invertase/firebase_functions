@@ -62,10 +62,7 @@ class EmulatorHelper {
         '--non-interactive',
       ],
       workingDirectory: projectPath,
-      environment: {
-        'FIREBASE_EMULATOR_HUB': 'true',
-        ...Platform.environment,
-      },
+      environment: {'FIREBASE_EMULATOR_HUB': 'true', ...Platform.environment},
     );
 
     // Create completer to signal readiness
@@ -76,25 +73,25 @@ class EmulatorHelper {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      print('[EMULATOR] $line');
-      _outputLines.add(line);
+          print('[EMULATOR] $line');
+          _outputLines.add(line);
 
-      // Detect when emulator is ready
-      if (line.contains('All emulators ready!') ||
-          line.contains('All emulators started')) {
-        if (!_readyCompleter!.isCompleted) {
-          _readyCompleter!.complete();
-        }
-      }
-    });
+          // Detect when emulator is ready
+          if (line.contains('All emulators ready!') ||
+              line.contains('All emulators started')) {
+            if (!_readyCompleter!.isCompleted) {
+              _readyCompleter!.complete();
+            }
+          }
+        });
 
     _process!.stderr
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      print('[EMULATOR ERROR] $line');
-      _errorLines.add(line);
-    });
+          print('[EMULATOR ERROR] $line');
+          _errorLines.add(line);
+        });
 
     // Wait for emulator to be ready
     print('Waiting for emulator to be ready...');
@@ -138,9 +135,7 @@ class EmulatorHelper {
       if (e is TimeoutException) {
         rethrow;
       }
-      throw TimeoutException(
-        'Error waiting for emulator: $e',
-      );
+      throw TimeoutException('Error waiting for emulator: $e');
     }
   }
 
@@ -151,10 +146,10 @@ class EmulatorHelper {
     final customFirebasePath = _findCustomFirebaseCli();
     if (customFirebasePath != null) {
       try {
-        final result = await Process.run(
-          'node',
-          [customFirebasePath, '--version'],
-        );
+        final result = await Process.run('node', [
+          customFirebasePath,
+          '--version',
+        ]);
         if (result.exitCode == 0) {
           print(
             'Using custom firebase-tools with Dart support: $customFirebasePath',
@@ -167,22 +162,23 @@ class EmulatorHelper {
     }
 
     // Try common locations
-    final candidates = [
-      'firebase', // In PATH
-      'npx firebase', // Via npx
-      '/usr/local/bin/firebase',
-      if (Platform.environment['HOME'] != null)
-        '${Platform.environment['HOME']}/.npm-global/bin/firebase'
-      else
-        null,
-    ].where((c) => c != null).cast<String>();
+    final candidates =
+        [
+          'firebase', // In PATH
+          'npx firebase', // Via npx
+          '/usr/local/bin/firebase',
+          if (Platform.environment['HOME'] != null)
+            '${Platform.environment['HOME']}/.npm-global/bin/firebase'
+          else
+            null,
+        ].where((c) => c != null).cast<String>();
 
     for (final cmd in candidates) {
       try {
-        final result = await Process.run(
-          cmd.split(' ').first,
-          [...cmd.split(' ').skip(1), '--version'],
-        );
+        final result = await Process.run(cmd.split(' ').first, [
+          ...cmd.split(' ').skip(1),
+          '--version',
+        ]);
 
         if (result.exitCode == 0) {
           return cmd;

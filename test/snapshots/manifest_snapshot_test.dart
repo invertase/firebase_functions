@@ -19,11 +19,12 @@ void main() {
     setUpAll(() async {
       // Generate the basic example manifest
       print('Generating basic Dart manifest via build_runner...');
-      final buildResult = await Process.run(
-        'dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
-        workingDirectory: 'example/basic',
-      );
+      final buildResult = await Process.run('dart', [
+        'run',
+        'build_runner',
+        'build',
+        '--delete-conflicting-outputs',
+      ], workingDirectory: 'example/basic');
 
       if (buildResult.exitCode != 0) {
         throw Exception(
@@ -32,16 +33,18 @@ void main() {
       }
 
       // Read Dart-generated YAML
-      final dartYaml = File(
-        'example/basic/.dart_tool/firebase/functions.yaml',
-      ).readAsStringSync();
+      final dartYaml =
+          File(
+            'example/basic/.dart_tool/firebase/functions.yaml',
+          ).readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
       // Read Node.js reference JSON
-      final nodejsJson = File(
-        'example/nodejs_reference/nodejs_manifest.json',
-      ).readAsStringSync();
+      final nodejsJson =
+          File(
+            'example/nodejs_reference/nodejs_manifest.json',
+          ).readAsStringSync();
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });
 
@@ -136,8 +139,10 @@ void main() {
 
     test('should have Pub/Sub function with correct naming', () {
       final dartFunc = _getEndpoint(dartManifest, 'onMessagePublished_mytopic');
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic');
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onMessagePublished_mytopic',
+      );
 
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
@@ -634,11 +639,12 @@ void main() {
     setUpAll(() async {
       // Generate the options example manifest
       print('Generating options Dart manifest via build_runner...');
-      final buildResult = await Process.run(
-        'dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
-        workingDirectory: 'example/with_options',
-      );
+      final buildResult = await Process.run('dart', [
+        'run',
+        'build_runner',
+        'build',
+        '--delete-conflicting-outputs',
+      ], workingDirectory: 'example/with_options');
 
       if (buildResult.exitCode != 0) {
         throw Exception(
@@ -647,16 +653,18 @@ void main() {
       }
 
       // Read Dart-generated YAML
-      final dartYaml = File(
-        'example/with_options/.dart_tool/firebase/functions.yaml',
-      ).readAsStringSync();
+      final dartYaml =
+          File(
+            'example/with_options/.dart_tool/firebase/functions.yaml',
+          ).readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
       // Read Node.js reference JSON
-      final nodejsJson = File(
-        'example/with_options_nodejs/nodejs_manifest.json',
-      ).readAsStringSync();
+      final nodejsJson =
+          File(
+            'example/with_options_nodejs/nodejs_manifest.json',
+          ).readAsStringSync();
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });
 
@@ -829,8 +837,9 @@ Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
 dynamic _yamlToJson(dynamic value) {
   if (value is Map) {
     return Map<String, dynamic>.fromEntries(
-      value.entries
-          .map((e) => MapEntry(e.key.toString(), _yamlToJson(e.value))),
+      value.entries.map(
+        (e) => MapEntry(e.key.toString(), _yamlToJson(e.value)),
+      ),
     );
   } else if (value is List) {
     return value.map(_yamlToJson).toList();

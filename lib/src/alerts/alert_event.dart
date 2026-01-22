@@ -11,14 +11,14 @@ class AlertData<T extends Object?> {
   factory AlertData.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) payloadDecoder,
-  ) =>
-      AlertData<T>(
-        createTime: DateTime.parse(json['createTime'] as String),
-        endTime: json['endTime'] != null
+  ) => AlertData<T>(
+    createTime: DateTime.parse(json['createTime'] as String),
+    endTime:
+        json['endTime'] != null
             ? DateTime.parse(json['endTime'] as String)
             : null,
-        payload: payloadDecoder(json['payload'] as Map<String, dynamic>),
-      );
+    payload: payloadDecoder(json['payload'] as Map<String, dynamic>),
+  );
 
   /// Time that the event was created.
   final DateTime createTime;
@@ -32,12 +32,11 @@ class AlertData<T extends Object?> {
 
   Map<String, dynamic> toJson(
     Map<String, dynamic> Function(T) payloadEncoder,
-  ) =>
-      {
-        'createTime': createTime.toIso8601String(),
-        if (endTime != null) 'endTime': endTime!.toIso8601String(),
-        'payload': payloadEncoder(payload),
-      };
+  ) => {
+    'createTime': createTime.toIso8601String(),
+    if (endTime != null) 'endTime': endTime!.toIso8601String(),
+    'payload': payloadEncoder(payload),
+  };
 }
 
 /// A custom CloudEvent for Firebase Alerts (with custom extension attributes).

@@ -24,10 +24,7 @@ void main() {
     });
 
     test('fromJson handles missing optional fields', () {
-      final json = {
-        'uid': 'user-123',
-        'providerId': 'password',
-      };
+      final json = {'uid': 'user-123', 'providerId': 'password'};
 
       final userInfo = AuthUserInfo.fromJson(json);
 
@@ -75,9 +72,7 @@ void main() {
     });
 
     test('fromJson handles missing lastSignInTime', () {
-      final json = {
-        'creationTime': '2024-01-15T12:00:00.000Z',
-      };
+      final json = {'creationTime': '2024-01-15T12:00:00.000Z'};
 
       final metadata = AuthUserMetadata.fromJson(json);
 
@@ -147,9 +142,7 @@ void main() {
     });
 
     test('fromJson defaults factorId to phone when not provided', () {
-      final json = {
-        'uid': 'mfa-789',
-      };
+      final json = {'uid': 'mfa-789'};
 
       final mfaInfo = AuthMultiFactorInfo.fromJson(json);
 
@@ -186,10 +179,7 @@ void main() {
     test('fromJson handles snake_case key', () {
       final json = {
         'enrolled_factors': [
-          {
-            'uid': 'mfa-3',
-            'factor_id': 'phone',
-          },
+          {'uid': 'mfa-3', 'factor_id': 'phone'},
         ],
       };
 
@@ -231,10 +221,7 @@ void main() {
             'photoURL': 'https://google.com/photo.jpg',
           },
         ],
-        'customClaims': {
-          'admin': true,
-          'role': 'superuser',
-        },
+        'customClaims': {'admin': true, 'role': 'superuser'},
         'tenantId': 'tenant-123',
       };
 
@@ -264,13 +251,9 @@ void main() {
         'custom_claims': {'level': 5},
         'tenant_id': 'tenant-snake',
         'tokens_valid_after_time': 1705320000,
-        'metadata': {
-          'creation_time': 1705320000000,
-        },
+        'metadata': {'creation_time': 1705320000000},
         'provider_data': <Map<String, dynamic>>[],
-        'multi_factor': {
-          'enrolled_factors': <Map<String, dynamic>>[],
-        },
+        'multi_factor': {'enrolled_factors': <Map<String, dynamic>>[]},
       };
 
       final record = AuthUserRecord.fromJson(json);
@@ -286,9 +269,7 @@ void main() {
     });
 
     test('fromJson handles minimal user record', () {
-      final json = {
-        'uid': 'user-minimal',
-      };
+      final json = {'uid': 'user-minimal'};
 
       final record = AuthUserRecord.fromJson(json);
 
@@ -305,9 +286,7 @@ void main() {
         email: 'serial@example.com',
         emailVerified: true,
         displayName: 'Serial User',
-        metadata: AuthUserMetadata(
-          creationTime: DateTime.utc(2024, 1, 15),
-        ),
+        metadata: AuthUserMetadata(creationTime: DateTime.utc(2024, 1, 15)),
         customClaims: {'test': true},
       );
 
@@ -411,9 +390,7 @@ void main() {
     });
 
     test('fromJson handles emailLink provider', () {
-      final json = {
-        'sign_in_method': 'emailLink',
-      };
+      final json = {'sign_in_method': 'emailLink'};
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
       final credential = Credential.fromJson(json, timestamp);
@@ -454,10 +431,7 @@ void main() {
     });
 
     test('fromJson parses recaptcha score', () {
-      final json = {
-        'event_type': 'beforeCreate',
-        'recaptcha_score': 0.9,
-      };
+      final json = {'event_type': 'beforeCreate', 'recaptcha_score': 0.9};
 
       final info = AdditionalUserInfo.fromJson(json);
 
@@ -495,9 +469,7 @@ void main() {
         'user_record': {
           'uid': 'new-user',
           'email': 'new@example.com',
-          'metadata': {
-            'creation_time': DateTime.now().millisecondsSinceEpoch,
-          },
+          'metadata': {'creation_time': DateTime.now().millisecondsSinceEpoch},
         },
       };
 
@@ -520,9 +492,7 @@ void main() {
         'sign_in_method': 'google.com',
         'user_record': {
           'uid': 'existing-user',
-          'metadata': {
-            'creation_time': DateTime.now().millisecondsSinceEpoch,
-          },
+          'metadata': {'creation_time': DateTime.now().millisecondsSinceEpoch},
         },
         'oauth_access_token': 'token-xyz',
       };
@@ -535,22 +505,24 @@ void main() {
       expect(event.credential!.accessToken, 'token-xyz');
     });
 
-    test('fromDecodedPayload parses beforeSendEmail event (no user record)',
-        () {
-      final decoded = {
-        'event_type': 'beforeSendEmail',
-        'ip_address': '10.0.0.3',
-        'user_agent': 'Email Agent',
-        'email': 'reset@example.com',
-        'email_type': 'PASSWORD_RESET',
-      };
+    test(
+      'fromDecodedPayload parses beforeSendEmail event (no user record)',
+      () {
+        final decoded = {
+          'event_type': 'beforeSendEmail',
+          'ip_address': '10.0.0.3',
+          'user_agent': 'Email Agent',
+          'email': 'reset@example.com',
+          'email_type': 'PASSWORD_RESET',
+        };
 
-      final event = AuthBlockingEvent.fromDecodedPayload(decoded);
+        final event = AuthBlockingEvent.fromDecodedPayload(decoded);
 
-      expect(event.data, isNull);
-      expect(event.emailType, EmailType.passwordReset);
-      expect(event.additionalUserInfo!.email, 'reset@example.com');
-    });
+        expect(event.data, isNull);
+        expect(event.emailType, EmailType.passwordReset);
+        expect(event.additionalUserInfo!.email, 'reset@example.com');
+      },
+    );
 
     test('fromDecodedPayload parses beforeSendSms event (no user record)', () {
       final decoded = {
@@ -630,9 +602,7 @@ void main() {
     });
 
     test('toJson omits null fields', () {
-      const response = BeforeCreateResponse(
-        displayName: 'Only Name',
-      );
+      const response = BeforeCreateResponse(displayName: 'Only Name');
 
       final json = response.toJson();
 

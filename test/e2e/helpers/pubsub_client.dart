@@ -70,19 +70,18 @@ class PubSubClient {
       '$baseUrl/v1/projects/$projectId/topics/$topic:publish',
     );
 
-    final encodedMessages = messages.map((msg) {
-      return <String, dynamic>{
-        'data': base64Encode(utf8.encode(msg.data)),
-        if (msg.attributes.isNotEmpty) 'attributes': msg.attributes,
-      };
-    }).toList();
+    final encodedMessages =
+        messages.map((msg) {
+          return <String, dynamic>{
+            'data': base64Encode(utf8.encode(msg.data)),
+            if (msg.attributes.isNotEmpty) 'attributes': msg.attributes,
+          };
+        }).toList();
 
     final response = await _client.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'messages': encodedMessages,
-      }),
+      body: jsonEncode({'messages': encodedMessages}),
     );
 
     if (response.statusCode != 200) {

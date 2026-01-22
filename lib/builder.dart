@@ -23,36 +23,47 @@ Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 class _TypeCheckers {
   static const _pkg = 'package:firebase_functions';
 
-  static const httpsNamespace =
-      TypeChecker.fromUrl('$_pkg/src/https/https_namespace.dart#HttpsNamespace');
-  static const pubsubNamespace =
-      TypeChecker.fromUrl('$_pkg/src/pubsub/pubsub_namespace.dart#PubSubNamespace');
-  static const firestoreNamespace =
-      TypeChecker.fromUrl('$_pkg/src/firestore/firestore_namespace.dart#FirestoreNamespace');
-  static const databaseNamespace =
-      TypeChecker.fromUrl('$_pkg/src/database/database_namespace.dart#DatabaseNamespace');
-  static const alertsNamespace =
-      TypeChecker.fromUrl('$_pkg/src/alerts/alerts_namespace.dart#AlertsNamespace');
-  static const crashlyticsNamespace =
-      TypeChecker.fromUrl('$_pkg/src/alerts/crashlytics_namespace.dart#CrashlyticsNamespace');
-  static const billingNamespace =
-      TypeChecker.fromUrl('$_pkg/src/alerts/billing_namespace.dart#BillingNamespace');
-  static const appDistributionNamespace =
-      TypeChecker.fromUrl('$_pkg/src/alerts/app_distribution_namespace.dart#AppDistributionNamespace');
-  static const performanceNamespace =
-      TypeChecker.fromUrl('$_pkg/src/alerts/performance_namespace.dart#PerformanceNamespace');
-  static const identityNamespace =
-      TypeChecker.fromUrl('$_pkg/src/identity/identity_namespace.dart#IdentityNamespace');
-  static const schedulerNamespace =
-      TypeChecker.fromUrl('$_pkg/src/scheduler/scheduler_namespace.dart#SchedulerNamespace');
+  static const httpsNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/https/https_namespace.dart#HttpsNamespace',
+  );
+  static const pubsubNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/pubsub/pubsub_namespace.dart#PubSubNamespace',
+  );
+  static const firestoreNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/firestore/firestore_namespace.dart#FirestoreNamespace',
+  );
+  static const databaseNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/database/database_namespace.dart#DatabaseNamespace',
+  );
+  static const alertsNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/alerts/alerts_namespace.dart#AlertsNamespace',
+  );
+  static const crashlyticsNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/alerts/crashlytics_namespace.dart#CrashlyticsNamespace',
+  );
+  static const billingNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/alerts/billing_namespace.dart#BillingNamespace',
+  );
+  static const appDistributionNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/alerts/app_distribution_namespace.dart#AppDistributionNamespace',
+  );
+  static const performanceNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/alerts/performance_namespace.dart#PerformanceNamespace',
+  );
+  static const identityNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/identity/identity_namespace.dart#IdentityNamespace',
+  );
+  static const schedulerNamespace = TypeChecker.fromUrl(
+    '$_pkg/src/scheduler/scheduler_namespace.dart#SchedulerNamespace',
+  );
 }
 
 /// The main builder that generates functions.yaml.
 class _SpecBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
-        r'$package$': ['.dart_tool/firebase/functions.yaml'],
-      };
+    r'$package$': ['.dart_tool/firebase/functions.yaml'],
+  };
 
   @override
   Future<void> build(BuildStep buildStep) async {
@@ -511,8 +522,9 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     }
 
     // Generate function name
-    final sanitizedAlertType =
-        alertTypeValue.replaceAll('.', '_').replaceAll('-', '');
+    final sanitizedAlertType = alertTypeValue
+        .replaceAll('.', '_')
+        .replaceAll('-', '');
     final functionName = 'onAlertPublished_$sanitizedAlertType';
 
     endpoints[functionName] = _EndpointSpec(
@@ -601,8 +613,9 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     }
 
     // Generate function name
-    final sanitizedAlertType =
-        alertType.replaceAll('.', '_').replaceAll('-', '');
+    final sanitizedAlertType = alertType
+        .replaceAll('.', '_')
+        .replaceAll('-', '');
     final functionName = 'onAlertPublished_$sanitizedAlertType';
 
     endpoints[functionName] = _EndpointSpec(
@@ -696,11 +709,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts timeZone from ScheduleOptions.
   String? _extractSchedulerTimeZone(InstanceCreationExpression node) {
-    final timeZoneArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'timeZone')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final timeZoneArg =
+        node.argumentList.arguments
+            .whereType<NamedExpression>()
+            .where((e) => e.name.label.name == 'timeZone')
+            .map((e) => e.expression)
+            .firstOrNull;
 
     if (timeZoneArg is InstanceCreationExpression) {
       // TimeZone('America/New_York')
@@ -714,11 +728,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts RetryConfig from ScheduleOptions.
   Map<String, dynamic>? _extractRetryConfig(InstanceCreationExpression node) {
-    final retryConfigArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'retryConfig')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final retryConfigArg =
+        node.argumentList.arguments
+            .whereType<NamedExpression>()
+            .where((e) => e.name.label.name == 'retryConfig')
+            .map((e) => e.expression)
+            .firstOrNull;
 
     if (retryConfigArg is! InstanceCreationExpression) return null;
 
@@ -752,11 +767,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts a boolean field from an InstanceCreationExpression.
   bool? _extractBoolField(InstanceCreationExpression node, String fieldName) {
-    final arg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == fieldName)
-        .map((e) => e.expression)
-        .firstOrNull;
+    final arg =
+        node.argumentList.arguments
+            .whereType<NamedExpression>()
+            .where((e) => e.name.label.name == fieldName)
+            .map((e) => e.expression)
+            .firstOrNull;
 
     if (arg is BooleanLiteral) {
       return arg.value;
@@ -797,10 +813,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Extracts a parameter definition from MethodInvocation.
-  void _extractParameterFromMethod(
-    MethodInvocation node,
-    String functionName,
-  ) {
+  void _extractParameterFromMethod(MethodInvocation node, String functionName) {
     _extractParamFromArgs(node.argumentList.arguments, functionName);
   }
 
@@ -865,10 +878,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   /// Converts a camelCase or PascalCase string to UPPER_SNAKE_CASE.
   String _toUpperSnakeCase(String input) {
     return input
-        .replaceAllMapped(
-          RegExp(r'[A-Z]'),
-          (match) => '_${match.group(0)}',
-        )
+        .replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)}')
         .toUpperCase()
         .replaceFirst('_', '');
   }
@@ -891,14 +901,14 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Gets the parameter type name for YAML.
   String _getParamType(String functionName) => switch (functionName) {
-        'defineString' => 'string',
-        'defineSecret' || 'defineJsonSecret' => 'secret',
-        'defineInt' => 'int',
-        'defineDouble' || 'defineFloat' => 'float',
-        'defineBoolean' => 'boolean',
-        'defineList' || 'defineEnumList' => 'list',
-        _ => 'string',
-      };
+    'defineString' => 'string',
+    'defineSecret' || 'defineJsonSecret' => 'secret',
+    'defineInt' => 'int',
+    'defineDouble' || 'defineFloat' => 'float',
+    'defineBoolean' => 'boolean',
+    'defineList' || 'defineEnumList' => 'list',
+    _ => 'string',
+  };
 
   /// Checks if the parameter is a JSON secret.
   bool _isJsonSecret(String functionName) => functionName == 'defineJsonSecret';
@@ -913,11 +923,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts the defaultValue field.
   dynamic _extractDefaultValue(InstanceCreationExpression node) {
-    final defaultValueArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'defaultValue')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final defaultValueArg =
+        node.argumentList.arguments
+            .whereType<NamedExpression>()
+            .where((e) => e.name.label.name == 'defaultValue')
+            .map((e) => e.expression)
+            .firstOrNull;
 
     if (defaultValueArg == null) return null;
 
@@ -1176,17 +1187,17 @@ class _EndpointSpec {
 
   /// Converts MemoryOption enum to integer value.
   int? _memoryOptionToInt(String optionName) => switch (optionName) {
-        'mb128' => 128,
-        'mb256' => 256,
-        'mb512' => 512,
-        'gb1' => 1024,
-        'gb2' => 2048,
-        'gb4' => 4096,
-        'gb8' => 8192,
-        'gb16' => 16384,
-        'gb32' => 32768,
-        _ => null,
-      };
+    'mb128' => 128,
+    'mb256' => 256,
+    'mb512' => 512,
+    'gb1' => 1024,
+    'gb2' => 2048,
+    'gb4' => 4096,
+    'gb8' => 8192,
+    'gb16' => 16384,
+    'gb32' => 32768,
+    _ => null,
+  };
 
   /// Extracts CPU option value.
   dynamic _extractCpu(Expression expression) {
@@ -1491,7 +1502,8 @@ class _EndpointSpec {
       if (methodName == 'thenElse' && target is SimpleIdentifier) {
         // Get the param name from the variable
         final variableName = target.name;
-        final paramName = variableToParamName[variableName] ??
+        final paramName =
+            variableToParamName[variableName] ??
             _toUpperSnakeCase(variableName);
 
         // Extract the two arguments
@@ -1521,10 +1533,7 @@ class _EndpointSpec {
   /// Converts a variable name to UPPER_SNAKE_CASE format.
   static String _toUpperSnakeCase(String variableName) {
     return variableName
-        .replaceAllMapped(
-          RegExp(r'[A-Z]'),
-          (match) => '_${match.group(0)}',
-        )
+        .replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)}')
         .toUpperCase()
         .replaceFirst('_', '');
   }
@@ -1569,15 +1578,17 @@ String _generateYaml(
   buffer.writeln('  - api: "cloudfunctions.googleapis.com"');
   buffer.writeln('    reason: "Required for Cloud Functions"');
   // Add identitytoolkit API if there are blocking functions
-  final hasBlockingFunctions =
-      endpoints.values.any((e) => e.type == 'blocking');
+  final hasBlockingFunctions = endpoints.values.any(
+    (e) => e.type == 'blocking',
+  );
   if (hasBlockingFunctions) {
     buffer.writeln('  - api: "identitytoolkit.googleapis.com"');
     buffer.writeln('    reason: "Needed for auth blocking functions"');
   }
   // Add cloudscheduler API if there are scheduler functions
-  final hasSchedulerFunctions =
-      endpoints.values.any((e) => e.type == 'scheduler');
+  final hasSchedulerFunctions = endpoints.values.any(
+    (e) => e.type == 'scheduler',
+  );
   if (hasSchedulerFunctions) {
     buffer.writeln('  - api: "cloudscheduler.googleapis.com"');
     buffer.writeln('    reason: "Needed for scheduled functions"');
@@ -1647,8 +1658,9 @@ String _generateYaml(
 
       // Add service account if specified (Node.js uses serviceAccountEmail)
       if (options.containsKey('serviceAccount')) {
-        buffer
-            .writeln('    serviceAccountEmail: "${options['serviceAccount']}"');
+        buffer.writeln(
+          '    serviceAccountEmail: "${options['serviceAccount']}"',
+        );
       }
 
       // Add VPC configuration if specified (nested structure like Node.js)
@@ -1737,8 +1749,9 @@ String _generateYaml(
         buffer.writeln('    eventTrigger:');
         buffer.writeln('      eventType: "$eventType"');
         buffer.writeln('      eventFilters:');
-        buffer
-            .writeln('        database: "${endpoint.database ?? '(default)'}"');
+        buffer.writeln(
+          '        database: "${endpoint.database ?? '(default)'}"',
+        );
         buffer.writeln(
           '        namespace: "${endpoint.namespace ?? '(default)'}"',
         );
@@ -1766,9 +1779,10 @@ String _generateYaml(
 
         // Both ref and instance go in eventFilterPathPatterns
         // The ref path should not have a leading slash to match Node.js format
-        final normalizedRef = endpoint.refPath!.startsWith('/')
-            ? endpoint.refPath!.substring(1)
-            : endpoint.refPath!;
+        final normalizedRef =
+            endpoint.refPath!.startsWith('/')
+                ? endpoint.refPath!.substring(1)
+                : endpoint.refPath!;
         buffer.writeln('      eventFilterPathPatterns:');
         buffer.writeln('        ref: "$normalizedRef"');
         buffer.writeln('        instance: "${endpoint.instance ?? '*'}"');
@@ -1793,7 +1807,8 @@ String _generateYaml(
         );
 
         // Only include token options for beforeCreate and beforeSignIn
-        final isAuthEvent = endpoint.blockingEventType == 'beforeCreate' ||
+        final isAuthEvent =
+            endpoint.blockingEventType == 'beforeCreate' ||
             endpoint.blockingEventType == 'beforeSignIn';
         if (isAuthEvent) {
           buffer.writeln('      options:');
@@ -1849,21 +1864,21 @@ String _generateYaml(
 
 /// Maps Firestore method name to CloudEvent event type.
 String _mapFirestoreEventType(String methodName) => switch (methodName) {
-      'onDocumentCreated' => 'google.cloud.firestore.document.v1.created',
-      'onDocumentUpdated' => 'google.cloud.firestore.document.v1.updated',
-      'onDocumentDeleted' => 'google.cloud.firestore.document.v1.deleted',
-      'onDocumentWritten' => 'google.cloud.firestore.document.v1.written',
-      _ => throw ArgumentError('Unknown Firestore event type: $methodName'),
-    };
+  'onDocumentCreated' => 'google.cloud.firestore.document.v1.created',
+  'onDocumentUpdated' => 'google.cloud.firestore.document.v1.updated',
+  'onDocumentDeleted' => 'google.cloud.firestore.document.v1.deleted',
+  'onDocumentWritten' => 'google.cloud.firestore.document.v1.written',
+  _ => throw ArgumentError('Unknown Firestore event type: $methodName'),
+};
 
 /// Maps Database method name to CloudEvent event type.
 String _mapDatabaseEventType(String methodName) => switch (methodName) {
-      'onValueCreated' => 'google.firebase.database.ref.v1.created',
-      'onValueUpdated' => 'google.firebase.database.ref.v1.updated',
-      'onValueDeleted' => 'google.firebase.database.ref.v1.deleted',
-      'onValueWritten' => 'google.firebase.database.ref.v1.written',
-      _ => throw ArgumentError('Unknown Database event type: $methodName'),
-    };
+  'onValueCreated' => 'google.firebase.database.ref.v1.created',
+  'onValueUpdated' => 'google.firebase.database.ref.v1.updated',
+  'onValueDeleted' => 'google.firebase.database.ref.v1.deleted',
+  'onValueWritten' => 'google.firebase.database.ref.v1.written',
+  _ => throw ArgumentError('Unknown Database event type: $methodName'),
+};
 
 /// Converts a value to YAML format.
 String _yamlValue(dynamic value) {
