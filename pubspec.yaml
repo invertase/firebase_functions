@@ -12,7 +12,6 @@ dependencies:
   dart_firebase_admin: ^0.4.1
   protobuf: ^6.0.0
   http: ^1.6.0
-  googleapis: ^15.0.0
   jose: ^0.3.5
   # Required for builder
   build: ^4.0.4

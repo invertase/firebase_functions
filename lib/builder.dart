@@ -14,32 +14,37 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
-// Import types for TypeChecker
-import 'firebase_functions.dart' as ff;
-
 /// Builder factory function (called by build_runner).
 Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 
 /// Type checkers for Firebase Functions types.
+/// Using TypeChecker.fromUrl with package URLs pointing to actual source files
+/// (source_gen 4.x compatible).
 class _TypeCheckers {
-  static final httpsNamespace = TypeChecker.fromRuntime(ff.HttpsNamespace);
-  static final pubsubNamespace = TypeChecker.fromRuntime(ff.PubSubNamespace);
-  static final firestoreNamespace =
-      TypeChecker.fromRuntime(ff.FirestoreNamespace);
-  static final databaseNamespace =
-      TypeChecker.fromRuntime(ff.DatabaseNamespace);
-  static final alertsNamespace = TypeChecker.fromRuntime(ff.AlertsNamespace);
-  static final crashlyticsNamespace =
-      TypeChecker.fromRuntime(ff.CrashlyticsNamespace);
-  static final billingNamespace = TypeChecker.fromRuntime(ff.BillingNamespace);
-  static final appDistributionNamespace =
-      TypeChecker.fromRuntime(ff.AppDistributionNamespace);
-  static final performanceNamespace =
-      TypeChecker.fromRuntime(ff.PerformanceNamespace);
-  static final identityNamespace =
-      TypeChecker.fromRuntime(ff.IdentityNamespace);
-  static final schedulerNamespace =
-      TypeChecker.fromRuntime(ff.SchedulerNamespace);
+  static const _pkg = 'package:firebase_functions';
+
+  static const httpsNamespace =
+      TypeChecker.fromUrl('$_pkg/src/https/https_namespace.dart#HttpsNamespace');
+  static const pubsubNamespace =
+      TypeChecker.fromUrl('$_pkg/src/pubsub/pubsub_namespace.dart#PubSubNamespace');
+  static const firestoreNamespace =
+      TypeChecker.fromUrl('$_pkg/src/firestore/firestore_namespace.dart#FirestoreNamespace');
+  static const databaseNamespace =
+      TypeChecker.fromUrl('$_pkg/src/database/database_namespace.dart#DatabaseNamespace');
+  static const alertsNamespace =
+      TypeChecker.fromUrl('$_pkg/src/alerts/alerts_namespace.dart#AlertsNamespace');
+  static const crashlyticsNamespace =
+      TypeChecker.fromUrl('$_pkg/src/alerts/crashlytics_namespace.dart#CrashlyticsNamespace');
+  static const billingNamespace =
+      TypeChecker.fromUrl('$_pkg/src/alerts/billing_namespace.dart#BillingNamespace');
+  static const appDistributionNamespace =
+      TypeChecker.fromUrl('$_pkg/src/alerts/app_distribution_namespace.dart#AppDistributionNamespace');
+  static const performanceNamespace =
+      TypeChecker.fromUrl('$_pkg/src/alerts/performance_namespace.dart#PerformanceNamespace');
+  static const identityNamespace =
+      TypeChecker.fromUrl('$_pkg/src/identity/identity_namespace.dart#IdentityNamespace');
+  static const schedulerNamespace =
+      TypeChecker.fromUrl('$_pkg/src/scheduler/scheduler_namespace.dart#SchedulerNamespace');
 }
 
 /// The main builder that generates functions.yaml.
@@ -65,7 +70,7 @@ class _SpecBuilder implements Builder {
       if (asset.package != buildStep.inputId.package) continue;
 
       // Try to get the library (skip part files)
-      LibraryElement? library;
+      LibraryElement library;
       try {
         library = await resolver.libraryFor(asset, allowSyntaxErrors: true);
       } catch (e) {
@@ -73,15 +78,10 @@ class _SpecBuilder implements Builder {
         continue;
       }
 
-      // Skip if it's a part file (no defining compilation unit)
-      final unit = library.definingCompilationUnit;
-
-      // Get the AST for this library
-      final ast = await resolver.astNodeFor(
-        unit,
-        resolve: true,
-      );
-
+      // Get the resolved AST for this library using the first fragment
+      // We need resolved types for TypeChecker to work properly
+      final fragment = library.firstFragment;
+      final ast = await resolver.astNodeFor(fragment, resolve: true);
       if (ast == null) continue;
 
       // Visit the AST to find function declarations
@@ -768,7 +768,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   String? _extractAlertTypeValue(Expression expression) {
     if (expression is InstanceCreationExpression) {
       // Extract from constructor: const CrashlyticsNewFatalIssue()
-      final typeName = expression.constructorName.type.name2.lexeme;
+      final typeName = expression.constructorName.type.name.lexeme;
       return switch (typeName) {
         'CrashlyticsNewFatalIssue' => 'crashlytics.newFatalIssue',
         'CrashlyticsNewNonfatalIssue' => 'crashlytics.newNonfatalIssue',
