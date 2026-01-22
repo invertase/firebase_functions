@@ -833,7 +833,7 @@ Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
 ///
 /// The yaml package returns YamlMap and YamlList which aren't directly
 /// JSON-encodable. This function recursively converts them to regular
-/// Map<String, dynamic> and List<dynamic>.
+/// `Map<String, dynamic>` and `List<dynamic>`.
 dynamic _yamlToJson(dynamic value) {
   if (value is Map) {
     return Map<String, dynamic>.fromEntries(

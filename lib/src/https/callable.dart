@@ -123,7 +123,7 @@ class CallableRequest<T extends Object?> {
       );
     }
 
-    return _jsonDecoder!(decoded);
+    return _jsonDecoder(decoded);
   }
 
   /// Whether the client accepts streaming (SSE) responses.
