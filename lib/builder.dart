@@ -5,7 +5,7 @@
 /// firebase-tools uses for deployment.
 ///
 /// See BUILDER_SYSTEM.md for detailed documentation.
-library builder;
+library;
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';

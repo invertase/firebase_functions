@@ -51,7 +51,7 @@
 /// See also:
 /// - [params.dart] for the full params API
 /// - [onInit] for safe initialization with secrets
-library firebase_functions;
+library;
 
 // Re-export dart_firebase_admin types for convenience
 export 'package:dart_firebase_admin/firestore.dart'

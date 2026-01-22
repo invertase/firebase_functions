@@ -1,5 +1,5 @@
 /// Firebase Alerts namespace for Cloud Functions.
-library alerts;
+library;
 
 export 'alert_event.dart';
 export 'alert_type.dart';

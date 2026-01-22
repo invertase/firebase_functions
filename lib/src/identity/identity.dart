@@ -2,7 +2,7 @@
 ///
 /// Provides auth blocking functions that run before user creation,
 /// sign-in, email sending, and SMS sending.
-library identity;
+library;
 
 export 'auth_blocking_event.dart';
 export 'auth_user_record.dart';
