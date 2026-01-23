@@ -4,7 +4,7 @@ version: 0.1.0
 repository: https://github.com/invertase/firebase-functions-dart
 
 environment:
-  sdk: ^3.7.0
+  sdk: ^3.9.0
 
 dependencies:
   shelf: ^1.4.2

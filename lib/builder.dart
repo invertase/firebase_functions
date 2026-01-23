@@ -20,7 +20,7 @@ Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 /// Type checkers for Firebase Functions types.
 /// Using TypeChecker.fromUrl with package URLs pointing to actual source files
 /// (source_gen 4.x compatible).
-class _TypeCheckers {
+abstract class _TypeCheckers {
   static const _pkg = 'package:firebase_functions';
 
   static const httpsNamespace = TypeChecker.fromUrl(
