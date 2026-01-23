@@ -1,6 +1,6 @@
 import '../common/cloud_event.dart';
 
-/// A CloudEvent that contains a DataSnapshot or a Change<DataSnapshot>.
+/// A CloudEvent that contains a DataSnapshot or a `Change<DataSnapshot>`.
 ///
 /// This event type extends the base [CloudEvent] with Realtime Database-specific fields.
 class DatabaseEvent<T extends Object?> extends CloudEvent<T> {

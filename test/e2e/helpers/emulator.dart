@@ -62,26 +62,26 @@ class EmulatorHelper {
         '--non-interactive',
       ],
       workingDirectory: projectPath,
-      environment: {
-        'FIREBASE_EMULATOR_HUB': 'true',
-        ...Platform.environment,
-      },
+      environment: {'FIREBASE_EMULATOR_HUB': 'true', ...Platform.environment},
     );
 
     // Create completer to signal readiness
     _readyCompleter = Completer<void>();
 
     // Capture output for debugging and detect readiness
-    _process!.stdout
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())
-        .listen((line) {
+    _process!.stdout.transform(utf8.decoder).transform(const LineSplitter()).listen((
+      line,
+    ) {
       print('[EMULATOR] $line');
       _outputLines.add(line);
 
       // Detect when emulator is ready
-      if (line.contains('All emulators ready!') ||
-          line.contains('All emulators started')) {
+      // We need to wait for functions to be initialized, not just the emulator hub
+      // Look for "http function initialized" which indicates triggers are registered
+      if (line.contains('http function initialized') ||
+          line.contains('All emulators ready') ||
+          line.contains('All emulators started') ||
+          line.contains('It is now safe to connect')) {
         if (!_readyCompleter!.isCompleted) {
           _readyCompleter!.complete();
         }
@@ -92,13 +92,18 @@ class EmulatorHelper {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      print('[EMULATOR ERROR] $line');
-      _errorLines.add(line);
-    });
+          print('[EMULATOR ERROR] $line');
+          _errorLines.add(line);
+        });
 
     // Wait for emulator to be ready
     print('Waiting for emulator to be ready...');
     await _waitForReady();
+
+    // Additional wait to ensure Dart runtime is fully initialized
+    // The first request triggers Dart process startup which takes ~2-3 seconds
+    print('Waiting for Dart runtime to stabilize...');
+    await Future<void>.delayed(const Duration(seconds: 2));
     print('✓ Emulator is ready');
   }
 
@@ -123,25 +128,55 @@ class EmulatorHelper {
     print('✓ Emulator stopped');
   }
 
-  /// Waits for the emulator to be ready by monitoring stdout for readiness message.
+  /// Waits for the emulator to be ready by monitoring stdout and polling the hub.
   Future<void> _waitForReady() async {
-    try {
-      await _readyCompleter!.future.timeout(
-        startupTimeout,
-        onTimeout: () {
-          throw TimeoutException(
-            'Emulator did not start within ${startupTimeout.inSeconds} seconds',
-          );
-        },
-      );
-    } catch (e) {
-      if (e is TimeoutException) {
-        rethrow;
+    final client = HttpClient();
+    final deadline = DateTime.now().add(startupTimeout);
+
+    while (DateTime.now().isBefore(deadline)) {
+      // Check if ready message was received
+      if (_readyCompleter!.isCompleted) {
+        client.close();
+        return;
       }
-      throw TimeoutException(
-        'Error waiting for emulator: $e',
-      );
+
+      // Poll the helloWorld function endpoint as a fallback
+      // We poll a specific function to ensure triggers are registered, not just the server
+      try {
+        final request = await client
+            .getUrl(
+              Uri.parse(
+                'http://127.0.0.1:$functionsPort/demo-test/us-central1/helloWorld',
+              ),
+            )
+            .timeout(const Duration(seconds: 5));
+        final response = await request.close().timeout(
+          const Duration(seconds: 5),
+        );
+        await response.drain<void>();
+        // Only consider ready if we get 200 (not 404 which means function not registered)
+        if (response.statusCode == 200) {
+          print('Function helloWorld responding on port $functionsPort');
+          client.close();
+          if (!_readyCompleter!.isCompleted) {
+            _readyCompleter!.complete();
+          }
+          return;
+        } else if (response.statusCode == 404) {
+          // Function not registered yet, keep waiting
+          print('Waiting for functions to be registered (got 404)...');
+        }
+      } catch (e) {
+        // Connection failed, emulator not ready yet
+      }
+
+      await Future<void>.delayed(const Duration(seconds: 1));
     }
+
+    client.close();
+    throw TimeoutException(
+      'Emulator did not start within ${startupTimeout.inSeconds} seconds',
+    );
   }
 
   /// Finds the Firebase CLI executable.
@@ -151,10 +186,10 @@ class EmulatorHelper {
     final customFirebasePath = _findCustomFirebaseCli();
     if (customFirebasePath != null) {
       try {
-        final result = await Process.run(
-          'node',
-          [customFirebasePath, '--version'],
-        );
+        final result = await Process.run('node', [
+          customFirebasePath,
+          '--version',
+        ]);
         if (result.exitCode == 0) {
           print(
             'Using custom firebase-tools with Dart support: $customFirebasePath',
@@ -179,10 +214,10 @@ class EmulatorHelper {
 
     for (final cmd in candidates) {
       try {
-        final result = await Process.run(
-          cmd.split(' ').first,
-          [...cmd.split(' ').skip(1), '--version'],
-        );
+        final result = await Process.run(cmd.split(' ').first, [
+          ...cmd.split(' ').skip(1),
+          '--version',
+        ]);
 
         if (result.exitCode == 0) {
           return cmd;

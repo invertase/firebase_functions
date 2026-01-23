@@ -22,16 +22,15 @@ class CloudEvent<T extends Object?> {
   factory CloudEvent.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) dataDecoder,
-  ) =>
-      CloudEvent<T>(
-        data: dataDecoder(json['data'] as Map<String, dynamic>),
-        id: json['id'] as String,
-        source: json['source'] as String,
-        specversion: json['specversion'] as String,
-        subject: json['subject'] as String?,
-        time: DateTime.parse(json['time'] as String),
-        type: json['type'] as String,
-      );
+  ) => CloudEvent<T>(
+    data: dataDecoder(json['data'] as Map<String, dynamic>),
+    id: json['id'] as String,
+    source: json['source'] as String,
+    specversion: json['specversion'] as String,
+    subject: json['subject'] as String?,
+    time: DateTime.parse(json['time'] as String),
+    type: json['type'] as String,
+  );
 
   /// The event data. Type depends on the event source.
   /// May be null in emulator mode when protobuf parsing is not available.
@@ -72,9 +71,7 @@ class CloudEvent<T extends Object?> {
 Map<String, dynamic> parseCloudEventJson(Object? decoded) {
   try {
     if (decoded is! Map<String, dynamic>) {
-      throw FormatException(
-        'CloudEvent body must be a JSON object',
-      );
+      throw FormatException('CloudEvent body must be a JSON object');
     }
     return decoded;
   } on FormatException catch (e) {

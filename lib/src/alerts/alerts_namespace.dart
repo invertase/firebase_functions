@@ -72,31 +72,28 @@ class AlertsNamespace extends FunctionsNamespace {
   }) {
     final functionName = _alertTypeToFunctionName(alertType.value);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final decoded = await jsonStreamDecode(request.read());
-          final json = parseCloudEventJson(decoded);
-          validateCloudEvent(json);
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final decoded = await jsonStreamDecode(request.read());
+        final json = parseCloudEventJson(decoded);
+        validateCloudEvent(json);
 
-          if (!_isAlertEvent(json['type'] as String)) {
-            return Response(
-              400,
-              body: 'Invalid event type for alerts: ${json['type']}',
-            );
-          }
-
-          final event = AlertEvent<T>.fromJson(json, fromJson);
-          await handler(event);
-          return Response.ok('');
-        } on FormatException catch (e) {
-          return Response(400, body: 'Invalid CloudEvent: ${e.message}');
-        } catch (e) {
-          return Response(500, body: 'Error processing alert: $e');
+        if (!_isAlertEvent(json['type'] as String)) {
+          return Response(
+            400,
+            body: 'Invalid event type for alerts: ${json['type']}',
+          );
         }
-      },
-    );
+
+        final event = AlertEvent<T>.fromJson(json, fromJson);
+        await handler(event);
+        return Response.ok('');
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e) {
+        return Response(500, body: 'Error processing alert: $e');
+      }
+    });
   }
 
   /// Converts an alert type value to a function name.

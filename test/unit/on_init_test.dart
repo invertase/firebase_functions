@@ -168,10 +168,7 @@ void main() {
       expect(didInit, false);
 
       // First call - init runs but handler throws
-      await expectLater(
-        () async => await throwingHandler(1),
-        throwsException,
-      );
+      await expectLater(() async => await throwingHandler(1), throwsException);
 
       // Init should have been marked as complete even though handler threw
       expect(didInit, true);

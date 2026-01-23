@@ -45,15 +45,9 @@ abstract class Expression<T extends Object> {
     required Expression<R> otherwise,
   }) {
     if (this is! Expression<bool>) {
-      throw ArgumentError(
-        'when() can only be called on Expression<bool>',
-      );
+      throw ArgumentError('when() can only be called on Expression<bool>');
     }
-    return If(
-      this as Expression<bool>,
-      then: then,
-      otherwise: otherwise,
-    );
+    return If(this as Expression<bool>, then: then, otherwise: otherwise);
   }
 
   /// Creates an equality comparison expression.

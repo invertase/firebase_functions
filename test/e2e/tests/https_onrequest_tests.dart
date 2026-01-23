@@ -29,10 +29,7 @@ void runHttpsOnRequestTests(
       final response = await client.get('helloWorld');
 
       expect(response.statusCode, equals(200));
-      expect(
-        response.headers['content-type'],
-        contains('text/plain'),
-      );
+      expect(response.headers['content-type'], contains('text/plain'));
     });
 
     test('helloWorld accepts GET requests', () async {

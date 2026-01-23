@@ -293,10 +293,7 @@ class AuthBlockingTokenVerifier {
       offset += eLenBytes;
       final eBytes = spki.sublist(offset, offset + eLen);
 
-      return (
-        n: _bytesToBigInt(nBytes),
-        e: _bytesToBigInt(eBytes),
-      );
+      return (n: _bytesToBigInt(nBytes), e: _bytesToBigInt(eBytes));
     } catch (e) {
       return null;
     }
@@ -342,8 +339,9 @@ class AuthBlockingTokenVerifier {
     }
 
     // Remove leading zero byte if present (from positive number encoding)
-    final trimmedBytes =
-        bytes.isNotEmpty && bytes[0] == 0 ? bytes.sublist(1) : bytes;
+    final trimmedBytes = bytes.isNotEmpty && bytes[0] == 0
+        ? bytes.sublist(1)
+        : bytes;
 
     return base64Url.encode(trimmedBytes).replaceAll('=', '');
   }

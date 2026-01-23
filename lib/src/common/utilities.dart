@@ -7,5 +7,4 @@ Future<Object?> jsonStreamDecode(Stream<List<int>> stream) async =>
 
 Future<Map<String, dynamic>> jsonStreamDecodeMap(
   Stream<List<int>> stream,
-) async =>
-    jsonStreamDecode(stream) as Future<Map<String, dynamic>>;
+) async => jsonStreamDecode(stream) as Future<Map<String, dynamic>>;

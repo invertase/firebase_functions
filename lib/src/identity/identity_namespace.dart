@@ -8,8 +8,6 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
-import '../common/utilities.dart';
-
 import '../firebase.dart';
 import '../https/error.dart';
 import 'auth_blocking_event.dart';
@@ -183,11 +181,7 @@ class IdentityNamespace extends FunctionsNamespace {
     // ignore: experimental_member_use
     @mustBeConst BlockingOptions? options = const BlockingOptions(),
   }) {
-    _beforeOperation(
-      eventType: eventType,
-      options: options,
-      handler: handler,
-    );
+    _beforeOperation(eventType: eventType, options: options, handler: handler);
   }
 
   /// Returns a combined InternalOptions class with merged blocking options.
@@ -200,67 +194,61 @@ class IdentityNamespace extends FunctionsNamespace {
     required AuthBlockingEventType eventType,
     required BlockingOptions? options,
     required FutureOr<BeforeResponse?> Function(AuthBlockingEvent event)
-        handler,
+    handler,
   }) {
     final functionName = eventType.value;
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          // Validate request
-          if (!_isValidRequest(request)) {
-            throw InvalidArgumentError('Bad Request');
-          }
-
-          // Parse request body
-          final body = await jsonStreamDecodeMap(request.read());
-
-          // Extract JWT from request body
-          final data = body['data'] as Map<String, dynamic>?;
-          final jwt = data?['jwt'] as String?;
-
-          if (jwt == null) {
-            throw InvalidArgumentError('Missing JWT in request body');
-          }
-
-          // Decode and verify JWT payload
-          final decodedPayload = await _decodeAndVerifyJwt(jwt);
-
-          // Parse the event
-          final event = AuthBlockingEvent.fromDecodedPayload(decodedPayload);
-
-          // Validate response claims
-          final response = await handler(event);
-          _validateAuthResponse(eventType, response);
-
-          // Generate response payload
-          final result = generateResponsePayload(response);
-
-          return Response.ok(
-            jsonEncode(result.toJson()),
-            headers: {'Content-Type': 'application/json'},
-          );
-        } on HttpsError catch (e) {
-          return Response(
-            e.httpStatusCode,
-            body: jsonEncode({
-              'error': e.toErrorResponse(),
-            }),
-            headers: {'Content-Type': 'application/json'},
-          );
-        } catch (e) {
-          final error = InternalError('An unexpected error occurred.');
-          return Response(
-            error.httpStatusCode,
-            body: jsonEncode({
-              'error': error.toErrorResponse(),
-            }),
-            headers: {'Content-Type': 'application/json'},
-          );
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        // Validate request
+        if (!_isValidRequest(request)) {
+          throw InvalidArgumentError('Bad Request');
         }
-      },
-    );
+
+        // Parse request body
+        final bodyString = await request.readAsString();
+        final body = jsonDecode(bodyString) as Map<String, dynamic>;
+
+        // Extract JWT from request body
+        final data = body['data'] as Map<String, dynamic>?;
+        final jwt = data?['jwt'] as String?;
+
+        if (jwt == null) {
+          throw InvalidArgumentError('Missing JWT in request body');
+        }
+
+        // Decode and verify JWT payload
+        final decodedPayload = await _decodeAndVerifyJwt(jwt);
+
+        // Parse the event
+        final event = AuthBlockingEvent.fromDecodedPayload(decodedPayload);
+
+        // Validate response claims
+        final response = await handler(event);
+        _validateAuthResponse(eventType, response);
+
+        // Generate response payload
+        final result = generateResponsePayload(response);
+
+        return Response.ok(
+          jsonEncode(result.toJson()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      } on HttpsError catch (e) {
+        return Response(
+          e.httpStatusCode,
+          body: jsonEncode({'error': e.toErrorResponse()}),
+          headers: {'Content-Type': 'application/json'},
+        );
+      } catch (e) {
+        final error = InternalError('An unexpected error occurred.');
+        return Response(
+          error.httpStatusCode,
+          body: jsonEncode({'error': error.toErrorResponse()}),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+    });
   }
 
   /// Validates the request format.
@@ -289,7 +277,8 @@ class IdentityNamespace extends FunctionsNamespace {
     final skipVerification = _shouldSkipTokenVerification(env);
 
     // Get project ID
-    final projectId = env['GCLOUD_PROJECT'] ??
+    final projectId =
+        env['GCLOUD_PROJECT'] ??
         env['GCP_PROJECT'] ??
         env['FIREBASE_PROJECT'] ??
         'demo-test';

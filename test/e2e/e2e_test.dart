@@ -32,8 +32,10 @@ void main() {
   // Debug: Show Directory.current.path at module load time
   print('DEBUG e2e_test: Directory.current.path = ${Directory.current.path}');
 
-  final examplePath =
-      '${Directory.current.path}/example/basic'.replaceAll('/test/e2e', '');
+  final examplePath = '${Directory.current.path}/example/basic'.replaceAll(
+    '/test/e2e',
+    '',
+  );
 
   print('DEBUG e2e_test: examplePath = $examplePath');
 
@@ -46,11 +48,12 @@ void main() {
 
     // Build the functions first
     print('Building functions...');
-    final buildResult = await Process.run(
-      'dart',
-      ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
-      workingDirectory: examplePath,
-    );
+    final buildResult = await Process.run('dart', [
+      'run',
+      'build_runner',
+      'build',
+      '--delete-conflicting-outputs',
+    ], workingDirectory: examplePath);
 
     if (buildResult.exitCode != 0) {
       throw Exception('Failed to build functions: ${buildResult.stderr}');

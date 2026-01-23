@@ -95,11 +95,7 @@ class DataSnapshot {
 
     final newRef = ref.endsWith('/') ? '$ref$childPath' : '$ref/$childPath';
 
-    return DataSnapshot(
-      instance: instance,
-      ref: newRef,
-      data: childData,
-    );
+    return DataSnapshot(instance: instance, ref: newRef, data: childData);
   }
 
   /// Enumerates the DataSnapshots of the children items.

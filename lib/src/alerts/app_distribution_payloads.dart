@@ -31,13 +31,13 @@ class NewTesterDevicePayload {
   final String testerDeviceIdentifier;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.AppDistroNewTesterIosDevicePayload',
-        'testerName': testerName,
-        'testerEmail': testerEmail,
-        'testerDeviceModelName': testerDeviceModelName,
-        'testerDeviceIdentifier': testerDeviceIdentifier,
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.AppDistroNewTesterIosDevicePayload',
+    'testerName': testerName,
+    'testerEmail': testerEmail,
+    'testerDeviceModelName': testerDeviceModelName,
+    'testerDeviceIdentifier': testerDeviceIdentifier,
+  };
 }
 
 /// Payload for in-app feedback alerts.
@@ -87,14 +87,14 @@ class InAppFeedbackPayload {
   final String? screenshotUri;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.AppDistroInAppFeedbackPayload',
-        'feedbackReport': feedbackReport,
-        'feedbackConsoleUri': feedbackConsoleUri,
-        if (testerName != null) 'testerName': testerName,
-        'testerEmail': testerEmail,
-        'appVersion': appVersion,
-        'text': text,
-        if (screenshotUri != null) 'screenshotUri': screenshotUri,
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.AppDistroInAppFeedbackPayload',
+    'feedbackReport': feedbackReport,
+    'feedbackConsoleUri': feedbackConsoleUri,
+    if (testerName != null) 'testerName': testerName,
+    'testerEmail': testerEmail,
+    'appVersion': appVersion,
+    'text': text,
+    if (screenshotUri != null) 'screenshotUri': screenshotUri,
+  };
 }

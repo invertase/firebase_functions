@@ -35,7 +35,7 @@ class CrashlyticsNamespace {
   /// Handles new non-fatal issue alerts from Crashlytics.
   void onNewNonfatalIssuePublished(
     FutureOr<void> Function(AlertEvent<NewNonfatalIssuePayload> event)
-        handler, {
+    handler, {
     // ignore: experimental_member_use
     @mustBeConst AlertOptions? options = const AlertOptions(),
   }) {
@@ -111,31 +111,28 @@ class CrashlyticsNamespace {
   ) {
     final functionName = _alertTypeToFunctionName(alertType.value);
 
-    _firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final decoded = await jsonStreamDecode(request.read());
-          final json = parseCloudEventJson(decoded);
-          validateCloudEvent(json);
+    _firebase.registerFunction(functionName, (request) async {
+      try {
+        final decoded = await jsonStreamDecode(request.read());
+        final json = parseCloudEventJson(decoded);
+        validateCloudEvent(json);
 
-          if (!_isAlertEvent(json['type'] as String)) {
-            return Response(
-              400,
-              body: 'Invalid event type for alerts: ${json['type']}',
-            );
-          }
-
-          final event = AlertEvent<T>.fromJson(json, payloadDecoder);
-          await handler(event);
-          return Response.ok('');
-        } on FormatException catch (e) {
-          return Response(400, body: 'Invalid CloudEvent: ${e.message}');
-        } catch (e) {
-          return Response(500, body: 'Error processing alert: $e');
+        if (!_isAlertEvent(json['type'] as String)) {
+          return Response(
+            400,
+            body: 'Invalid event type for alerts: ${json['type']}',
+          );
         }
-      },
-    );
+
+        final event = AlertEvent<T>.fromJson(json, payloadDecoder);
+        await handler(event);
+        return Response.ok('');
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e) {
+        return Response(500, body: 'Error processing alert: $e');
+      }
+    });
   }
 
   String _alertTypeToFunctionName(String alertType) {
