@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 /// Represents a CloudEvents v1.0 event.
 ///
 /// CloudEvents is a specification for describing event data in a common way.
@@ -71,9 +69,8 @@ class CloudEvent<T extends Object?> {
 }
 
 /// Parses a raw CloudEvent JSON string into a Map.
-Map<String, dynamic> parseCloudEventJson(String body) {
+Map<String, dynamic> parseCloudEventJson(Object? decoded) {
   try {
-    final decoded = jsonDecode(body);
     if (decoded is! Map<String, dynamic>) {
       throw FormatException(
         'CloudEvent body must be a JSON object',

@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'alert_event.dart';
 import 'alert_type.dart';
@@ -58,8 +59,8 @@ class BillingNamespace {
       functionName,
       (request) async {
         try {
-          final bodyString = await request.readAsString();
-          final json = parseCloudEventJson(bodyString);
+          final decoded = await jsonStreamDecode(request.read());
+          final json = parseCloudEventJson(decoded);
           validateCloudEvent(json);
 
           if (!_isAlertEvent(json['type'] as String)) {

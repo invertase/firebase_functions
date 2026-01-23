@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'document_snapshot.dart';
 import 'event.dart';
@@ -180,7 +181,7 @@ class FirestoreNamespace extends FunctionsNamespace {
             return Response.ok('');
           } else {
             // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
+            final bodyString = await jsonStreamDecodeMap(request.read());
             final json = parseCloudEventJson(bodyString);
 
             // Validate CloudEvent structure

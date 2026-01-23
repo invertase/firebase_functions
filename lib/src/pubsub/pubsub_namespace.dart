@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'message.dart';
 import 'options.dart';
@@ -44,7 +45,7 @@ class PubSubNamespace extends FunctionsNamespace {
       (request) async {
         try {
           // Read and parse CloudEvent
-          final bodyString = await request.readAsString();
+          final bodyString = await jsonStreamDecodeMap(request.read());
           final json = parseCloudEventJson(bodyString);
 
           // Validate CloudEvent structure

@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'data_snapshot.dart';
 import 'event.dart';
@@ -143,8 +144,8 @@ class DatabaseNamespace extends FunctionsNamespace {
             return Response.ok('');
           } else {
             // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
+            final decoded = await jsonStreamDecode(request.read());
+            final json = parseCloudEventJson(decoded);
             validateCloudEvent(json);
 
             if (!_isCreatedEvent(json['type'] as String)) {
@@ -326,8 +327,8 @@ class DatabaseNamespace extends FunctionsNamespace {
             return Response.ok('');
           } else {
             // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
+            final decoded = await jsonStreamDecode(request.read());
+            final json = parseCloudEventJson(decoded);
             validateCloudEvent(json);
 
             if (!_isUpdatedEvent(json['type'] as String)) {
@@ -502,7 +503,7 @@ class DatabaseNamespace extends FunctionsNamespace {
             return Response.ok('');
           } else {
             // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
+            final bodyString = await jsonStreamDecodeMap(request.read());
             final json = parseCloudEventJson(bodyString);
             validateCloudEvent(json);
 
@@ -701,7 +702,7 @@ class DatabaseNamespace extends FunctionsNamespace {
             return Response.ok('');
           } else {
             // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
+            final bodyString = await jsonStreamDecodeMap(request.read());
             final json = parseCloudEventJson(bodyString);
             validateCloudEvent(json);
 
