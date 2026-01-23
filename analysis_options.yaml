@@ -9,6 +9,9 @@ analyzer:
     missing_required_param: error
     missing_return: error
     todo: ignore
+    # Library names are optional but doc comments before them are cleaner
+    unnecessary_library_name: ignore
+    dangling_library_doc_comments: ignore
 
 linter:
   rules:

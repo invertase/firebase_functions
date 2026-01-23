@@ -19,11 +19,12 @@ void main() {
     setUpAll(() async {
       // Generate the basic example manifest
       print('Generating basic Dart manifest via build_runner...');
-      final buildResult = await Process.run(
-        'dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
-        workingDirectory: 'example/basic',
-      );
+      final buildResult = await Process.run('dart', [
+        'run',
+        'build_runner',
+        'build',
+        '--delete-conflicting-outputs',
+      ], workingDirectory: 'example/basic');
 
       if (buildResult.exitCode != 0) {
         throw Exception(
@@ -136,8 +137,10 @@ void main() {
 
     test('should have Pub/Sub function with correct naming', () {
       final dartFunc = _getEndpoint(dartManifest, 'onMessagePublished_mytopic');
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic');
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onMessagePublished_mytopic',
+      );
 
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
@@ -147,10 +150,14 @@ void main() {
     });
 
     test('should use eventFilters format for Pub/Sub', () {
-      final dartFunc =
-          _getEndpoint(dartManifest, 'onMessagePublished_mytopic')!;
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic')!;
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onMessagePublished_mytopic',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onMessagePublished_mytopic',
+      )!;
 
       final dartTrigger = dartFunc['eventTrigger'] as Map;
       final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
@@ -388,10 +395,14 @@ void main() {
     });
 
     test('should use eventFilterPathPatterns format for Database', () {
-      final dartFunc =
-          _getEndpoint(dartManifest, 'onValueCreated_messages_messageId')!;
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onValueCreated_messages_messageId')!;
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueCreated_messages_messageId',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueCreated_messages_messageId',
+      )!;
 
       final dartTrigger = dartFunc['eventTrigger'] as Map;
       final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
@@ -634,11 +645,12 @@ void main() {
     setUpAll(() async {
       // Generate the options example manifest
       print('Generating options Dart manifest via build_runner...');
-      final buildResult = await Process.run(
-        'dart',
-        ['run', 'build_runner', 'build', '--delete-conflicting-outputs'],
-        workingDirectory: 'example/with_options',
-      );
+      final buildResult = await Process.run('dart', [
+        'run',
+        'build_runner',
+        'build',
+        '--delete-conflicting-outputs',
+      ], workingDirectory: 'example/with_options');
 
       if (buildResult.exitCode != 0) {
         throw Exception(
@@ -778,10 +790,14 @@ void main() {
     });
 
     test('Pub/Sub function should have options in manifest', () {
-      final dartFunc =
-          _getEndpoint(dartManifest, 'onMessagePublished_optionstopic')!;
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onMessagePublished_optionstopic')!;
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onMessagePublished_optionstopic',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onMessagePublished_optionstopic',
+      )!;
 
       expect(dartFunc['availableMemoryMb'], equals(256));
       expect(nodejsFunc['availableMemoryMb'], equals(256));
@@ -825,12 +841,13 @@ Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
 ///
 /// The yaml package returns YamlMap and YamlList which aren't directly
 /// JSON-encodable. This function recursively converts them to regular
-/// Map<String, dynamic> and List<dynamic>.
+/// `Map<String, dynamic>` and `List<dynamic>`.
 dynamic _yamlToJson(dynamic value) {
   if (value is Map) {
     return Map<String, dynamic>.fromEntries(
-      value.entries
-          .map((e) => MapEntry(e.key.toString(), _yamlToJson(e.value))),
+      value.entries.map(
+        (e) => MapEntry(e.key.toString(), _yamlToJson(e.value)),
+      ),
     );
   } else if (value is List) {
     return value.map(_yamlToJson).toList();

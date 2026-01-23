@@ -56,10 +56,7 @@ void main() {
         final payload = base64Url
             .encode(
               utf8.encode(
-                jsonEncode({
-                  'sub': 'test-user',
-                  'event_type': 'beforeSignIn',
-                }),
+                jsonEncode({'sub': 'test-user', 'event_type': 'beforeSignIn'}),
               ),
             )
             .replaceAll('=', '');
@@ -176,8 +173,9 @@ String _createTestJwt(Map<String, dynamic> payload) {
   final header = base64Url
       .encode(utf8.encode(jsonEncode({'alg': 'RS256', 'kid': 'test'})))
       .replaceAll('=', '');
-  final payloadEncoded =
-      base64Url.encode(utf8.encode(jsonEncode(payload))).replaceAll('=', '');
+  final payloadEncoded = base64Url
+      .encode(utf8.encode(jsonEncode(payload)))
+      .replaceAll('=', '');
   return '$header.$payloadEncoded.fake-signature';
 }
 

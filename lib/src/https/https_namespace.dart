@@ -35,29 +35,25 @@ class HttpsNamespace extends FunctionsNamespace {
     // ignore: experimental_member_use
     @mustBeConst HttpsOptions? options = const HttpsOptions(),
   }) {
-    firebase.registerFunction(
-      name,
-      (request) async {
-        try {
-          return await handler(request);
-        } on HttpsError catch (e) {
-          return Response(
-            e.httpStatusCode,
-            body: jsonEncode(e.toErrorResponse()),
-            headers: {'Content-Type': 'application/json'},
-          );
-        } catch (e) {
-          // Unexpected error - return internal error
-          final error = InternalError(e.toString());
-          return Response(
-            error.httpStatusCode,
-            body: jsonEncode(error.toErrorResponse()),
-            headers: {'Content-Type': 'application/json'},
-          );
-        }
-      },
-      external: true,
-    );
+    firebase.registerFunction(name, (request) async {
+      try {
+        return await handler(request);
+      } on HttpsError catch (e) {
+        return Response(
+          e.httpStatusCode,
+          body: jsonEncode(e.toErrorResponse()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      } catch (e) {
+        // Unexpected error - return internal error
+        final error = InternalError(e.toString());
+        return Response(
+          error.httpStatusCode,
+          body: jsonEncode(error.toErrorResponse()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+    }, external: true);
   }
 
   /// Creates an HTTPS callable function (untyped data).
@@ -79,37 +75,35 @@ class HttpsNamespace extends FunctionsNamespace {
     Future<CallableResult<T>> Function(
       CallableRequest<Object?> request,
       CallableResponse<T> response,
-    ) handler, {
+    )
+    handler, {
     // ignore: experimental_member_use
     @mustBeConst required String name,
     // ignore: experimental_member_use
     @mustBeConst CallableOptions? options = const CallableOptions(),
   }) {
-    firebase.registerFunction(
-      name,
-      (request) async {
-        final bodyString = await request.change().readAsString();
-        Map<String, dynamic>? body;
-        if (bodyString.isNotEmpty) {
-          try {
-            body = jsonDecode(bodyString) as Map<String, dynamic>;
-          } catch (_) {
-            // Invalid JSON - body stays null, validation will fail
-          }
+    firebase.registerFunction(name, (request) async {
+      final bodyString = await request.change().readAsString();
+      Map<String, dynamic>? body;
+      if (bodyString.isNotEmpty) {
+        try {
+          body = jsonDecode(bodyString) as Map<String, dynamic>;
+        } catch (_) {
+          // Invalid JSON - body stays null, validation will fail
         }
-        final callableRequest = CallableRequest(request, body?['data'], null);
+      }
+      final callableRequest = CallableRequest(request, body?['data'], null);
 
-        return _handleCallable<Object?, T, CallableResult<T>>(
-          request,
-          callableRequest,
-          body,
-          options,
-          handler,
-          (result) => result.data,
-          (result) => result.toResponse(),
-        );
-      },
-    );
+      return _handleCallable<Object?, T, CallableResult<T>>(
+        request,
+        callableRequest,
+        body,
+        options,
+        handler,
+        (result) => result.data,
+        (result) => result.toResponse(),
+      );
+    });
   }
 
   /// Creates an HTTPS callable function with typed data.
@@ -137,45 +131,46 @@ class HttpsNamespace extends FunctionsNamespace {
     Future<Output> Function(
       CallableRequest<Input> request,
       CallableResponse<Output> response,
-    ) handler, {
+    )
+    handler, {
     required Input Function(Map<String, dynamic>) fromJson,
     // ignore: experimental_member_use
     @mustBeConst required String name,
     // ignore: experimental_member_use
     @mustBeConst CallableOptions? options = const CallableOptions(),
   }) {
-    firebase.registerFunction(
-      name,
-      (request) async {
-        final body = await request.json as Map<String, dynamic>?;
-        final callableRequest = CallableRequest<Input>(
-          request,
-          body?['data'],
-          fromJson,
-        );
+    firebase.registerFunction(name, (request) async {
+      final body = await request.json as Map<String, dynamic>?;
+      final callableRequest = CallableRequest<Input>(
+        request,
+        body?['data'],
+        fromJson,
+      );
 
-        return _handleCallable<Input, Output, Output>(
-          request,
-          callableRequest,
-          body,
-          options,
-          handler,
-          (result) => result,
-          (result) => Response.ok(
-            jsonEncode({'result': result}),
-            headers: {'Content-Type': 'application/json'},
-          ),
-        );
-      },
-    );
+      return _handleCallable<Input, Output, Output>(
+        request,
+        callableRequest,
+        body,
+        options,
+        handler,
+        (result) => result,
+        (result) => Response.ok(
+          jsonEncode({'result': result}),
+          headers: {'Content-Type': 'application/json'},
+        ),
+      );
+    });
   }
 
   /// Internal handler for callable functions.
   ///
   /// Handles both streaming and non-streaming responses, error handling,
   /// and request validation.
-  Future<Response> _handleCallable<Req extends Object?,
-      StreamType extends Object, Res extends Object>(
+  Future<Response> _handleCallable<
+    Req extends Object?,
+    StreamType extends Object,
+    Res extends Object
+  >(
     Request request,
     CallableRequest<Req> callableRequest,
     Map<String, dynamic>? body,
@@ -183,7 +178,8 @@ class HttpsNamespace extends FunctionsNamespace {
     Future<Res> Function(
       CallableRequest<Req> request,
       CallableResponse<StreamType> response,
-    ) handler,
+    )
+    handler,
     dynamic Function(Res result) extractResultData,
     Response Function(Res result) createNonStreamingResponse,
   ) async {

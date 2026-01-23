@@ -44,8 +44,10 @@ void main() {
         );
 
         final func = _findFunction(firebase, 'testFunction')!;
-        final request =
-            Request('GET', Uri.parse('http://localhost/testFunction'));
+        final request = Request(
+          'GET',
+          Uri.parse('http://localhost/testFunction'),
+        );
         final response = await func.handler(request);
 
         expect(response.statusCode, 200);
@@ -53,16 +55,15 @@ void main() {
       });
 
       test('catches HttpsError and returns proper error response', () async {
-        https.onRequest(
-          name: 'errorFunction',
-          (request) async {
-            throw NotFoundError('Resource not found');
-          },
-        );
+        https.onRequest(name: 'errorFunction', (request) async {
+          throw NotFoundError('Resource not found');
+        });
 
         final func = _findFunction(firebase, 'errorFunction')!;
-        final request =
-            Request('GET', Uri.parse('http://localhost/errorFunction'));
+        final request = Request(
+          'GET',
+          Uri.parse('http://localhost/errorFunction'),
+        );
         final response = await func.handler(request);
 
         expect(response.statusCode, 404);
@@ -74,16 +75,15 @@ void main() {
       });
 
       test('catches unexpected errors and returns internal error', () async {
-        https.onRequest(
-          name: 'crashFunction',
-          (request) async {
-            throw Exception('Unexpected crash');
-          },
-        );
+        https.onRequest(name: 'crashFunction', (request) async {
+          throw Exception('Unexpected crash');
+        });
 
         final func = _findFunction(firebase, 'crashFunction')!;
-        final request =
-            Request('GET', Uri.parse('http://localhost/crashFunction'));
+        final request = Request(
+          'GET',
+          Uri.parse('http://localhost/crashFunction'),
+        );
         final response = await func.handler(request);
 
         expect(response.statusCode, 500);
@@ -104,12 +104,9 @@ void main() {
       });
 
       test('uses correct HTTP status codes for different errors', () async {
-        https.onRequest(
-          name: 'unauthorizedFunction',
-          (request) async {
-            throw UnauthenticatedError('Not logged in');
-          },
-        );
+        https.onRequest(name: 'unauthorizedFunction', (request) async {
+          throw UnauthenticatedError('Not logged in');
+        });
 
         final func = _findFunction(firebase, 'unauthorizedFunction')!;
         final request = Request('GET', Uri.parse('http://localhost/test'));
@@ -128,10 +125,7 @@ void main() {
         return Request(
           'POST',
           Uri.parse('http://localhost/testFunction'),
-          headers: {
-            'content-type': 'application/json',
-            ...headers,
-          },
+          headers: {'content-type': 'application/json', ...headers},
           body: body,
         );
       }
@@ -146,14 +140,11 @@ void main() {
       });
 
       test('handler returns wrapped result', () async {
-        https.onCall(
-          name: 'greetFunction',
-          (request, response) async {
-            final data = request.data as Map<String, dynamic>;
-            final name = data['name'] as String;
-            return CallableResult({'message': 'Hello, $name!'});
-          },
-        );
+        https.onCall(name: 'greetFunction', (request, response) async {
+          final data = request.data as Map<String, dynamic>;
+          final name = data['name'] as String;
+          return CallableResult({'message': 'Hello, $name!'});
+        });
 
         final func = _findFunction(firebase, 'greetFunction')!;
         final request = createCallableRequest(data: {'name': 'World'});
@@ -204,12 +195,9 @@ void main() {
       });
 
       test('catches HttpsError and returns proper status', () async {
-        https.onCall(
-          name: 'errorFunction',
-          (request, response) async {
-            throw PermissionDeniedError('Not authorized');
-          },
-        );
+        https.onCall(name: 'errorFunction', (request, response) async {
+          throw PermissionDeniedError('Not authorized');
+        });
 
         final func = _findFunction(firebase, 'errorFunction')!;
         final request = createCallableRequest();
@@ -222,12 +210,9 @@ void main() {
       });
 
       test('catches unexpected errors as internal errors', () async {
-        https.onCall(
-          name: 'crashFunction',
-          (request, response) async {
-            throw StateError('Something broke');
-          },
-        );
+        https.onCall(name: 'crashFunction', (request, response) async {
+          throw StateError('Something broke');
+        });
 
         final func = _findFunction(firebase, 'crashFunction')!;
         final request = createCallableRequest();
@@ -239,12 +224,9 @@ void main() {
       });
 
       test('returns JSON when client does not accept SSE', () async {
-        https.onCall(
-          name: 'nonStreamFunction',
-          (request, response) async {
-            return CallableResult('result');
-          },
-        );
+        https.onCall(name: 'nonStreamFunction', (request, response) async {
+          return CallableResult('result');
+        });
 
         final func = _findFunction(firebase, 'nonStreamFunction')!;
         final request = createCallableRequest();
@@ -258,12 +240,9 @@ void main() {
       });
 
       test('JsonResult returns Map data correctly', () async {
-        https.onCall(
-          name: 'jsonResultFunction',
-          (request, response) async {
-            return JsonResult({'status': 'ok', 'count': 42});
-          },
-        );
+        https.onCall(name: 'jsonResultFunction', (request, response) async {
+          return JsonResult({'status': 'ok', 'count': 42});
+        });
 
         final func = _findFunction(firebase, 'jsonResultFunction')!;
         final request = createCallableRequest();
@@ -283,10 +262,7 @@ void main() {
         return Request(
           'POST',
           Uri.parse('http://localhost/testFunction'),
-          headers: {
-            'content-type': 'application/json',
-            ...headers,
-          },
+          headers: {'content-type': 'application/json', ...headers},
           body: body,
         );
       }
@@ -384,9 +360,7 @@ void main() {
       test('HttpsOptions can be provided', () {
         https.onRequest(
           name: 'optionsFunction',
-          options: const HttpsOptions(
-            cors: Cors(['https://example.com']),
-          ),
+          options: const HttpsOptions(cors: Cors(['https://example.com'])),
           (request) async => Response.ok('OK'),
         );
 

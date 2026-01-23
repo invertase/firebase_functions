@@ -192,25 +192,25 @@ sealed class Memory extends DeployOption<int> {
 
 final class _MemoryLiteral extends OptionLiteral<int> implements Memory {
   const _MemoryLiteral(MemoryOption value)
-      : super(
-          identical(value, MemoryOption.mb128)
-              ? 128
-              : identical(value, MemoryOption.mb256)
-                  ? 256
-                  : identical(value, MemoryOption.mb512)
-                      ? 512
-                      : identical(value, MemoryOption.gb1)
-                          ? 1024
-                          : identical(value, MemoryOption.gb2)
-                              ? 2048
-                              : identical(value, MemoryOption.gb4)
-                                  ? 4096
-                                  : identical(value, MemoryOption.gb8)
-                                      ? 8192
-                                      : identical(value, MemoryOption.gb16)
-                                          ? 16384
-                                          : 32768,
-        );
+    : super(
+        identical(value, MemoryOption.mb128)
+            ? 128
+            : identical(value, MemoryOption.mb256)
+            ? 256
+            : identical(value, MemoryOption.mb512)
+            ? 512
+            : identical(value, MemoryOption.gb1)
+            ? 1024
+            : identical(value, MemoryOption.gb2)
+            ? 2048
+            : identical(value, MemoryOption.gb4)
+            ? 4096
+            : identical(value, MemoryOption.gb8)
+            ? 8192
+            : identical(value, MemoryOption.gb16)
+            ? 16384
+            : 32768,
+      );
 
   _MemoryLiteral.fromOption(MemoryOption value) : super(value.value);
   _MemoryLiteral.fromInt(super.value);

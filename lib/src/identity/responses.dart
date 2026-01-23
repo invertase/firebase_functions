@@ -27,34 +27,30 @@ sealed class BeforeResponse {
 
 /// The handler response type for `beforeEmailSent` blocking events.
 class BeforeEmailResponse extends BeforeResponse {
-  const BeforeEmailResponse({
-    this.recaptchaActionOverride,
-  });
+  const BeforeEmailResponse({this.recaptchaActionOverride});
 
   /// Override the reCAPTCHA action.
   final RecaptchaActionOptions? recaptchaActionOverride;
 
   @override
   Map<String, dynamic> toJson() => {
-        if (recaptchaActionOverride != null)
-          'recaptchaActionOverride': recaptchaActionOverride!.value,
-      };
+    if (recaptchaActionOverride != null)
+      'recaptchaActionOverride': recaptchaActionOverride!.value,
+  };
 }
 
 /// The handler response type for `beforeSmsSent` blocking events.
 class BeforeSmsResponse extends BeforeResponse {
-  const BeforeSmsResponse({
-    this.recaptchaActionOverride,
-  });
+  const BeforeSmsResponse({this.recaptchaActionOverride});
 
   /// Override the reCAPTCHA action.
   final RecaptchaActionOptions? recaptchaActionOverride;
 
   @override
   Map<String, dynamic> toJson() => {
-        if (recaptchaActionOverride != null)
-          'recaptchaActionOverride': recaptchaActionOverride!.value,
-      };
+    if (recaptchaActionOverride != null)
+      'recaptchaActionOverride': recaptchaActionOverride!.value,
+  };
 }
 
 /// The handler response type for `beforeUserCreated` blocking events.
@@ -88,14 +84,14 @@ class BeforeCreateResponse extends BeforeResponse {
 
   @override
   Map<String, dynamic> toJson() => {
-        if (displayName != null) 'displayName': displayName,
-        if (disabled != null) 'disabled': disabled,
-        if (emailVerified != null) 'emailVerified': emailVerified,
-        if (photoURL != null) 'photoURL': photoURL,
-        if (customClaims != null) 'customClaims': customClaims,
-        if (recaptchaActionOverride != null)
-          'recaptchaActionOverride': recaptchaActionOverride!.value,
-      };
+    if (displayName != null) 'displayName': displayName,
+    if (disabled != null) 'disabled': disabled,
+    if (emailVerified != null) 'emailVerified': emailVerified,
+    if (photoURL != null) 'photoURL': photoURL,
+    if (customClaims != null) 'customClaims': customClaims,
+    if (recaptchaActionOverride != null)
+      'recaptchaActionOverride': recaptchaActionOverride!.value,
+  };
 }
 
 /// The handler response type for `beforeUserSignedIn` blocking events.
@@ -115,17 +111,14 @@ class BeforeSignInResponse extends BeforeCreateResponse {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        if (sessionClaims != null) 'sessionClaims': sessionClaims,
-      };
+    ...super.toJson(),
+    if (sessionClaims != null) 'sessionClaims': sessionClaims,
+  };
 }
 
 /// Internal class used when generating the response payload.
 class ResponsePayload {
-  const ResponsePayload({
-    this.userRecord,
-    this.recaptchaActionOverride,
-  });
+  const ResponsePayload({this.userRecord, this.recaptchaActionOverride});
 
   /// The user record response.
   final UserRecordResponsePayload? userRecord;

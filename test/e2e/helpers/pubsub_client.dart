@@ -55,8 +55,9 @@ class PubSubClient {
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final messageIds =
-        (body['messageIds'] as List<dynamic>).map((e) => e as String).toList();
+    final messageIds = (body['messageIds'] as List<dynamic>)
+        .map((e) => e as String)
+        .toList();
 
     return PubSubPublishResponse(messageIds);
   }
@@ -80,9 +81,7 @@ class PubSubClient {
     final response = await _client.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'messages': encodedMessages,
-      }),
+      body: jsonEncode({'messages': encodedMessages}),
     );
 
     if (response.statusCode != 200) {
@@ -92,8 +91,9 @@ class PubSubClient {
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final messageIds =
-        (body['messageIds'] as List<dynamic>).map((e) => e as String).toList();
+    final messageIds = (body['messageIds'] as List<dynamic>)
+        .map((e) => e as String)
+        .toList();
 
     return PubSubPublishResponse(messageIds);
   }
