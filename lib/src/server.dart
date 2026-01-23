@@ -234,10 +234,8 @@ FutureOr<Response> _routeByPath(
   // For POST requests, check if this is a CloudEvent first (binary or structured mode)
   // CloudEvents have all the routing info in headers, so check those before path parsing
   if (request.method.toUpperCase() == 'POST') {
-    final (
-      reconstructedRequest,
-      matchedFunction,
-    ) = await _tryMatchCloudEventFunction(request, functions);
+    final (reconstructedRequest, matchedFunction) =
+        await _tryMatchCloudEventFunction(request, functions);
     if (matchedFunction != null) {
       // Use the recreated request with the body since we consumed the original
       // Wrap with onInit to ensure initialization callback runs before first execution
@@ -364,8 +362,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
           );
 
           // For structured mode, recreate request with body; for binary mode, use original
-          final newRequest =
-              bodyString != null ? request.change(body: bodyString) : request;
+          final newRequest = bodyString != null
+              ? request.change(body: bodyString)
+              : request;
           return (newRequest, function);
         }
       }
@@ -417,10 +416,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
                   );
 
                   // For structured mode, recreate request with body; for binary mode, use original
-                  final newRequest =
-                      bodyString != null
-                          ? request.change(body: bodyString)
-                          : request;
+                  final newRequest = bodyString != null
+                      ? request.change(body: bodyString)
+                      : request;
                   return (newRequest, function);
                 }
               }
@@ -469,10 +467,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
                   );
 
                   // For structured mode, recreate request with body; for binary mode, use original
-                  final newRequest =
-                      bodyString != null
-                          ? request.change(body: bodyString)
-                          : request;
+                  final newRequest = bodyString != null
+                      ? request.change(body: bodyString)
+                      : request;
                   return (newRequest, function);
                 }
               }
@@ -485,8 +482,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
     // TODO: Add support for other CloudEvent types (Storage, Auth, etc.)
 
     // No CloudEvent function matched - return reconstructed request if we read the body
-    final finalRequest =
-        bodyString != null ? request.change(body: bodyString) : request;
+    final finalRequest = bodyString != null
+        ? request.change(body: bodyString)
+        : request;
     return (finalRequest, null);
   } catch (e) {
     print('Failed to parse CloudEvent for function matching: $e');

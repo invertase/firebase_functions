@@ -190,16 +190,15 @@ class EmulatorHelper {
     }
 
     // Try common locations
-    final candidates =
-        [
-          'firebase', // In PATH
-          'npx firebase', // Via npx
-          '/usr/local/bin/firebase',
-          if (Platform.environment['HOME'] != null)
-            '${Platform.environment['HOME']}/.npm-global/bin/firebase'
-          else
-            null,
-        ].where((c) => c != null).cast<String>();
+    final candidates = [
+      'firebase', // In PATH
+      'npx firebase', // Via npx
+      '/usr/local/bin/firebase',
+      if (Platform.environment['HOME'] != null)
+        '${Platform.environment['HOME']}/.npm-global/bin/firebase'
+      else
+        null,
+    ].where((c) => c != null).cast<String>();
 
     for (final cmd in candidates) {
       try {

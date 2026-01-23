@@ -709,12 +709,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts timeZone from ScheduleOptions.
   String? _extractSchedulerTimeZone(InstanceCreationExpression node) {
-    final timeZoneArg =
-        node.argumentList.arguments
-            .whereType<NamedExpression>()
-            .where((e) => e.name.label.name == 'timeZone')
-            .map((e) => e.expression)
-            .firstOrNull;
+    final timeZoneArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'timeZone')
+        .map((e) => e.expression)
+        .firstOrNull;
 
     if (timeZoneArg is InstanceCreationExpression) {
       // TimeZone('America/New_York')
@@ -728,12 +727,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts RetryConfig from ScheduleOptions.
   Map<String, dynamic>? _extractRetryConfig(InstanceCreationExpression node) {
-    final retryConfigArg =
-        node.argumentList.arguments
-            .whereType<NamedExpression>()
-            .where((e) => e.name.label.name == 'retryConfig')
-            .map((e) => e.expression)
-            .firstOrNull;
+    final retryConfigArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'retryConfig')
+        .map((e) => e.expression)
+        .firstOrNull;
 
     if (retryConfigArg is! InstanceCreationExpression) return null;
 
@@ -767,12 +765,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts a boolean field from an InstanceCreationExpression.
   bool? _extractBoolField(InstanceCreationExpression node, String fieldName) {
-    final arg =
-        node.argumentList.arguments
-            .whereType<NamedExpression>()
-            .where((e) => e.name.label.name == fieldName)
-            .map((e) => e.expression)
-            .firstOrNull;
+    final arg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == fieldName)
+        .map((e) => e.expression)
+        .firstOrNull;
 
     if (arg is BooleanLiteral) {
       return arg.value;
@@ -884,12 +881,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Finds a named argument in a method invocation.
-  Expression? _findNamedArg(MethodInvocation node, String name) =>
-      node.argumentList.arguments
-          .whereType<NamedExpression>()
-          .where((e) => e.name.label.name == name)
-          .map((e) => e.expression)
-          .firstOrNull;
+  Expression? _findNamedArg(MethodInvocation node, String name) => node
+      .argumentList
+      .arguments
+      .whereType<NamedExpression>()
+      .where((e) => e.name.label.name == name)
+      .map((e) => e.expression)
+      .firstOrNull;
 
   /// Extracts a string literal value.
   String? _extractStringLiteral(Expression expression) {
@@ -923,12 +921,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts the defaultValue field.
   dynamic _extractDefaultValue(InstanceCreationExpression node) {
-    final defaultValueArg =
-        node.argumentList.arguments
-            .whereType<NamedExpression>()
-            .where((e) => e.name.label.name == 'defaultValue')
-            .map((e) => e.expression)
-            .firstOrNull;
+    final defaultValueArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'defaultValue')
+        .map((e) => e.expression)
+        .firstOrNull;
 
     if (defaultValueArg == null) return null;
 
@@ -939,14 +936,13 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   String? _extractStringField(
     InstanceCreationExpression node,
     String fieldName,
-  ) =>
-      node.argumentList.arguments
-          .whereType<NamedExpression>()
-          .where((e) => e.name.label.name == fieldName)
-          .map((e) => e.expression)
-          .whereType<StringLiteral>()
-          .map((e) => e.stringValue!)
-          .firstOrNull;
+  ) => node.argumentList.arguments
+      .whereType<NamedExpression>()
+      .where((e) => e.name.label.name == fieldName)
+      .map((e) => e.expression)
+      .whereType<StringLiteral>()
+      .map((e) => e.stringValue!)
+      .firstOrNull;
 
   /// Extracts a constant value from an expression.
   dynamic _extractConstValue(Expression expression) {
@@ -1779,10 +1775,9 @@ String _generateYaml(
 
         // Both ref and instance go in eventFilterPathPatterns
         // The ref path should not have a leading slash to match Node.js format
-        final normalizedRef =
-            endpoint.refPath!.startsWith('/')
-                ? endpoint.refPath!.substring(1)
-                : endpoint.refPath!;
+        final normalizedRef = endpoint.refPath!.startsWith('/')
+            ? endpoint.refPath!.substring(1)
+            : endpoint.refPath!;
         buffer.writeln('      eventFilterPathPatterns:');
         buffer.writeln('        ref: "$normalizedRef"');
         buffer.writeln('        instance: "${endpoint.instance ?? '*'}"');

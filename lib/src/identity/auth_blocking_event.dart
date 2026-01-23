@@ -95,17 +95,13 @@ class Credential {
       idToken: json['oauth_id_token'] as String?,
       accessToken: json['oauth_access_token'] as String?,
       refreshToken: json['oauth_refresh_token'] as String?,
-      expirationTime:
-          expiresIn != null
-              ? DateTime.fromMillisecondsSinceEpoch(
-                timestamp + expiresIn * 1000,
-              )
-              : null,
+      expirationTime: expiresIn != null
+          ? DateTime.fromMillisecondsSinceEpoch(timestamp + expiresIn * 1000)
+          : null,
       secret: json['oauth_token_secret'] as String?,
-      providerId:
-          json['sign_in_method'] == 'emailLink'
-              ? 'password'
-              : json['sign_in_method'] as String? ?? '',
+      providerId: json['sign_in_method'] == 'emailLink'
+          ? 'password'
+          : json['sign_in_method'] as String? ?? '',
       signInMethod: json['sign_in_method'] as String? ?? '',
     );
   }
@@ -189,10 +185,9 @@ class AdditionalUserInfo {
     final eventType = json['event_type'] as String?;
 
     return AdditionalUserInfo(
-      providerId:
-          json['sign_in_method'] == 'emailLink'
-              ? 'password'
-              : json['sign_in_method'] as String?,
+      providerId: json['sign_in_method'] == 'emailLink'
+          ? 'password'
+          : json['sign_in_method'] as String?,
       profile: profile,
       username: username,
       isNewUser: eventType == 'beforeCreate',

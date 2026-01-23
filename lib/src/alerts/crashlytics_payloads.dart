@@ -156,13 +156,11 @@ class StabilityDigestPayload {
   factory StabilityDigestPayload.fromJson(Map<String, dynamic> json) =>
       StabilityDigestPayload(
         digestDate: DateTime.parse(json['digestDate'] as String),
-        trendingIssues:
-            (json['trendingIssues'] as List)
-                .map(
-                  (e) =>
-                      TrendingIssueDetails.fromJson(e as Map<String, dynamic>),
-                )
-                .toList(),
+        trendingIssues: (json['trendingIssues'] as List)
+            .map(
+              (e) => TrendingIssueDetails.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
       );
 
   /// The date that the digest was created.

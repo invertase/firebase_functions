@@ -55,8 +55,9 @@ class PubSubClient {
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final messageIds =
-        (body['messageIds'] as List<dynamic>).map((e) => e as String).toList();
+    final messageIds = (body['messageIds'] as List<dynamic>)
+        .map((e) => e as String)
+        .toList();
 
     return PubSubPublishResponse(messageIds);
   }
@@ -70,13 +71,12 @@ class PubSubClient {
       '$baseUrl/v1/projects/$projectId/topics/$topic:publish',
     );
 
-    final encodedMessages =
-        messages.map((msg) {
-          return <String, dynamic>{
-            'data': base64Encode(utf8.encode(msg.data)),
-            if (msg.attributes.isNotEmpty) 'attributes': msg.attributes,
-          };
-        }).toList();
+    final encodedMessages = messages.map((msg) {
+      return <String, dynamic>{
+        'data': base64Encode(utf8.encode(msg.data)),
+        if (msg.attributes.isNotEmpty) 'attributes': msg.attributes,
+      };
+    }).toList();
 
     final response = await _client.post(
       url,
@@ -91,8 +91,9 @@ class PubSubClient {
     }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final messageIds =
-        (body['messageIds'] as List<dynamic>).map((e) => e as String).toList();
+    final messageIds = (body['messageIds'] as List<dynamic>)
+        .map((e) => e as String)
+        .toList();
 
     return PubSubPublishResponse(messageIds);
   }

@@ -341,10 +341,9 @@ class IdentityNamespace extends FunctionsNamespace {
     if (authResponse is BeforeCreateResponse) {
       final customClaims = authResponse.customClaims;
       if (customClaims != null) {
-        final invalidClaims =
-            disallowedClaims
-                .where((claim) => customClaims.containsKey(claim))
-                .toList();
+        final invalidClaims = disallowedClaims
+            .where((claim) => customClaims.containsKey(claim))
+            .toList();
         if (invalidClaims.isNotEmpty) {
           throw InvalidArgumentError(
             'The customClaims claims "${invalidClaims.join(",")}" are reserved '
@@ -363,10 +362,9 @@ class IdentityNamespace extends FunctionsNamespace {
     if (authResponse is BeforeSignInResponse) {
       final sessionClaims = authResponse.sessionClaims;
       if (sessionClaims != null) {
-        final invalidClaims =
-            disallowedClaims
-                .where((claim) => sessionClaims.containsKey(claim))
-                .toList();
+        final invalidClaims = disallowedClaims
+            .where((claim) => sessionClaims.containsKey(claim))
+            .toList();
         if (invalidClaims.isNotEmpty) {
           throw InvalidArgumentError(
             'The sessionClaims claims "${invalidClaims.join(",")}" are reserved '

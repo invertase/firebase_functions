@@ -451,8 +451,9 @@ extension RequestValidation on Request {
       return false;
     }
 
-    final extraKeys =
-        requestBody.keys.where((field) => field != 'data').toList();
+    final extraKeys = requestBody.keys
+        .where((field) => field != 'data')
+        .toList();
     if (extraKeys.isNotEmpty) {
       return false;
     }

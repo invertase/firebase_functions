@@ -33,18 +33,16 @@ void main() {
       }
 
       // Read Dart-generated YAML
-      final dartYaml =
-          File(
-            'example/basic/.dart_tool/firebase/functions.yaml',
-          ).readAsStringSync();
+      final dartYaml = File(
+        'example/basic/.dart_tool/firebase/functions.yaml',
+      ).readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
       // Read Node.js reference JSON
-      final nodejsJson =
-          File(
-            'example/nodejs_reference/nodejs_manifest.json',
-          ).readAsStringSync();
+      final nodejsJson = File(
+        'example/nodejs_reference/nodejs_manifest.json',
+      ).readAsStringSync();
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });
 
@@ -152,10 +150,14 @@ void main() {
     });
 
     test('should use eventFilters format for Pub/Sub', () {
-      final dartFunc =
-          _getEndpoint(dartManifest, 'onMessagePublished_mytopic')!;
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onMessagePublished_mytopic')!;
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onMessagePublished_mytopic',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onMessagePublished_mytopic',
+      )!;
 
       final dartTrigger = dartFunc['eventTrigger'] as Map;
       final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
@@ -393,10 +395,14 @@ void main() {
     });
 
     test('should use eventFilterPathPatterns format for Database', () {
-      final dartFunc =
-          _getEndpoint(dartManifest, 'onValueCreated_messages_messageId')!;
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onValueCreated_messages_messageId')!;
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onValueCreated_messages_messageId',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onValueCreated_messages_messageId',
+      )!;
 
       final dartTrigger = dartFunc['eventTrigger'] as Map;
       final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
@@ -653,18 +659,16 @@ void main() {
       }
 
       // Read Dart-generated YAML
-      final dartYaml =
-          File(
-            'example/with_options/.dart_tool/firebase/functions.yaml',
-          ).readAsStringSync();
+      final dartYaml = File(
+        'example/with_options/.dart_tool/firebase/functions.yaml',
+      ).readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
       // Read Node.js reference JSON
-      final nodejsJson =
-          File(
-            'example/with_options_nodejs/nodejs_manifest.json',
-          ).readAsStringSync();
+      final nodejsJson = File(
+        'example/with_options_nodejs/nodejs_manifest.json',
+      ).readAsStringSync();
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });
 
@@ -786,10 +790,14 @@ void main() {
     });
 
     test('Pub/Sub function should have options in manifest', () {
-      final dartFunc =
-          _getEndpoint(dartManifest, 'onMessagePublished_optionstopic')!;
-      final nodejsFunc =
-          _getEndpoint(nodejsManifest, 'onMessagePublished_optionstopic')!;
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onMessagePublished_optionstopic',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onMessagePublished_optionstopic',
+      )!;
 
       expect(dartFunc['availableMemoryMb'], equals(256));
       expect(nodejsFunc['availableMemoryMb'], equals(256));

@@ -13,10 +13,9 @@ class AlertData<T extends Object?> {
     T Function(Map<String, dynamic>) payloadDecoder,
   ) => AlertData<T>(
     createTime: DateTime.parse(json['createTime'] as String),
-    endTime:
-        json['endTime'] != null
-            ? DateTime.parse(json['endTime'] as String)
-            : null,
+    endTime: json['endTime'] != null
+        ? DateTime.parse(json['endTime'] as String)
+        : null,
     payload: payloadDecoder(json['payload'] as Map<String, dynamic>),
   );
 

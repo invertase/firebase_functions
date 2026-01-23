@@ -22,13 +22,14 @@ class ThresholdAlertPayload {
     final rawConditionPercentile = json['conditionPercentile'] as int?;
     final conditionPercentile =
         (rawConditionPercentile == null || rawConditionPercentile == 0)
-            ? null
-            : rawConditionPercentile;
+        ? null
+        : rawConditionPercentile;
 
     // Handle appVersion: omit if empty or missing
     final rawAppVersion = json['appVersion'] as String?;
-    final appVersion =
-        (rawAppVersion == null || rawAppVersion.isEmpty) ? null : rawAppVersion;
+    final appVersion = (rawAppVersion == null || rawAppVersion.isEmpty)
+        ? null
+        : rawAppVersion;
 
     return ThresholdAlertPayload(
       eventName: json['eventName'] as String,

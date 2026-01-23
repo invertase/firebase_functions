@@ -160,12 +160,11 @@ class AuthBlockingTokenVerifier {
   /// Converts a PEM X.509 certificate to a JsonWebKey.
   JsonWebKey? _pemToJwk(String pemCert, String kid) {
     // Remove PEM headers and decode base64
-    final certBase64 =
-        pemCert
-            .replaceAll('-----BEGIN CERTIFICATE-----', '')
-            .replaceAll('-----END CERTIFICATE-----', '')
-            .replaceAll('\n', '')
-            .trim();
+    final certBase64 = pemCert
+        .replaceAll('-----BEGIN CERTIFICATE-----', '')
+        .replaceAll('-----END CERTIFICATE-----', '')
+        .replaceAll('\n', '')
+        .trim();
 
     final certBytes = base64.decode(certBase64);
 
@@ -340,8 +339,9 @@ class AuthBlockingTokenVerifier {
     }
 
     // Remove leading zero byte if present (from positive number encoding)
-    final trimmedBytes =
-        bytes.isNotEmpty && bytes[0] == 0 ? bytes.sublist(1) : bytes;
+    final trimmedBytes = bytes.isNotEmpty && bytes[0] == 0
+        ? bytes.sublist(1)
+        : bytes;
 
     return base64Url.encode(trimmedBytes).replaceAll('=', '');
   }

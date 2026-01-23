@@ -732,8 +732,8 @@ class EnumListParam<T extends Enum> extends Param<List<T>> {
         for (final stringValue in parsed) {
           final enumValue = enumValues.firstWhere(
             (e) => e.name == stringValue,
-            orElse:
-                () => throw FormatException('Invalid enum value: $stringValue'),
+            orElse: () =>
+                throw FormatException('Invalid enum value: $stringValue'),
           );
           result.add(enumValue);
         }
@@ -759,10 +759,9 @@ class EnumListParam<T extends Enum> extends Param<List<T>> {
     input:
         options?.input ??
         _EnumSelectParamInput<T>(
-          options:
-              enumValues
-                  .map((e) => SelectOption(value: e, label: e.name))
-                  .toList(),
+          options: enumValues
+              .map((e) => SelectOption(value: e, label: e.name))
+              .toList(),
         ),
     defaultValue: options?.defaultValue,
   );
@@ -859,10 +858,9 @@ sealed class ParamInput<T extends Object> {
   static MultiSelectParamInput multiSelectWithLabels(
     Map<String, String> optionsWithLabels,
   ) => MultiSelectParamInput(
-    options:
-        optionsWithLabels.entries
-            .map((entry) => SelectOption(value: entry.value, label: entry.key))
-            .toList(),
+    options: optionsWithLabels.entries
+        .map((entry) => SelectOption(value: entry.value, label: entry.key))
+        .toList(),
   );
 
   /// Creates a single-select input from a list of values.
@@ -875,10 +873,9 @@ sealed class ParamInput<T extends Object> {
   static SelectParamInput<T> selectWithLabels<T extends Object>(
     Map<String, T> optionsWithLabels,
   ) => SelectParamInput<T>(
-    options:
-        optionsWithLabels.entries
-            .map((entry) => SelectOption(value: entry.value, label: entry.key))
-            .toList(),
+    options: optionsWithLabels.entries
+        .map((entry) => SelectOption(value: entry.value, label: entry.key))
+        .toList(),
   );
 }
 

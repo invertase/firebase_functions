@@ -63,8 +63,9 @@ class AuthUserMetadata {
 
     return AuthUserMetadata(
       creationTime: _parseDateTime(creationTimeRaw),
-      lastSignInTime:
-          lastSignInTimeRaw != null ? _parseDateTime(lastSignInTimeRaw) : null,
+      lastSignInTime: lastSignInTimeRaw != null
+          ? _parseDateTime(lastSignInTimeRaw)
+          : null,
     );
   }
 
@@ -116,12 +117,11 @@ class AuthMultiFactorInfo {
             json['factorId'] as String? ??
             json['factor_id'] as String? ??
             'phone',
-        enrollmentTime:
-            json['enrollmentTime'] != null
-                ? DateTime.parse(json['enrollmentTime'] as String)
-                : json['enrollment_time'] != null
-                ? DateTime.parse(json['enrollment_time'] as String)
-                : null,
+        enrollmentTime: json['enrollmentTime'] != null
+            ? DateTime.parse(json['enrollmentTime'] as String)
+            : json['enrollment_time'] != null
+            ? DateTime.parse(json['enrollment_time'] as String)
+            : null,
         phoneNumber:
             json['phoneNumber'] as String? ?? json['phone_number'] as String?,
       );
@@ -161,11 +161,10 @@ class AuthMultiFactorSettings {
         json['enrolled_factors'] as List<dynamic>? ??
         [];
     return AuthMultiFactorSettings(
-      enrolledFactors:
-          factorsList
-              .cast<Map<String, dynamic>>()
-              .map(AuthMultiFactorInfo.fromJson)
-              .toList(),
+      enrolledFactors: factorsList
+          .cast<Map<String, dynamic>>()
+          .map(AuthMultiFactorInfo.fromJson)
+          .toList(),
     );
   }
 
@@ -216,17 +215,13 @@ class AuthUserRecord {
       phoneNumber:
           json['phoneNumber'] as String? ?? json['phone_number'] as String?,
       disabled: json['disabled'] as bool? ?? false,
-      metadata:
-          json['metadata'] != null
-              ? AuthUserMetadata.fromJson(
-                json['metadata'] as Map<String, dynamic>,
-              )
-              : AuthUserMetadata(creationTime: DateTime.now()),
-      providerData:
-          providerDataList
-              .cast<Map<String, dynamic>>()
-              .map(AuthUserInfo.fromJson)
-              .toList(),
+      metadata: json['metadata'] != null
+          ? AuthUserMetadata.fromJson(json['metadata'] as Map<String, dynamic>)
+          : AuthUserMetadata(creationTime: DateTime.now()),
+      providerData: providerDataList
+          .cast<Map<String, dynamic>>()
+          .map(AuthUserInfo.fromJson)
+          .toList(),
       passwordHash:
           json['passwordHash'] as String? ?? json['password_hash'] as String?,
       passwordSalt:
@@ -235,24 +230,22 @@ class AuthUserRecord {
           json['customClaims'] as Map<String, dynamic>? ??
           json['custom_claims'] as Map<String, dynamic>?,
       tenantId: json['tenantId'] as String? ?? json['tenant_id'] as String?,
-      tokensValidAfterTime:
-          json['tokensValidAfterTime'] != null
-              ? DateTime.parse(json['tokensValidAfterTime'] as String)
-              : json['tokens_valid_after_time'] != null
-              ? DateTime.fromMillisecondsSinceEpoch(
-                (json['tokens_valid_after_time'] as int) * 1000,
-              )
-              : null,
-      multiFactor:
-          json['multiFactor'] != null
-              ? AuthMultiFactorSettings.fromJson(
-                json['multiFactor'] as Map<String, dynamic>,
-              )
-              : json['multi_factor'] != null
-              ? AuthMultiFactorSettings.fromJson(
-                json['multi_factor'] as Map<String, dynamic>,
-              )
-              : null,
+      tokensValidAfterTime: json['tokensValidAfterTime'] != null
+          ? DateTime.parse(json['tokensValidAfterTime'] as String)
+          : json['tokens_valid_after_time'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              (json['tokens_valid_after_time'] as int) * 1000,
+            )
+          : null,
+      multiFactor: json['multiFactor'] != null
+          ? AuthMultiFactorSettings.fromJson(
+              json['multiFactor'] as Map<String, dynamic>,
+            )
+          : json['multi_factor'] != null
+          ? AuthMultiFactorSettings.fromJson(
+              json['multi_factor'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
