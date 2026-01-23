@@ -176,11 +176,7 @@ class FirestoreNamespace extends FunctionsNamespace {
           return Response.ok('');
         } else {
           // Structured content mode: full CloudEvent in JSON body
-          final bodyString = await request.readAsString();
-          final json = parseCloudEventJson(bodyString);
-
-          // Validate CloudEvent structure
-          validateCloudEvent(json);
+          final json = await parseAndValidateCloudEvent(request);
 
           // Verify it's a Firestore document created event
           if (!_isFirestoreCreatedEvent(json['type'] as String)) {
