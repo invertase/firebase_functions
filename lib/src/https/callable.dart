@@ -224,7 +224,7 @@ class CallableResponse<T extends Object> {
 
     _streamSubscription = dataStream.listen(
       (result) {
-        sendChunk(result.data);
+        unawaited(sendChunk(result.data));
       },
       onError: (Object error) {
         // Log error but don't close the stream - let handler complete
@@ -297,7 +297,7 @@ class CallableResponse<T extends Object> {
   /// Marks the stream as aborted.
   void abort() {
     _aborted = true;
-    _streamSubscription?.cancel();
+    unawaited(_streamSubscription?.cancel());
     _streamSubscription = null;
     clearHeartbeat();
   }

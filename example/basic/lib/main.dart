@@ -32,8 +32,8 @@ final isProduction = defineBoolean(
   ),
 );
 
-void main(List<String> args) {
-  fireUp(args, (firebase) {
+void main(List<String> args) async {
+  await fireUp(args, (firebase) {
     // ==========================================================================
     // HTTPS Callable Functions (onCall / onCallWithData)
     // ==========================================================================
