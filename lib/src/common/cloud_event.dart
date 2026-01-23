@@ -1,6 +1,6 @@
-import 'dart:convert';
-
 import 'package:shelf/shelf.dart';
+
+import 'utilities.dart';
 
 /// Represents a CloudEvents v1.0 event.
 ///
@@ -71,8 +71,10 @@ class CloudEvent<T extends Object?> {
       };
 }
 
-/// Validates that a JSON object has the required CloudEvent fields.
-void validateCloudEvent(Map<String, dynamic> json) {
+/// Reads the request body, parses it as a CloudEvent JSON, and validates it.
+Future<Map<String, dynamic>> parseAndValidateCloudEvent(Request request) async {
+  final json = await readAsJsonMap(request);
+
   const requiredFields = ['specversion', 'id', 'source', 'type', 'time'];
 
   for (final field in requiredFields) {
@@ -86,17 +88,6 @@ void validateCloudEvent(Map<String, dynamic> json) {
       'Unsupported CloudEvent version: ${json['specversion']}',
     );
   }
-}
 
-/// Reads the request body, parses it as a CloudEvent JSON, and validates it.
-Future<Map<String, dynamic>> parseAndValidateCloudEvent(Request request) async {
-  final decoded = await _converter.bind(request.read()).first;
-  final json = switch (decoded) {
-    final Map<String, dynamic> m => m,
-    _ => throw FormatException('CloudEvent body must be a JSON object'),
-  };
-  validateCloudEvent(json);
   return json;
 }
-
-final _converter = const Utf8Decoder().fuse(const JsonDecoder());
