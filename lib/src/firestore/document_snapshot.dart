@@ -54,8 +54,9 @@ dynamic parseFirestoreValue(Map<String, dynamic> field) {
 Map<String, dynamic> parseFirestoreFields(Map<String, dynamic> fields) {
   final result = <String, dynamic>{};
   for (final entry in fields.entries) {
-    result[entry.key] =
-        parseFirestoreValue(entry.value as Map<String, dynamic>);
+    result[entry.key] = parseFirestoreValue(
+      entry.value as Map<String, dynamic>,
+    );
   }
   return result;
 }

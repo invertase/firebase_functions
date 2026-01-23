@@ -39,49 +39,40 @@ class PubSubNamespace extends FunctionsNamespace {
     // Generate function name from topic
     final functionName = _topicToFunctionName(topic);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          // Read and parse CloudEvent
-          final bodyString = await request.readAsString();
-          final json = parseCloudEventJson(bodyString);
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        // Read and parse CloudEvent
+        final bodyString = await request.readAsString();
+        final json = parseCloudEventJson(bodyString);
 
-          // Validate CloudEvent structure
-          validateCloudEvent(json);
+        // Validate CloudEvent structure
+        validateCloudEvent(json);
 
-          // Verify it's a Pub/Sub event
-          if (!_isPubSubEvent(json['type'] as String)) {
-            return Response(
-              400,
-              body: 'Invalid event type for Pub/Sub: ${json['type']}',
-            );
-          }
-
-          // Parse CloudEvent with PubsubMessage data
-          final event = CloudEvent<PubsubMessage>.fromJson(
-            json,
-            (data) => PubsubMessage.fromJson(data),
-          );
-
-          // Execute handler
-          await handler(event);
-
-          // Return success
-          return Response.ok('');
-        } on FormatException catch (e) {
+        // Verify it's a Pub/Sub event
+        if (!_isPubSubEvent(json['type'] as String)) {
           return Response(
             400,
-            body: 'Invalid CloudEvent: ${e.message}',
-          );
-        } catch (e) {
-          return Response(
-            500,
-            body: 'Error processing Pub/Sub message: $e',
+            body: 'Invalid event type for Pub/Sub: ${json['type']}',
           );
         }
-      },
-    );
+
+        // Parse CloudEvent with PubsubMessage data
+        final event = CloudEvent<PubsubMessage>.fromJson(
+          json,
+          (data) => PubsubMessage.fromJson(data),
+        );
+
+        // Execute handler
+        await handler(event);
+
+        // Return success
+        return Response.ok('');
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e) {
+        return Response(500, body: 'Error processing Pub/Sub message: $e');
+      }
+    });
   }
 
   /// Converts a topic name to a function name.

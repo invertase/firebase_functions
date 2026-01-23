@@ -212,10 +212,7 @@ void main() {
     });
 
     test('PlanAutomatedUpdatePayload.fromJson parses correctly', () {
-      final json = {
-        'billingPlan': 'Spark',
-        'notificationType': 'downgrade',
-      };
+      final json = {'billingPlan': 'Spark', 'notificationType': 'downgrade'};
 
       final payload = PlanAutomatedUpdatePayload.fromJson(json);
 

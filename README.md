@@ -1,7 +1,7 @@
 # Firebase Functions for Dart
 
-[![Tests](https://github.com/invertase/firebase-functions-dart/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase-functions-dart/actions/workflows/test.yml)
-[![PR Checks](https://github.com/invertase/firebase-functions-dart/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/invertase/firebase-functions-dart/actions/workflows/pr-checks.yml)
+[![Tests](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/test.yml)
+[![PR Checks](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml)
 
 Write Firebase Cloud Functions in Dart with full type safety and performance.
 

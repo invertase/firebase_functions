@@ -11,11 +11,11 @@ class Issue {
   });
 
   factory Issue.fromJson(Map<String, dynamic> json) => Issue(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        subtitle: json['subtitle'] as String,
-        appVersion: json['appVersion'] as String,
-      );
+    id: json['id'] as String,
+    title: json['title'] as String,
+    subtitle: json['subtitle'] as String,
+    appVersion: json['appVersion'] as String,
+  );
 
   /// The ID of the Crashlytics issue.
   final String id;
@@ -30,11 +30,11 @@ class Issue {
   final String appVersion;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'subtitle': subtitle,
-        'appVersion': appVersion,
-      };
+    'id': id,
+    'title': title,
+    'subtitle': subtitle,
+    'appVersion': appVersion,
+  };
 }
 
 /// Payload for a new fatal issue alert.
@@ -50,10 +50,10 @@ class NewFatalIssuePayload {
   final Issue issue;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsNewFatalIssuePayload',
-        'issue': issue.toJson(),
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsNewFatalIssuePayload',
+    'issue': issue.toJson(),
+  };
 }
 
 /// Payload for a new non-fatal issue alert.
@@ -69,10 +69,10 @@ class NewNonfatalIssuePayload {
   final Issue issue;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsNewNonfatalIssuePayload',
-        'issue': issue.toJson(),
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsNewNonfatalIssuePayload',
+    'issue': issue.toJson(),
+  };
 }
 
 /// Payload for a regression alert.
@@ -101,12 +101,12 @@ class RegressionAlertPayload {
   final DateTime resolveTime;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsRegressionAlertPayload',
-        'type': type,
-        'issue': issue.toJson(),
-        'resolveTime': resolveTime.toIso8601String(),
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsRegressionAlertPayload',
+    'type': type,
+    'issue': issue.toJson(),
+    'resolveTime': resolveTime.toIso8601String(),
+  };
 }
 
 /// Generic Crashlytics trending issue interface.
@@ -139,11 +139,11 @@ class TrendingIssueDetails {
   final int userCount;
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'issue': issue.toJson(),
-        'eventCount': eventCount,
-        'userCount': userCount,
-      };
+    'type': type,
+    'issue': issue.toJson(),
+    'eventCount': eventCount,
+    'userCount': userCount,
+  };
 }
 
 /// Payload for a stability digest alert.
@@ -171,11 +171,11 @@ class StabilityDigestPayload {
   final List<TrendingIssueDetails> trendingIssues;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsStabilityDigestPayload',
-        'digestDate': digestDate.toIso8601String(),
-        'trendingIssues': trendingIssues.map((e) => e.toJson()).toList(),
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsStabilityDigestPayload',
+    'digestDate': digestDate.toIso8601String(),
+    'trendingIssues': trendingIssues.map((e) => e.toJson()).toList(),
+  };
 }
 
 /// Payload for a velocity alert.
@@ -216,14 +216,14 @@ class VelocityAlertPayload {
   final String firstVersion;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsVelocityAlertPayload',
-        'issue': issue.toJson(),
-        'createTime': createTime.toIso8601String(),
-        'crashCount': crashCount,
-        'crashPercentage': crashPercentage,
-        'firstVersion': firstVersion,
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsVelocityAlertPayload',
+    'issue': issue.toJson(),
+    'createTime': createTime.toIso8601String(),
+    'crashCount': crashCount,
+    'crashPercentage': crashPercentage,
+    'firstVersion': firstVersion,
+  };
 }
 
 /// Payload for a new Application Not Responding issue alert.
@@ -239,8 +239,8 @@ class NewAnrIssuePayload {
   final Issue issue;
 
   Map<String, dynamic> toJson() => {
-        '@type':
-            'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsNewAnrIssuePayload',
-        'issue': issue.toJson(),
-      };
+    '@type':
+        'type.googleapis.com/google.events.firebase.firebasealerts.v1.CrashlyticsNewAnrIssuePayload',
+    'issue': issue.toJson(),
+  };
 }

@@ -58,10 +58,7 @@ Map<String, EmulatorDocumentSnapshot?>? parseDocumentEventData(
       }
     }
 
-    return {
-      'value': value,
-      'old_value': oldValue,
-    };
+    return {'value': value, 'old_value': oldValue};
   } catch (e, stack) {
     print('Error parsing DocumentEventData protobuf: $e');
     print('Stack: $stack');

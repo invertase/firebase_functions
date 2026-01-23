@@ -348,8 +348,7 @@ void main() {
       expect(doc['fields']['double']['doubleValue'], 3.14);
       expect(doc['fields']['bool']['booleanValue'], true);
       expect(
-        doc['fields']['nestedMap']['mapValue']['fields']['level2']['mapValue']
-            ['fields']['deep']['stringValue'],
+        doc['fields']['nestedMap']['mapValue']['fields']['level2']['mapValue']['fields']['deep']['stringValue'],
         'value',
       );
       print('✓ All data types verified');

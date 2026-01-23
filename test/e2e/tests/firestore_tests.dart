@@ -22,22 +22,15 @@ void runFirestoreTests(
       print('\n=== Testing onDocumentCreated ===');
 
       // Create a document with various data types
-      final doc = await client.createDocument(
-        'users',
-        testUserId,
-        {
-          'name': 'John Doe',
-          'email': 'john@example.com',
-          'age': 28,
-          'active': true,
-          'score': 95.5,
-          'metadata': {
-            'created': '2024-01-01',
-            'verified': true,
-          },
-          'tags': ['admin', 'premium'],
-        },
-      );
+      final doc = await client.createDocument('users', testUserId, {
+        'name': 'John Doe',
+        'email': 'john@example.com',
+        'age': 28,
+        'active': true,
+        'score': 95.5,
+        'metadata': {'created': '2024-01-01', 'verified': true},
+        'tags': ['admin', 'premium'],
+      });
 
       expect(doc, isNotNull);
       print('✓ Document created successfully');
@@ -48,10 +41,7 @@ void runFirestoreTests(
       // Verify document exists
       final retrieved = await client.getDocument('users/$testUserId');
       expect(retrieved, isNotNull);
-      expect(
-        retrieved!['fields']['name']['stringValue'],
-        'John Doe',
-      );
+      expect(retrieved!['fields']['name']['stringValue'], 'John Doe');
       expect(retrieved['fields']['age']['integerValue'], '28');
       print('✓ Document data verified');
     });
@@ -60,29 +50,22 @@ void runFirestoreTests(
       print('\n=== Testing onDocumentUpdated ===');
 
       // First create a document
-      await client.createDocument(
-        'users',
-        testUserId,
-        {
-          'name': 'Jane Doe',
-          'age': 25,
-          'status': 'active',
-        },
-      );
+      await client.createDocument('users', testUserId, {
+        'name': 'Jane Doe',
+        'age': 25,
+        'status': 'active',
+      });
 
       await Future<void>.delayed(const Duration(milliseconds: 500));
       print('✓ Initial document created');
 
       // Now update it
-      final updated = await client.updateDocument(
-        'users/$testUserId',
-        {
-          'name': 'Jane Smith', // Changed
-          'age': 26, // Changed
-          'status': 'active', // Same
-          'newField': 'added', // New
-        },
-      );
+      final updated = await client.updateDocument('users/$testUserId', {
+        'name': 'Jane Smith', // Changed
+        'age': 26, // Changed
+        'status': 'active', // Same
+        'newField': 'added', // New
+      });
 
       expect(updated, isNotNull);
       print('✓ Document updated successfully');
@@ -102,15 +85,11 @@ void runFirestoreTests(
       print('\n=== Testing onDocumentDeleted ===');
 
       // Create a document to delete
-      await client.createDocument(
-        'users',
-        testUserId,
-        {
-          'name': 'To Be Deleted',
-          'email': 'delete@example.com',
-          'finalMessage': 'goodbye',
-        },
-      );
+      await client.createDocument('users', testUserId, {
+        'name': 'To Be Deleted',
+        'email': 'delete@example.com',
+        'finalMessage': 'goodbye',
+      });
 
       await Future<void>.delayed(const Duration(milliseconds: 500));
       print('✓ Document created for deletion test');
@@ -132,14 +111,10 @@ void runFirestoreTests(
       print('\n=== Testing onDocumentWritten (CREATE) ===');
 
       // Test 1: CREATE operation
-      await client.createDocument(
-        'users',
-        testUserId,
-        {
-          'name': 'Written User',
-          'operation': 'create',
-        },
-      );
+      await client.createDocument('users', testUserId, {
+        'name': 'Written User',
+        'operation': 'create',
+      });
 
       await Future<void>.delayed(const Duration(seconds: 2));
       print('✓ CREATE operation triggered');
@@ -147,13 +122,10 @@ void runFirestoreTests(
       // Test 2: UPDATE operation
       print('\n=== Testing onDocumentWritten (UPDATE) ===');
 
-      await client.updateDocument(
-        'users/$testUserId',
-        {
-          'name': 'Updated Written User',
-          'operation': 'update',
-        },
-      );
+      await client.updateDocument('users/$testUserId', {
+        'name': 'Updated Written User',
+        'operation': 'update',
+      });
 
       await Future<void>.delayed(const Duration(seconds: 2));
       print('✓ UPDATE operation triggered');
@@ -174,15 +146,11 @@ void runFirestoreTests(
       final commentId = 'comment_${DateTime.now().millisecondsSinceEpoch}';
 
       // Create a comment in a nested collection
-      await client.createDocument(
-        'posts/$postId/comments',
-        commentId,
-        {
-          'text': 'This is a comment',
-          'author': 'John',
-          'likes': 5,
-        },
-      );
+      await client.createDocument('posts/$postId/comments', commentId, {
+        'text': 'This is a comment',
+        'author': 'John',
+        'likes': 5,
+      });
 
       print('✓ Nested collection document created');
 
@@ -198,27 +166,21 @@ void runFirestoreTests(
     test('Complex data types are parsed correctly', () async {
       print('\n=== Testing complex data types ===');
 
-      await client.createDocument(
-        'users',
-        testUserId,
-        {
-          'string': 'text',
-          'int': 42,
-          'double': 3.14,
-          'bool': true,
-          'null': null,
-          'nestedMap': {
-            'level2': {
-              'deep': 'value',
-            },
-          },
-          'nestedArray': [
-            1,
-            2,
-            {'inArray': 'yes'},
-          ],
+      await client.createDocument('users', testUserId, {
+        'string': 'text',
+        'int': 42,
+        'double': 3.14,
+        'bool': true,
+        'null': null,
+        'nestedMap': {
+          'level2': {'deep': 'value'},
         },
-      );
+        'nestedArray': [
+          1,
+          2,
+          {'inArray': 'yes'},
+        ],
+      });
 
       print('✓ Complex document created');
 
@@ -231,8 +193,7 @@ void runFirestoreTests(
       expect(doc['fields']['double']['doubleValue'], 3.14);
       expect(doc['fields']['bool']['booleanValue'], true);
       expect(
-        doc['fields']['nestedMap']['mapValue']['fields']['level2']['mapValue']
-            ['fields']['deep']['stringValue'],
+        doc['fields']['nestedMap']['mapValue']['fields']['level2']['mapValue']['fields']['deep']['stringValue'],
         'value',
       );
       print('✓ All data types verified');
@@ -242,14 +203,10 @@ void runFirestoreTests(
       print('\n=== Testing path parameter extraction ===');
 
       // This tests that {userId} wildcard pattern correctly extracts the ID
-      await client.createDocument(
-        'users',
-        testUserId,
-        {
-          'name': 'Parameter Test',
-          'userId': testUserId,
-        },
-      );
+      await client.createDocument('users', testUserId, {
+        'name': 'Parameter Test',
+        'userId': testUserId,
+      });
 
       print('✓ Document with path parameter created');
       print('  Test user ID: $testUserId');

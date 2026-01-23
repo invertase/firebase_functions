@@ -27,20 +27,14 @@ void main() {
 
     group('onSchedule', () {
       test('registers function with firebase', () {
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {},
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {});
 
         // Function name: schedule '0 0 * * *' becomes 'onSchedule_0_0___'
         expect(_findFunction(firebase, 'onSchedule_0_0___'), isNotNull);
       });
 
       test('generates correct function name from schedule', () {
-        scheduler.onSchedule(
-          schedule: '*/5 * * * *',
-          (event) async {},
-        );
+        scheduler.onSchedule(schedule: '*/5 * * * *', (event) async {});
 
         // '*/5 * * * *' -> '5____' (removes * and /)
         expect(_findFunction(firebase, 'onSchedule_5____'), isNotNull);
@@ -49,12 +43,9 @@ void main() {
       test('handler receives scheduled event', () async {
         ScheduledEvent? receivedEvent;
 
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onSchedule_0_0___')!;
         final request = Request(
@@ -80,20 +71,15 @@ void main() {
       test('handles missing job name header', () async {
         ScheduledEvent? receivedEvent;
 
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onSchedule_0_0___')!;
         final request = Request(
           'POST',
           Uri.parse('http://localhost/onSchedule_0_0___'),
-          headers: {
-            'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z',
-          },
+          headers: {'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z'},
         );
         final response = await func.handler(request);
 
@@ -106,12 +92,9 @@ void main() {
       test('uses current time when schedule time header missing', () async {
         ScheduledEvent? receivedEvent;
 
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onSchedule_0_0___')!;
         final request = Request(
@@ -132,20 +115,15 @@ void main() {
       });
 
       test('returns 200 on success', () async {
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {
-            // Success - do nothing
-          },
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+          // Success - do nothing
+        });
 
         final func = _findFunction(firebase, 'onSchedule_0_0___')!;
         final request = Request(
           'POST',
           Uri.parse('http://localhost/onSchedule_0_0___'),
-          headers: {
-            'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z',
-          },
+          headers: {'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z'},
         );
         final response = await func.handler(request);
 
@@ -153,20 +131,15 @@ void main() {
       });
 
       test('returns 500 on handler error', () async {
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {
-            throw Exception('Handler error');
-          },
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+          throw Exception('Handler error');
+        });
 
         final func = _findFunction(firebase, 'onSchedule_0_0___')!;
         final request = Request(
           'POST',
           Uri.parse('http://localhost/onSchedule_0_0___'),
-          headers: {
-            'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z',
-          },
+          headers: {'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z'},
         );
         final response = await func.handler(request);
 
@@ -194,12 +167,9 @@ void main() {
       test('handles case-insensitive headers', () async {
         ScheduledEvent? receivedEvent;
 
-        scheduler.onSchedule(
-          schedule: '0 0 * * *',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onSchedule_0_0___')!;
         final request = Request(
@@ -250,10 +220,7 @@ void main() {
         eventTime.isAfter(before.subtract(const Duration(seconds: 1))),
         isTrue,
       );
-      expect(
-        eventTime.isBefore(after.add(const Duration(seconds: 1))),
-        isTrue,
-      );
+      expect(eventTime.isBefore(after.add(const Duration(seconds: 1))), isTrue);
     });
 
     test('scheduleDateTime returns parsed DateTime', () {
@@ -295,9 +262,7 @@ void main() {
     });
 
     test('supports timeZone', () {
-      const options = ScheduleOptions(
-        timeZone: TimeZone('America/New_York'),
-      );
+      const options = ScheduleOptions(timeZone: TimeZone('America/New_York'));
 
       expect(options.timeZone, isNotNull);
       expect(options.timeZone!.runtimeValue(), 'America/New_York');

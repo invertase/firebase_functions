@@ -58,10 +58,7 @@ void runPubSubTests(
       final response = await pubsubClient.publishMessage(
         'my-topic',
         data: 'Hello from E2E test!',
-        attributes: {
-          'testAttribute': 'testValue',
-          'source': 'e2e-test',
-        },
+        attributes: {'testAttribute': 'testValue', 'source': 'e2e-test'},
       );
 
       print('Message published with ID: ${response.messageId}');
@@ -93,10 +90,7 @@ void runPubSubTests(
       print('Publishing message: "$testMessage"');
 
       // Publish message
-      await pubsubClient.publishMessage(
-        'my-topic',
-        data: testMessage,
-      );
+      await pubsubClient.publishMessage('my-topic', data: testMessage);
 
       // Wait for processing
       await Future<void>.delayed(const Duration(seconds: 2));
@@ -156,10 +150,7 @@ void runPubSubTests(
 
       // Publish multiple messages
       for (var i = 1; i <= 3; i++) {
-        await pubsubClient.publishMessage(
-          'my-topic',
-          data: 'Message $i',
-        );
+        await pubsubClient.publishMessage('my-topic', data: 'Message $i');
         print('  Published message $i');
 
         // Small delay between messages
@@ -223,10 +214,7 @@ void runPubSubTests(
       print('Publishing message to verify CloudEvent format...');
 
       // Publish message
-      await pubsubClient.publishMessage(
-        'my-topic',
-        data: 'CloudEvent test',
-      );
+      await pubsubClient.publishMessage('my-topic', data: 'CloudEvent test');
 
       // Wait for processing
       await Future<void>.delayed(const Duration(seconds: 2));

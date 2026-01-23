@@ -3,10 +3,7 @@
 /// Contains metadata about the Cloud Scheduler job invocation.
 class ScheduledEvent {
   /// Creates a ScheduledEvent.
-  const ScheduledEvent({
-    this.jobName,
-    required this.scheduleTime,
-  });
+  const ScheduledEvent({this.jobName, required this.scheduleTime});
 
   /// Creates a ScheduledEvent from HTTP request headers.
   ///
@@ -23,10 +20,7 @@ class ScheduledEvent {
     final scheduleTime =
         scheduleTimeHeader ?? DateTime.now().toUtc().toIso8601String();
 
-    return ScheduledEvent(
-      jobName: jobName,
-      scheduleTime: scheduleTime,
-    );
+    return ScheduledEvent(jobName: jobName, scheduleTime: scheduleTime);
   }
 
   /// The Cloud Scheduler job name.

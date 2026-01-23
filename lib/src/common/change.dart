@@ -4,10 +4,7 @@
 /// `onDocumentUpdated`, `onDocumentWritten`, `onValueUpdated`, and
 /// `onValueWritten` handlers.
 class Change<T> {
-  const Change({
-    required this.before,
-    required this.after,
-  });
+  const Change({required this.before, required this.after});
 
   /// The state before the change.
   /// May be null if the data didn't exist (for creates).

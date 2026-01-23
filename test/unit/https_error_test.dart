@@ -35,10 +35,7 @@ void main() {
         FunctionsErrorCode.fromValue('invalid-argument'),
         FunctionsErrorCode.invalidArgument,
       );
-      expect(
-        FunctionsErrorCode.fromValue('unknown-value'),
-        isNull,
-      );
+      expect(FunctionsErrorCode.fromValue('unknown-value'), isNull);
     });
   });
 
@@ -82,26 +79,17 @@ void main() {
       );
 
       expect(error.toErrorResponse(), {
-        'error': {
-          'status': 'NOT_FOUND',
-          'message': 'Document not found',
-        },
+        'error': {'status': 'NOT_FOUND', 'message': 'Document not found'},
       });
     });
 
     test('httpStatusCode returns correct HTTP status', () {
-      expect(
-        GenericHttpsError(FunctionsErrorCode.ok).httpStatusCode,
-        200,
-      );
+      expect(GenericHttpsError(FunctionsErrorCode.ok).httpStatusCode, 200);
       expect(
         GenericHttpsError(FunctionsErrorCode.cancelled).httpStatusCode,
         499,
       );
-      expect(
-        GenericHttpsError(FunctionsErrorCode.unknown).httpStatusCode,
-        500,
-      );
+      expect(GenericHttpsError(FunctionsErrorCode.unknown).httpStatusCode, 500);
       expect(
         GenericHttpsError(FunctionsErrorCode.invalidArgument).httpStatusCode,
         400,
@@ -130,10 +118,7 @@ void main() {
         GenericHttpsError(FunctionsErrorCode.failedPrecondition).httpStatusCode,
         400,
       );
-      expect(
-        GenericHttpsError(FunctionsErrorCode.aborted).httpStatusCode,
-        409,
-      );
+      expect(GenericHttpsError(FunctionsErrorCode.aborted).httpStatusCode, 409);
       expect(
         GenericHttpsError(FunctionsErrorCode.outOfRange).httpStatusCode,
         400,
@@ -161,10 +146,7 @@ void main() {
     });
 
     test('httpStatusToErrorCode returns correct error code', () {
-      expect(
-        HttpsError.httpStatusToErrorCode(200),
-        FunctionsErrorCode.ok,
-      );
+      expect(HttpsError.httpStatusToErrorCode(200), FunctionsErrorCode.ok);
       expect(
         HttpsError.httpStatusToErrorCode(400),
         FunctionsErrorCode.invalidArgument,
@@ -350,10 +332,7 @@ void main() {
     });
 
     test('Error classes support details parameter', () {
-      final error = NotFoundError(
-        'User not found',
-        {'userId': '12345'},
-      );
+      final error = NotFoundError('User not found', {'userId': '12345'});
 
       expect(error.details, {'userId': '12345'});
       expect(error.toJson()['details'], {'userId': '12345'});

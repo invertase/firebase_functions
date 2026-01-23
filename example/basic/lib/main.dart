@@ -39,14 +39,11 @@ void main(List<String> args) {
     // ==========================================================================
 
     // Basic callable function - untyped data
-    firebase.https.onCall(
-      name: 'greet',
-      (request, response) async {
-        final data = request.data as Map<String, dynamic>?;
-        final name = data?['name'] ?? 'World';
-        return CallableResult({'message': 'Hello, $name!'});
-      },
-    );
+    firebase.https.onCall(name: 'greet', (request, response) async {
+      final data = request.data as Map<String, dynamic>?;
+      final name = data?['name'] ?? 'World';
+      return CallableResult({'message': 'Hello, $name!'});
+    });
 
     // Callable function with typed data using fromJson
     firebase.https.onCallWithData<GreetRequest, GreetResponse>(
@@ -58,24 +55,21 @@ void main(List<String> args) {
     );
 
     // Callable function demonstrating error handling
-    firebase.https.onCall(
-      name: 'divide',
-      (request, response) async {
-        final data = request.data as Map<String, dynamic>?;
-        final a = (data?['a'] as num?)?.toDouble();
-        final b = (data?['b'] as num?)?.toDouble();
+    firebase.https.onCall(name: 'divide', (request, response) async {
+      final data = request.data as Map<String, dynamic>?;
+      final a = (data?['a'] as num?)?.toDouble();
+      final b = (data?['b'] as num?)?.toDouble();
 
-        if (a == null || b == null) {
-          throw InvalidArgumentError('Both "a" and "b" are required');
-        }
+      if (a == null || b == null) {
+        throw InvalidArgumentError('Both "a" and "b" are required');
+      }
 
-        if (b == 0) {
-          throw FailedPreconditionError('Cannot divide by zero');
-        }
+      if (b == 0) {
+        throw FailedPreconditionError('Cannot divide by zero');
+      }
 
-        return CallableResult({'result': a / b});
-      },
-    );
+      return CallableResult({'result': a / b});
+    });
 
     // Callable function with streaming support
     firebase.https.onCall(
@@ -134,64 +128,57 @@ void main(List<String> args) {
     );
 
     // Pub/Sub trigger example
-    firebase.pubsub.onMessagePublished(
-      topic: 'my-topic',
-      (event) async {
-        final message = event.data;
-        print('Received Pub/Sub message:');
-        print('  ID: ${message?.messageId}');
-        print('  Published: ${message?.publishTime}');
-        print('  Data: ${message?.textData}');
-        print('  Attributes: ${message?.attributes}');
-      },
-    );
+    firebase.pubsub.onMessagePublished(topic: 'my-topic', (event) async {
+      final message = event.data;
+      print('Received Pub/Sub message:');
+      print('  ID: ${message?.messageId}');
+      print('  Published: ${message?.publishTime}');
+      print('  Data: ${message?.textData}');
+      print('  Attributes: ${message?.attributes}');
+    });
 
     // Firestore trigger examples
-    firebase.firestore.onDocumentCreated(
-      document: 'users/{userId}',
-      (event) async {
-        final data = event.data?.data();
-        print('Document created: users/${event.params['userId']}');
-        print('  Name: ${data?['name']}');
-        print('  Email: ${data?['email']}');
-      },
-    );
+    firebase.firestore.onDocumentCreated(document: 'users/{userId}', (
+      event,
+    ) async {
+      final data = event.data?.data();
+      print('Document created: users/${event.params['userId']}');
+      print('  Name: ${data?['name']}');
+      print('  Email: ${data?['email']}');
+    });
 
-    firebase.firestore.onDocumentUpdated(
-      document: 'users/{userId}',
-      (event) async {
-        final before = event.data?.before?.data();
-        final after = event.data?.after?.data();
-        print('Document updated: users/${event.params['userId']}');
-        print('  Before: $before');
-        print('  After: $after');
-      },
-    );
+    firebase.firestore.onDocumentUpdated(document: 'users/{userId}', (
+      event,
+    ) async {
+      final before = event.data?.before?.data();
+      final after = event.data?.after?.data();
+      print('Document updated: users/${event.params['userId']}');
+      print('  Before: $before');
+      print('  After: $after');
+    });
 
-    firebase.firestore.onDocumentDeleted(
-      document: 'users/{userId}',
-      (event) async {
-        final data = event.data?.data();
-        print('Document deleted: users/${event.params['userId']}');
-        print('  Final data: $data');
-      },
-    );
+    firebase.firestore.onDocumentDeleted(document: 'users/{userId}', (
+      event,
+    ) async {
+      final data = event.data?.data();
+      print('Document deleted: users/${event.params['userId']}');
+      print('  Final data: $data');
+    });
 
-    firebase.firestore.onDocumentWritten(
-      document: 'users/{userId}',
-      (event) async {
-        final before = event.data?.before?.data();
-        final after = event.data?.after?.data();
-        print('Document written: users/${event.params['userId']}');
-        if (before == null && after != null) {
-          print('  Operation: CREATE');
-        } else if (before != null && after != null) {
-          print('  Operation: UPDATE');
-        } else if (before != null && after == null) {
-          print('  Operation: DELETE');
-        }
-      },
-    );
+    firebase.firestore.onDocumentWritten(document: 'users/{userId}', (
+      event,
+    ) async {
+      final before = event.data?.before?.data();
+      final after = event.data?.after?.data();
+      print('Document written: users/${event.params['userId']}');
+      if (before == null && after != null) {
+        print('  Operation: CREATE');
+      } else if (before != null && after != null) {
+        print('  Operation: UPDATE');
+      } else if (before != null && after == null) {
+        print('  Operation: DELETE');
+      }
+    });
 
     // Nested collection trigger example
     firebase.firestore.onDocumentCreated(
@@ -211,96 +198,87 @@ void main(List<String> args) {
     // ==========================================================================
 
     // Database onValueCreated - triggers when data is created
-    firebase.database.onValueCreated(
-      ref: 'messages/{messageId}',
-      (event) async {
-        final data = event.data?.val();
-        print('Database value created: messages/${event.params['messageId']}');
-        print('  Data: $data');
-        print('  Instance: ${event.instance}');
-        print('  Ref: ${event.ref}');
-      },
-    );
+    firebase.database.onValueCreated(ref: 'messages/{messageId}', (
+      event,
+    ) async {
+      final data = event.data?.val();
+      print('Database value created: messages/${event.params['messageId']}');
+      print('  Data: $data');
+      print('  Instance: ${event.instance}');
+      print('  Ref: ${event.ref}');
+    });
 
     // Database onValueUpdated - triggers when data is updated
-    firebase.database.onValueUpdated(
-      ref: 'messages/{messageId}',
-      (event) async {
-        final before = event.data?.before?.val();
-        final after = event.data?.after?.val();
-        print('Database value updated: messages/${event.params['messageId']}');
-        print('  Before: $before');
-        print('  After: $after');
-      },
-    );
+    firebase.database.onValueUpdated(ref: 'messages/{messageId}', (
+      event,
+    ) async {
+      final before = event.data?.before?.val();
+      final after = event.data?.after?.val();
+      print('Database value updated: messages/${event.params['messageId']}');
+      print('  Before: $before');
+      print('  After: $after');
+    });
 
     // Database onValueDeleted - triggers when data is deleted
-    firebase.database.onValueDeleted(
-      ref: 'messages/{messageId}',
-      (event) async {
-        final data = event.data?.val();
-        print('Database value deleted: messages/${event.params['messageId']}');
-        print('  Final data: $data');
-      },
-    );
+    firebase.database.onValueDeleted(ref: 'messages/{messageId}', (
+      event,
+    ) async {
+      final data = event.data?.val();
+      print('Database value deleted: messages/${event.params['messageId']}');
+      print('  Final data: $data');
+    });
 
     // Database onValueWritten - triggers on any write (create, update, delete)
-    firebase.database.onValueWritten(
-      ref: 'messages/{messageId}',
-      (event) async {
-        final before = event.data?.before;
-        final after = event.data?.after;
-        print('Database value written: messages/${event.params['messageId']}');
-        if (before == null || !before.exists()) {
-          print('  Operation: CREATE');
-          print('  New data: ${after?.val()}');
-        } else if (after == null || !after.exists()) {
-          print('  Operation: DELETE');
-          print('  Deleted data: ${before.val()}');
-        } else {
-          print('  Operation: UPDATE');
-          print('  Before: ${before.val()}');
-          print('  After: ${after.val()}');
-        }
-      },
-    );
+    firebase.database.onValueWritten(ref: 'messages/{messageId}', (
+      event,
+    ) async {
+      final before = event.data?.before;
+      final after = event.data?.after;
+      print('Database value written: messages/${event.params['messageId']}');
+      if (before == null || !before.exists()) {
+        print('  Operation: CREATE');
+        print('  New data: ${after?.val()}');
+      } else if (after == null || !after.exists()) {
+        print('  Operation: DELETE');
+        print('  Deleted data: ${before.val()}');
+      } else {
+        print('  Operation: UPDATE');
+        print('  Before: ${before.val()}');
+        print('  After: ${after.val()}');
+      }
+    });
 
     // Nested path database trigger
-    firebase.database.onValueWritten(
-      ref: 'users/{userId}/status',
-      (event) async {
-        final after = event.data?.after?.val();
-        print('User status changed: ${event.params['userId']}');
-        print('  New status: $after');
-      },
-    );
+    firebase.database.onValueWritten(ref: 'users/{userId}/status', (
+      event,
+    ) async {
+      final after = event.data?.after?.val();
+      print('User status changed: ${event.params['userId']}');
+      print('  New status: $after');
+    });
 
     // ==========================================================================
     // Firebase Alerts trigger examples
     // ==========================================================================
 
     // Crashlytics new fatal issue alert
-    firebase.alerts.crashlytics.onNewFatalIssuePublished(
-      (event) async {
-        final issue = event.data?.payload.issue;
-        print('New fatal issue in Crashlytics:');
-        print('  Issue ID: ${issue?.id}');
-        print('  Title: ${issue?.title}');
-        print('  App Version: ${issue?.appVersion}');
-        print('  App ID: ${event.appId}');
-      },
-    );
+    firebase.alerts.crashlytics.onNewFatalIssuePublished((event) async {
+      final issue = event.data?.payload.issue;
+      print('New fatal issue in Crashlytics:');
+      print('  Issue ID: ${issue?.id}');
+      print('  Title: ${issue?.title}');
+      print('  App Version: ${issue?.appVersion}');
+      print('  App ID: ${event.appId}');
+    });
 
     // Billing plan update alert
-    firebase.alerts.billing.onPlanUpdatePublished(
-      (event) async {
-        final payload = event.data?.payload;
-        print('Billing plan updated:');
-        print('  New Plan: ${payload?.billingPlan}');
-        print('  Updated By: ${payload?.principalEmail}');
-        print('  Type: ${payload?.notificationType}');
-      },
-    );
+    firebase.alerts.billing.onPlanUpdatePublished((event) async {
+      final payload = event.data?.payload;
+      print('Billing plan updated:');
+      print('  New Plan: ${payload?.billingPlan}');
+      print('  Updated By: ${payload?.principalEmail}');
+      print('  Type: ${payload?.notificationType}');
+    });
 
     // Performance threshold alert with app ID filter
     firebase.alerts.performance.onThresholdAlertPublished(
@@ -323,10 +301,7 @@ void main(List<String> args) {
 
     // Before user created - runs before a new user is created
     firebase.identity.beforeUserCreated(
-      options: const BlockingOptions(
-        idToken: true,
-        accessToken: true,
-      ),
+      options: const BlockingOptions(idToken: true, accessToken: true),
       (AuthBlockingEvent event) async {
         final user = event.data;
         print('Before user created:');
@@ -342,9 +317,7 @@ void main(List<String> args) {
 
         // Example: Set custom claims based on email domain
         if (email != null && email.endsWith('@admin.com')) {
-          return const BeforeCreateResponse(
-            customClaims: {'admin': true},
-          );
+          return const BeforeCreateResponse(customClaims: {'admin': true});
         }
 
         return null;
@@ -353,9 +326,7 @@ void main(List<String> args) {
 
     // Before user signed in - runs before a user signs in
     firebase.identity.beforeUserSignedIn(
-      options: const BlockingOptions(
-        idToken: true,
-      ),
+      options: const BlockingOptions(idToken: true),
       (AuthBlockingEvent event) async {
         final user = event.data;
         print('Before user signed in:');
@@ -377,60 +348,53 @@ void main(List<String> args) {
     // NOTE: The Auth emulator only supports beforeCreate and beforeSignIn.
     // This function is included for manifest snapshot testing but cannot be
     // tested with the emulator.
-    firebase.identity.beforeEmailSent(
-      (AuthBlockingEvent event) async {
-        print('Before email sent:');
-        print('  Email Type: ${event.emailType?.value}');
-        print('  IP Address: ${event.ipAddress}');
+    firebase.identity.beforeEmailSent((AuthBlockingEvent event) async {
+      print('Before email sent:');
+      print('  Email Type: ${event.emailType?.value}');
+      print('  IP Address: ${event.ipAddress}');
 
-        // Example: Rate limit password reset emails
-        // In production, you'd check against a database
-        if (event.emailType == EmailType.passwordReset) {
-          // Could return BeforeEmailResponse(
-          //   recaptchaActionOverride: RecaptchaActionOptions.block,
-          // ) to block suspicious requests
-        }
+      // Example: Rate limit password reset emails
+      // In production, you'd check against a database
+      if (event.emailType == EmailType.passwordReset) {
+        // Could return BeforeEmailResponse(
+        //   recaptchaActionOverride: RecaptchaActionOptions.block,
+        // ) to block suspicious requests
+      }
 
-        return null;
-      },
-    );
+      return null;
+    });
 
     // Before SMS sent - runs before MFA or sign-in SMS messages
     // NOTE: The Auth emulator only supports beforeCreate and beforeSignIn.
     // This function is included for manifest snapshot testing but cannot be
     // tested with the emulator.
-    firebase.identity.beforeSmsSent(
-      (AuthBlockingEvent event) async {
-        print('Before SMS sent:');
-        print('  SMS Type: ${event.smsType?.value}');
-        print('  Phone: ${event.additionalUserInfo?.phoneNumber}');
+    firebase.identity.beforeSmsSent((AuthBlockingEvent event) async {
+      print('Before SMS sent:');
+      print('  SMS Type: ${event.smsType?.value}');
+      print('  Phone: ${event.additionalUserInfo?.phoneNumber}');
 
-        // Example: Block SMS to certain country codes
-        final phone = event.additionalUserInfo?.phoneNumber;
-        if (phone != null && phone.startsWith('+1900')) {
-          return const BeforeSmsResponse(
-            recaptchaActionOverride: RecaptchaActionOptions.block,
-          );
-        }
+      // Example: Block SMS to certain country codes
+      final phone = event.additionalUserInfo?.phoneNumber;
+      if (phone != null && phone.startsWith('+1900')) {
+        return const BeforeSmsResponse(
+          recaptchaActionOverride: RecaptchaActionOptions.block,
+        );
+      }
 
-        return null;
-      },
-    );
+      return null;
+    });
 
     // ==========================================================================
     // Scheduler trigger examples
     // ==========================================================================
 
     // Basic scheduled function - runs every day at midnight
-    firebase.scheduler.onSchedule(
-      schedule: '0 0 * * *',
-      (event) async {
-        print('Scheduled function triggered:');
-        print('  Job Name: ${event.jobName}');
-        print('  Schedule Time: ${event.scheduleTime}');
-        // Perform daily cleanup, send reports, etc.
-      },
-    );
+    firebase.scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
+      print('Scheduled function triggered:');
+      print('  Job Name: ${event.jobName}');
+      print('  Schedule Time: ${event.scheduleTime}');
+      // Perform daily cleanup, send reports, etc.
+    });
 
     // Scheduled function with timezone and retry config
     firebase.scheduler.onSchedule(

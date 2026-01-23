@@ -127,10 +127,7 @@ void main() {
     });
 
     test('IntParam generates correct spec', () {
-      final param = defineInt(
-        'MY_INT',
-        ParamOptions(defaultValue: 42),
-      );
+      final param = defineInt('MY_INT', ParamOptions(defaultValue: 42));
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_INT');
@@ -139,10 +136,7 @@ void main() {
     });
 
     test('BooleanParam generates correct spec', () {
-      final param = defineBoolean(
-        'MY_BOOL',
-        ParamOptions(defaultValue: true),
-      );
+      final param = defineBoolean('MY_BOOL', ParamOptions(defaultValue: true));
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_BOOL');
@@ -265,10 +259,7 @@ void main() {
     });
 
     test('generates correct spec', () {
-      final param = defineFloat(
-        'MY_FLOAT',
-        ParamOptions(defaultValue: 3.14),
-      );
+      final param = defineFloat('MY_FLOAT', ParamOptions(defaultValue: 3.14));
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_FLOAT');

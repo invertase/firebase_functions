@@ -66,15 +66,15 @@ sealed class HttpsError implements Exception {
 
   /// Converts this error to JSON for wire transmission.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'status': code.value.toUpperCase().replaceAll('-', '_'),
-        'message': message ?? _defaultMessage(code),
-        if (details != null) 'details': details,
-      };
+    'status': code.value.toUpperCase().replaceAll('-', '_'),
+    'message': message ?? _defaultMessage(code),
+    if (details != null) 'details': details,
+  };
 
   /// Converts this error to a full error response.
   Map<String, dynamic> toErrorResponse() => <String, dynamic>{
-        'error': toJson(),
-      };
+    'error': toJson(),
+  };
 
   /// Gets the HTTP status code for this error.
   int get httpStatusCode => errorCodeToHttpStatus(code);
@@ -85,24 +85,24 @@ sealed class HttpsError implements Exception {
 
   /// Maps error codes to HTTP status codes.
   static int errorCodeToHttpStatus(FunctionsErrorCode code) => switch (code) {
-        FunctionsErrorCode.ok => 200,
-        FunctionsErrorCode.cancelled => 499,
-        FunctionsErrorCode.unknown => 500,
-        FunctionsErrorCode.invalidArgument => 400,
-        FunctionsErrorCode.deadlineExceeded => 504,
-        FunctionsErrorCode.notFound => 404,
-        FunctionsErrorCode.alreadyExists => 409,
-        FunctionsErrorCode.permissionDenied => 403,
-        FunctionsErrorCode.resourceExhausted => 429,
-        FunctionsErrorCode.failedPrecondition => 400,
-        FunctionsErrorCode.aborted => 409,
-        FunctionsErrorCode.outOfRange => 400,
-        FunctionsErrorCode.unimplemented => 501,
-        FunctionsErrorCode.internal => 500,
-        FunctionsErrorCode.unavailable => 503,
-        FunctionsErrorCode.dataLoss => 500,
-        FunctionsErrorCode.unauthenticated => 401,
-      };
+    FunctionsErrorCode.ok => 200,
+    FunctionsErrorCode.cancelled => 499,
+    FunctionsErrorCode.unknown => 500,
+    FunctionsErrorCode.invalidArgument => 400,
+    FunctionsErrorCode.deadlineExceeded => 504,
+    FunctionsErrorCode.notFound => 404,
+    FunctionsErrorCode.alreadyExists => 409,
+    FunctionsErrorCode.permissionDenied => 403,
+    FunctionsErrorCode.resourceExhausted => 429,
+    FunctionsErrorCode.failedPrecondition => 400,
+    FunctionsErrorCode.aborted => 409,
+    FunctionsErrorCode.outOfRange => 400,
+    FunctionsErrorCode.unimplemented => 501,
+    FunctionsErrorCode.internal => 500,
+    FunctionsErrorCode.unavailable => 503,
+    FunctionsErrorCode.dataLoss => 500,
+    FunctionsErrorCode.unauthenticated => 401,
+  };
 
   /// Maps HTTP status codes to error codes (for parsing).
   static FunctionsErrorCode httpStatusToErrorCode(int statusCode) =>
@@ -124,24 +124,24 @@ sealed class HttpsError implements Exception {
 
   /// Default messages for each error code.
   static String _defaultMessage(FunctionsErrorCode code) => switch (code) {
-        FunctionsErrorCode.ok => 'OK',
-        FunctionsErrorCode.cancelled => 'Request was cancelled',
-        FunctionsErrorCode.unknown => 'Unknown error occurred',
-        FunctionsErrorCode.invalidArgument => 'Invalid argument',
-        FunctionsErrorCode.deadlineExceeded => 'Deadline exceeded',
-        FunctionsErrorCode.notFound => 'Resource not found',
-        FunctionsErrorCode.alreadyExists => 'Resource already exists',
-        FunctionsErrorCode.permissionDenied => 'Permission denied',
-        FunctionsErrorCode.resourceExhausted => 'Resource exhausted',
-        FunctionsErrorCode.failedPrecondition => 'Failed precondition',
-        FunctionsErrorCode.aborted => 'Operation aborted',
-        FunctionsErrorCode.outOfRange => 'Value out of range',
-        FunctionsErrorCode.unimplemented => 'Operation not implemented',
-        FunctionsErrorCode.internal => 'Internal error',
-        FunctionsErrorCode.unavailable => 'Service unavailable',
-        FunctionsErrorCode.dataLoss => 'Data loss',
-        FunctionsErrorCode.unauthenticated => 'Unauthenticated',
-      };
+    FunctionsErrorCode.ok => 'OK',
+    FunctionsErrorCode.cancelled => 'Request was cancelled',
+    FunctionsErrorCode.unknown => 'Unknown error occurred',
+    FunctionsErrorCode.invalidArgument => 'Invalid argument',
+    FunctionsErrorCode.deadlineExceeded => 'Deadline exceeded',
+    FunctionsErrorCode.notFound => 'Resource not found',
+    FunctionsErrorCode.alreadyExists => 'Resource already exists',
+    FunctionsErrorCode.permissionDenied => 'Permission denied',
+    FunctionsErrorCode.resourceExhausted => 'Resource exhausted',
+    FunctionsErrorCode.failedPrecondition => 'Failed precondition',
+    FunctionsErrorCode.aborted => 'Operation aborted',
+    FunctionsErrorCode.outOfRange => 'Value out of range',
+    FunctionsErrorCode.unimplemented => 'Operation not implemented',
+    FunctionsErrorCode.internal => 'Internal error',
+    FunctionsErrorCode.unavailable => 'Service unavailable',
+    FunctionsErrorCode.dataLoss => 'Data loss',
+    FunctionsErrorCode.unauthenticated => 'Unauthenticated',
+  };
 }
 
 /// Creates an [HttpsError] with the given code and optional message.
@@ -154,67 +154,67 @@ final class GenericHttpsError extends HttpsError {
 /// Error indicating the operation was cancelled.
 final class CancelledError extends HttpsError {
   CancelledError([String? message, dynamic details])
-      : super(FunctionsErrorCode.cancelled, message, details);
+    : super(FunctionsErrorCode.cancelled, message, details);
 }
 
 /// Error indicating an unknown error occurred.
 final class UnknownError extends HttpsError {
   UnknownError([String? message, dynamic details])
-      : super(FunctionsErrorCode.unknown, message, details);
+    : super(FunctionsErrorCode.unknown, message, details);
 }
 
 /// Error indicating an invalid argument was provided.
 final class InvalidArgumentError extends HttpsError {
   InvalidArgumentError([String? message, dynamic details])
-      : super(FunctionsErrorCode.invalidArgument, message, details);
+    : super(FunctionsErrorCode.invalidArgument, message, details);
 }
 
 /// Error indicating the deadline was exceeded.
 final class DeadlineExceededError extends HttpsError {
   DeadlineExceededError([String? message, dynamic details])
-      : super(FunctionsErrorCode.deadlineExceeded, message, details);
+    : super(FunctionsErrorCode.deadlineExceeded, message, details);
 }
 
 /// Error indicating the requested resource was not found.
 final class NotFoundError extends HttpsError {
   NotFoundError([String? message, dynamic details])
-      : super(FunctionsErrorCode.notFound, message, details);
+    : super(FunctionsErrorCode.notFound, message, details);
 }
 
 /// Error indicating the resource already exists.
 final class AlreadyExistsError extends HttpsError {
   AlreadyExistsError([String? message, dynamic details])
-      : super(FunctionsErrorCode.alreadyExists, message, details);
+    : super(FunctionsErrorCode.alreadyExists, message, details);
 }
 
 /// Error indicating permission was denied.
 final class PermissionDeniedError extends HttpsError {
   PermissionDeniedError([String? message, dynamic details])
-      : super(FunctionsErrorCode.permissionDenied, message, details);
+    : super(FunctionsErrorCode.permissionDenied, message, details);
 }
 
 /// Error indicating a resource has been exhausted.
 final class ResourceExhaustedError extends HttpsError {
   ResourceExhaustedError([String? message, dynamic details])
-      : super(FunctionsErrorCode.resourceExhausted, message, details);
+    : super(FunctionsErrorCode.resourceExhausted, message, details);
 }
 
 /// Error indicating a precondition check failed.
 final class FailedPreconditionError extends HttpsError {
   FailedPreconditionError([String? message, dynamic details])
-      : super(FunctionsErrorCode.failedPrecondition, message, details);
+    : super(FunctionsErrorCode.failedPrecondition, message, details);
 }
 
 /// Error indicating the operation was aborted.
 final class AbortedError extends HttpsError {
   AbortedError([String? message, dynamic details])
-      : super(FunctionsErrorCode.aborted, message, details);
+    : super(FunctionsErrorCode.aborted, message, details);
 }
 
 /// Error indicating a value was out of range.
 final class OutOfRangeError extends HttpsError {
   OutOfRangeError([String? message, dynamic details])
-      : super(FunctionsErrorCode.outOfRange, message, details);
+    : super(FunctionsErrorCode.outOfRange, message, details);
 }
 
 /// Error indicating the operation is not implemented.
@@ -223,29 +223,29 @@ final class OutOfRangeError extends HttpsError {
 /// error, use `throw UnsupportedError('...')` instead.
 final class UnimplementedError extends HttpsError {
   UnimplementedError([String? message, dynamic details])
-      : super(FunctionsErrorCode.unimplemented, message, details);
+    : super(FunctionsErrorCode.unimplemented, message, details);
 }
 
 /// Error indicating an internal error occurred.
 final class InternalError extends HttpsError {
   InternalError([String? message, dynamic details])
-      : super(FunctionsErrorCode.internal, message, details);
+    : super(FunctionsErrorCode.internal, message, details);
 }
 
 /// Error indicating the service is unavailable.
 final class UnavailableError extends HttpsError {
   UnavailableError([String? message, dynamic details])
-      : super(FunctionsErrorCode.unavailable, message, details);
+    : super(FunctionsErrorCode.unavailable, message, details);
 }
 
 /// Error indicating data was lost.
 final class DataLossError extends HttpsError {
   DataLossError([String? message, dynamic details])
-      : super(FunctionsErrorCode.dataLoss, message, details);
+    : super(FunctionsErrorCode.dataLoss, message, details);
 }
 
 /// Error indicating the user is not authenticated.
 final class UnauthenticatedError extends HttpsError {
   UnauthenticatedError([String? message, dynamic details])
-      : super(FunctionsErrorCode.unauthenticated, message, details);
+    : super(FunctionsErrorCode.unauthenticated, message, details);
 }

@@ -43,9 +43,9 @@ enum EmailType {
   static EmailType? fromString(String? value) {
     if (value == null) return null;
     return EmailType.values.cast<EmailType?>().firstWhere(
-          (e) => e!.value == value,
-          orElse: () => null,
-        );
+      (e) => e!.value == value,
+      orElse: () => null,
+    );
   }
 }
 
@@ -69,9 +69,9 @@ enum SmsType {
   static SmsType? fromString(String? value) {
     if (value == null) return null;
     return SmsType.values.cast<SmsType?>().firstWhere(
-          (e) => e!.value == value,
-          orElse: () => null,
-        );
+      (e) => e!.value == value,
+      orElse: () => null,
+    );
   }
 }
 
@@ -131,16 +131,16 @@ class Credential {
   final String signInMethod;
 
   Map<String, dynamic> toJson() => {
-        if (claims != null) 'claims': claims,
-        if (idToken != null) 'idToken': idToken,
-        if (accessToken != null) 'accessToken': accessToken,
-        if (refreshToken != null) 'refreshToken': refreshToken,
-        if (expirationTime != null)
-          'expirationTime': expirationTime!.toIso8601String(),
-        if (secret != null) 'secret': secret,
-        'providerId': providerId,
-        'signInMethod': signInMethod,
-      };
+    if (claims != null) 'claims': claims,
+    if (idToken != null) 'idToken': idToken,
+    if (accessToken != null) 'accessToken': accessToken,
+    if (refreshToken != null) 'refreshToken': refreshToken,
+    if (expirationTime != null)
+      'expirationTime': expirationTime!.toIso8601String(),
+    if (secret != null) 'secret': secret,
+    'providerId': providerId,
+    'signInMethod': signInMethod,
+  };
 }
 
 /// The additional user info component of the auth event context.
@@ -233,14 +233,14 @@ class AdditionalUserInfo {
   final String? phoneNumber;
 
   Map<String, dynamic> toJson() => {
-        if (providerId != null) 'providerId': providerId,
-        if (profile != null) 'profile': profile,
-        if (username != null) 'username': username,
-        'isNewUser': isNewUser,
-        if (recaptchaScore != null) 'recaptchaScore': recaptchaScore,
-        if (email != null) 'email': email,
-        if (phoneNumber != null) 'phoneNumber': phoneNumber,
-      };
+    if (providerId != null) 'providerId': providerId,
+    if (profile != null) 'profile': profile,
+    if (username != null) 'username': username,
+    'isNewUser': isNewUser,
+    if (recaptchaScore != null) 'recaptchaScore': recaptchaScore,
+    if (email != null) 'email': email,
+    if (phoneNumber != null) 'phoneNumber': phoneNumber,
+  };
 }
 
 /// Defines the auth event context for blocking events.
@@ -277,15 +277,15 @@ class AuthEventContext {
   final SmsType? smsType;
 
   Map<String, dynamic> toJson() => {
-        if (locale != null) 'locale': locale,
-        'ipAddress': ipAddress,
-        'userAgent': userAgent,
-        if (additionalUserInfo != null)
-          'additionalUserInfo': additionalUserInfo!.toJson(),
-        if (credential != null) 'credential': credential!.toJson(),
-        if (emailType != null) 'emailType': emailType!.value,
-        if (smsType != null) 'smsType': smsType!.value,
-      };
+    if (locale != null) 'locale': locale,
+    'ipAddress': ipAddress,
+    'userAgent': userAgent,
+    if (additionalUserInfo != null)
+      'additionalUserInfo': additionalUserInfo!.toJson(),
+    if (credential != null) 'credential': credential!.toJson(),
+    if (emailType != null) 'emailType': emailType!.value,
+    if (smsType != null) 'smsType': smsType!.value,
+  };
 }
 
 /// Defines the auth event for 2nd gen blocking events.
@@ -343,7 +343,7 @@ class AuthBlockingEvent extends AuthEventContext {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        if (data != null) 'data': data!.toJson(),
-      };
+    ...super.toJson(),
+    if (data != null) 'data': data!.toJson(),
+  };
 }

@@ -1,6 +1,6 @@
 import '../common/cloud_event.dart';
 
-/// A CloudEvent that contains a DocumentSnapshot or a Change<DocumentSnapshot>.
+/// A CloudEvent that contains a DocumentSnapshot or a `Change<DocumentSnapshot>`.
 ///
 /// This event type extends the base [CloudEvent] with Firestore-specific fields.
 class FirestoreEvent<T extends Object?> extends CloudEvent<T> {

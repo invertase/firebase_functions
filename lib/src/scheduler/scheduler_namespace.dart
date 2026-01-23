@@ -79,33 +79,27 @@ class SchedulerNamespace extends FunctionsNamespace {
     // Generate function name from schedule
     final functionName = _scheduleToFunctionName(schedule);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          // Extract event data from request headers
-          final headers = _lowercaseHeaders(request.headers);
-          final event = ScheduledEvent.fromHeaders(headers);
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        // Extract event data from request headers
+        final headers = _lowercaseHeaders(request.headers);
+        final event = ScheduledEvent.fromHeaders(headers);
 
-          // Execute handler
-          await handler(event);
+        // Execute handler
+        await handler(event);
 
-          // Return success (Cloud Scheduler expects 2xx response)
-          return Response.ok('');
-        } catch (e, stackTrace) {
-          // Log the error for debugging
-          print('Error in scheduled function: $e');
-          print('Stack trace: $stackTrace');
+        // Return success (Cloud Scheduler expects 2xx response)
+        return Response.ok('');
+      } catch (e, stackTrace) {
+        // Log the error for debugging
+        print('Error in scheduled function: $e');
+        print('Stack trace: $stackTrace');
 
-          // Return error response
-          // Cloud Scheduler will retry based on retry config
-          return Response(
-            500,
-            body: 'Error executing scheduled function: $e',
-          );
-        }
-      },
-    );
+        // Return error response
+        // Cloud Scheduler will retry based on retry config
+        return Response(500, body: 'Error executing scheduled function: $e');
+      }
+    });
   }
 
   /// Converts a schedule expression to a function name.

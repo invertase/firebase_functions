@@ -82,11 +82,7 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 
   // Start HTTP server
   final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
-  final server = await shelf_io.serve(
-    handler,
-    InternetAddress.anyIPv4,
-    port,
-  );
+  final server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
 
   print(
     'Firebase Functions serving at http://${server.address.host}:${server.port}',
@@ -96,32 +92,32 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 /// CORS middleware for emulator mode.
 Middleware _corsMiddleware(EmulatorEnvironment env) =>
     (innerHandler) => (request) {
-          // Handle preflight OPTIONS requests
-          if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
-            return Response.ok(
-              '',
-              headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': '*',
-                'Access-Control-Allow-Headers': '*',
-              },
-            );
-          }
+      // Handle preflight OPTIONS requests
+      if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
+        return Response.ok(
+          '',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': '*',
+            'Access-Control-Allow-Headers': '*',
+          },
+        );
+      }
 
-          return Future.sync(() => innerHandler(request)).then((response) {
-            // Add CORS headers to all responses if enabled
-            if (env.enableCors) {
-              return response.change(
-                headers: {
-                  'Access-Control-Allow-Origin': '*',
-                  'Access-Control-Allow-Methods': '*',
-                  'Access-Control-Allow-Headers': '*',
-                },
-              );
-            }
-            return response;
-          });
-        };
+      return Future.sync(() => innerHandler(request)).then((response) {
+        // Add CORS headers to all responses if enabled
+        if (env.enableCors) {
+          return response.change(
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': '*',
+              'Access-Control-Allow-Headers': '*',
+            },
+          );
+        }
+        return response;
+      });
+    };
 
 /// Routes incoming requests to the appropriate function handler.
 FutureOr<Response> _routeRequest(
@@ -159,12 +155,7 @@ FutureOr<Response> _routeRequest(
   // This matches Node.js behavior where each Cloud Run service runs one function
   final functionTarget = env.environment['FUNCTION_TARGET'];
   if (functionTarget != null && functionTarget.isNotEmpty) {
-    return _routeToTargetFunction(
-      request,
-      firebase,
-      env,
-      functionTarget,
-    );
+    return _routeToTargetFunction(request, firebase, env, functionTarget);
   }
 
   // Shared process mode (development): Route by path
@@ -184,11 +175,9 @@ FutureOr<Response> _routeToTargetFunction(
   final functions = firebase.functions;
 
   // Find the function with matching name
-  final targetFunction =
-      functions.cast<FirebaseFunctionDeclaration?>().firstWhere(
-            (f) => f?.name == functionTarget,
-            orElse: () => null,
-          );
+  final targetFunction = functions
+      .cast<FirebaseFunctionDeclaration?>()
+      .firstWhere((f) => f?.name == functionTarget, orElse: () => null);
 
   if (targetFunction == null) {
     return Response.notFound(
@@ -302,7 +291,8 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
     print('DEBUG: Content-Type: ${request.headers['content-type']}');
 
     String? bodyString; // Only set for structured mode
-    final isBinaryMode = request.headers.containsKey('ce-type') &&
+    final isBinaryMode =
+        request.headers.containsKey('ce-type') &&
         request.headers.containsKey('ce-source');
 
     String source;
@@ -372,8 +362,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
           );
 
           // For structured mode, recreate request with body; for binary mode, use original
-          final newRequest =
-              bodyString != null ? request.change(body: bodyString) : request;
+          final newRequest = bodyString != null
+              ? request.change(body: bodyString)
+              : request;
           return (newRequest, function);
         }
       }
@@ -491,8 +482,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
     // TODO: Add support for other CloudEvent types (Storage, Auth, etc.)
 
     // No CloudEvent function matched - return reconstructed request if we read the body
-    final finalRequest =
-        bodyString != null ? request.change(body: bodyString) : request;
+    final finalRequest = bodyString != null
+        ? request.change(body: bodyString)
+        : request;
     return (finalRequest, null);
   } catch (e) {
     print('Failed to parse CloudEvent for function matching: $e');
