@@ -42,11 +42,7 @@ class PubSubNamespace extends FunctionsNamespace {
     firebase.registerFunction(functionName, (request) async {
       try {
         // Read and parse CloudEvent
-        final bodyString = await request.readAsString();
-        final json = parseCloudEventJson(bodyString);
-
-        // Validate CloudEvent structure
-        validateCloudEvent(json);
+        final json = await parseAndValidateCloudEvent(request);
 
         // Verify it's a Pub/Sub event
         if (!_isPubSubEvent(json['type'] as String)) {
