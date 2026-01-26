@@ -9,9 +9,6 @@ analyzer:
     missing_required_param: error
     missing_return: error
     todo: ignore
-    # Library names are optional but doc comments before them are cleaner
-    unnecessary_library_name: ignore
-    dangling_library_doc_comments: ignore
 
 linter:
   rules:
@@ -33,7 +30,6 @@ linter:
     - avoid_returning_this
     - avoid_void_async
     - directives_ordering
-    - library_private_types_in_public_api
     - omit_local_variable_types
     - parameter_assignments
     - prefer_asserts_with_message
@@ -50,7 +46,6 @@ linter:
     - unawaited_futures
     - use_if_null_to_convert_nulls_to_bools
     - use_string_buffers
-    - use_super_parameters
 
     # Disabled rules (too strict or not always applicable)
     # - avoid_catches_without_on_clauses (sometimes catching all exceptions is intentional)
