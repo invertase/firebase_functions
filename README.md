@@ -32,6 +32,8 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 ## Prerequisites
 
 - Dart SDK >=3.0.0
+- Node v22 (Later versions of Node won't work!)
+- Java 21+ (for Firestore)
 - Custom Firebase CLI with Dart runtime support:
 
 ```bash
