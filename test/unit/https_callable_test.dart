@@ -255,7 +255,7 @@ void main() {
       expect(response.streamingResponse!.headers['Connection'], 'keep-alive');
 
       // Cleanup
-      response.closeStream();
+      unawaited(response.closeStream());
     });
 
     test('sendChunk returns false when not streaming', () async {
@@ -339,7 +339,7 @@ void main() {
       // Just verify it doesn't throw
       response.clearHeartbeat();
 
-      response.closeStream();
+      unawaited(response.closeStream());
     });
 
     test('stream method forwards stream data', () async {

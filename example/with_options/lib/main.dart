@@ -2,8 +2,8 @@ import 'package:firebase_functions/firebase_functions.dart';
 
 /// Comprehensive example testing ALL HTTP function options.
 /// This validates that the builder correctly extracts and exports all 21 options.
-void main(List<String> args) {
-  fireUp(args, (firebase) {
+void main(List<String> args) async {
+  await fireUp(args, (firebase) async {
     // Test 1: HTTPS onRequest with ALL GlobalOptions + cors
     firebase.https.onRequest(
       name: 'httpsFull',
