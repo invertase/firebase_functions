@@ -126,21 +126,19 @@ void main() {
     }
 
     test('data returns decoded body data', () {
-      final request = CallableRequest<Map<String, dynamic>>(
-        createRequest(),
-        {'name': 'John', 'age': 30},
-        null,
-      );
+      final request = CallableRequest<Map<String, dynamic>>(createRequest(), {
+        'name': 'John',
+        'age': 30,
+      }, null);
 
       expect(request.data, {'name': 'John', 'age': 30});
     });
 
     test('data uses fromJson decoder when provided', () {
-      final request = CallableRequest<_TestUser>(
-        createRequest(),
-        {'name': 'John', 'age': 30},
-        _TestUser.fromJson,
-      );
+      final request = CallableRequest<_TestUser>(createRequest(), {
+        'name': 'John',
+        'age': 30,
+      }, _TestUser.fromJson);
 
       final user = request.data;
       expect(user.name, 'John');
@@ -154,10 +152,7 @@ void main() {
         _TestUser.fromJson,
       );
 
-      expect(
-        () => request.data,
-        throwsStateError,
-      );
+      expect(() => request.data, throwsStateError);
     });
 
     test('acceptsStreaming returns true for SSE accept header', () {
@@ -181,11 +176,7 @@ void main() {
     });
 
     test('acceptsStreaming returns false when no accept header', () {
-      final request = CallableRequest(
-        createRequest(),
-        null,
-        null,
-      );
+      final request = CallableRequest(createRequest(), null, null);
 
       expect(request.acceptsStreaming, isFalse);
     });
@@ -260,17 +251,11 @@ void main() {
         response.streamingResponse!.headers['Content-Type'],
         'text/event-stream',
       );
-      expect(
-        response.streamingResponse!.headers['Cache-Control'],
-        'no-cache',
-      );
-      expect(
-        response.streamingResponse!.headers['Connection'],
-        'keep-alive',
-      );
+      expect(response.streamingResponse!.headers['Cache-Control'], 'no-cache');
+      expect(response.streamingResponse!.headers['Connection'], 'keep-alive');
 
       // Cleanup
-      response.closeStream();
+      unawaited(response.closeStream());
     });
 
     test('sendChunk returns false when not streaming', () async {
@@ -354,7 +339,7 @@ void main() {
       // Just verify it doesn't throw
       response.clearHeartbeat();
 
-      response.closeStream();
+      unawaited(response.closeStream());
     });
 
     test('stream method forwards stream data', () async {
@@ -388,9 +373,7 @@ void main() {
       final response = CallableResponse<int>(acceptsStreaming: false);
 
       var streamCompleted = false;
-      final sourceStream = Stream.fromIterable([
-        CallableResult(1),
-      ]).map((e) {
+      final sourceStream = Stream.fromIterable([CallableResult(1)]).map((e) {
         streamCompleted = true;
         return e;
       });
@@ -527,10 +510,7 @@ void main() {
     });
 
     test('throws for unsupported types', () {
-      expect(
-        () => encode(_CustomObject()),
-        throwsArgumentError,
-      );
+      expect(() => encode(_CustomObject()), throwsArgumentError);
     });
   });
 
@@ -556,10 +536,7 @@ void main() {
     });
 
     test('json returns null for empty body', () async {
-      final request = Request(
-        'POST',
-        Uri.parse('http://localhost:8080/test'),
-      );
+      final request = Request('POST', Uri.parse('http://localhost:8080/test'));
       final json = await request.json;
       expect(json, isNull);
     });

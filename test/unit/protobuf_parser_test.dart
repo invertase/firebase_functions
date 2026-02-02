@@ -104,9 +104,7 @@ void main() {
 
       test('parses DocumentEventData with null fields correctly', () {
         final docEventData = _buildDocumentEventData(
-          fields: [
-            _buildField('deleted', _buildNullValue()),
-          ],
+          fields: [_buildField('deleted', _buildNullValue())],
         );
 
         final result = parseDocumentEventData(docEventData);
@@ -142,9 +140,7 @@ void main() {
         final docEventData = _buildDocumentEventData(
           name:
               'projects/test-project/databases/(default)/documents/users/user123',
-          fields: [
-            _buildField('name', _buildStringValue('Test')),
-          ],
+          fields: [_buildField('name', _buildStringValue('Test'))],
         );
 
         final result = parseDocumentEventData(docEventData);

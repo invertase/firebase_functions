@@ -34,7 +34,7 @@ class BillingNamespace {
   /// Handles automated billing plan update alerts.
   void onPlanAutomatedUpdatePublished(
     FutureOr<void> Function(AlertEvent<PlanAutomatedUpdatePayload> event)
-        handler, {
+    handler, {
     // ignore: experimental_member_use
     @mustBeConst AlertOptions? options = const AlertOptions(),
   }) {
@@ -54,31 +54,26 @@ class BillingNamespace {
   ) {
     final functionName = _alertTypeToFunctionName(alertType.value);
 
-    _firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final bodyString = await request.readAsString();
-          final json = parseCloudEventJson(bodyString);
-          validateCloudEvent(json);
+    _firebase.registerFunction(functionName, (request) async {
+      try {
+        final json = await parseAndValidateCloudEvent(request);
 
-          if (!_isAlertEvent(json['type'] as String)) {
-            return Response(
-              400,
-              body: 'Invalid event type for alerts: ${json['type']}',
-            );
-          }
-
-          final event = AlertEvent<T>.fromJson(json, payloadDecoder);
-          await handler(event);
-          return Response.ok('');
-        } on FormatException catch (e) {
-          return Response(400, body: 'Invalid CloudEvent: ${e.message}');
-        } catch (e) {
-          return Response(500, body: 'Error processing alert: $e');
+        if (!_isAlertEvent(json['type'] as String)) {
+          return Response(
+            400,
+            body: 'Invalid event type for alerts: ${json['type']}',
+          );
         }
-      },
-    );
+
+        final event = AlertEvent<T>.fromJson(json, payloadDecoder);
+        await handler(event);
+        return Response.ok('');
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e) {
+        return Response(500, body: 'Error processing alert: $e');
+      }
+    });
   }
 
   String _alertTypeToFunctionName(String alertType) {

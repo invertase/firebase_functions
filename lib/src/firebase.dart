@@ -27,7 +27,8 @@ class Firebase {
   /// Initialize the Firebase Admin SDK
   void _initializeAdminSDK() {
     // Get project ID from environment
-    final projectId = Platform.environment['GCLOUD_PROJECT'] ??
+    final projectId =
+        Platform.environment['GCLOUD_PROJECT'] ??
         Platform.environment['GCP_PROJECT'] ??
         'demo-test'; // Fallback for emulator
 

@@ -32,9 +32,7 @@ class PubsubMessage {
 
     return PubsubMessage(
       data: message['data'] as String,
-      attributes: Map<String, String>.from(
-        message['attributes'] as Map? ?? {},
-      ),
+      attributes: Map<String, String>.from(message['attributes'] as Map? ?? {}),
       messageId: message['messageId'] as String,
       publishTime: DateTime.parse(message['publishTime'] as String),
       orderingKey: message['orderingKey'] as String?,
@@ -58,14 +56,14 @@ class PubsubMessage {
 
   /// Converts this message to JSON.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'message': <String, dynamic>{
-          'data': data,
-          'attributes': attributes,
-          'messageId': messageId,
-          'publishTime': publishTime.toIso8601String(),
-          if (orderingKey != null) 'orderingKey': orderingKey,
-        },
-      };
+    'message': <String, dynamic>{
+      'data': data,
+      'attributes': attributes,
+      'messageId': messageId,
+      'publishTime': publishTime.toIso8601String(),
+      if (orderingKey != null) 'orderingKey': orderingKey,
+    },
+  };
 
   /// Decodes the base64-encoded data as a UTF-8 string.
   String get textData {

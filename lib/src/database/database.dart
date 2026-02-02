@@ -17,7 +17,7 @@
 ///   },
 /// );
 /// ```
-library database;
+library;
 
 export 'data_snapshot.dart'
     show Change, DataSnapshot, IntPriority, Priority, StringPriority;

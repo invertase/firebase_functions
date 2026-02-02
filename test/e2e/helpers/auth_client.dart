@@ -55,10 +55,7 @@ class SignInResponse {
 
 /// Error from an auth operation.
 class AuthError implements Exception {
-  AuthError({
-    required this.code,
-    required this.message,
-  });
+  AuthError({required this.code, required this.message});
 
   factory AuthError.fromJson(Map<String, dynamic> json) {
     final error = json['error'] as Map<String, dynamic>;
@@ -173,9 +170,7 @@ class AuthClient {
     final response = await _client.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'idToken': idToken,
-      }),
+      body: jsonEncode({'idToken': idToken}),
     );
 
     if (response.statusCode != 200) {
@@ -188,9 +183,7 @@ class AuthClient {
   ///
   /// This is useful for test cleanup.
   Future<void> clearAllUsers() async {
-    final url = Uri.parse(
-      '$baseUrl/emulator/v1/projects/$projectId/accounts',
-    );
+    final url = Uri.parse('$baseUrl/emulator/v1/projects/$projectId/accounts');
 
     print('AUTH clearAllUsers');
 

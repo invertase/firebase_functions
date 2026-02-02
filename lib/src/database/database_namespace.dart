@@ -51,6 +51,7 @@ class DatabaseNamespace extends FunctionsNamespace {
   /// ```
   void onValueCreated(
     Future<void> Function(DatabaseEvent<DataSnapshot?> event) handler, {
+
     /// The database reference path to trigger on.
     /// Supports wildcards: '/users/{userId}', '/users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -63,142 +64,134 @@ class DatabaseNamespace extends FunctionsNamespace {
     final functionName = _refToFunctionName('onValueCreated', ref);
     final instance = options?.instance ?? '*';
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isCreatedEvent(ceType)) {
-              return Response(
-                400,
-                body: 'Invalid event type for Database onValueCreated: $ceType',
-              );
-            }
+          if (ceType != null && !_isCreatedEvent(ceType)) {
+            return Response(
+              400,
+              body: 'Invalid event type for Database onValueCreated: $ceType',
+            );
+          }
 
-            final ceId = request.headers['ce-id'] ?? '';
-            final ceSource = request.headers['ce-source'] ?? '';
-            final ceTime =
-                request.headers['ce-time'] ?? DateTime.now().toIso8601String();
-            final ceSubject = request.headers['ce-subject'];
-            final refPath = request.headers['ce-ref'] ?? '';
-            final instanceName = request.headers['ce-instance'] ?? instance;
-            final databaseHost =
-                request.headers['ce-firebasedatabasehost'] ?? '';
-            final location = request.headers['ce-location'] ?? 'us-central1';
+          final ceId = request.headers['ce-id'] ?? '';
+          final ceSource = request.headers['ce-source'] ?? '';
+          final ceTime =
+              request.headers['ce-time'] ?? DateTime.now().toIso8601String();
+          final ceSubject = request.headers['ce-subject'];
+          final refPath = request.headers['ce-ref'] ?? '';
+          final instanceName = request.headers['ce-instance'] ?? instance;
+          final databaseHost = request.headers['ce-firebasedatabasehost'] ?? '';
+          final location = request.headers['ce-location'] ?? 'us-central1';
 
-            final params = _extractParams(ref, refPath);
+          final params = _extractParams(ref, refPath);
 
-            print('Database onValueCreated triggered!');
-            print('Ref: $refPath');
-            print('Instance: $instanceName');
-            print('Params: $params');
+          print('Database onValueCreated triggered!');
+          print('Ref: $refPath');
+          print('Instance: $instanceName');
+          print('Params: $params');
 
-            // Parse JSON body
-            DataSnapshot? snapshot;
-            try {
-              final bodyString = await request.readAsString();
-              if (bodyString.isNotEmpty) {
-                final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
-                // For created events, the new data is in 'delta'
-                final deltaData = bodyJson['delta'];
-                snapshot = DataSnapshot(
-                  instance: instanceName,
-                  ref: refPath,
-                  data: deltaData,
-                );
-              }
-            } catch (e, stack) {
-              print('Error parsing body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final event = DatabaseEvent<DataSnapshot?>(
-                data: snapshot,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType ?? createdEventType,
-                firebaseDatabaseHost: databaseHost,
+          // Parse JSON body
+          DataSnapshot? snapshot;
+          try {
+            final bodyString = await request.readAsString();
+            if (bodyString.isNotEmpty) {
+              final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
+              // For created events, the new data is in 'delta'
+              final deltaData = bodyJson['delta'];
+              snapshot = DataSnapshot(
                 instance: instanceName,
                 ref: refPath,
-                location: location,
-                params: params,
-              );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
-            // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
-            validateCloudEvent(json);
-
-            if (!_isCreatedEvent(json['type'] as String)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Database onValueCreated: ${json['type']}',
+                data: deltaData,
               );
             }
+          } catch (e, stack) {
+            print('Error parsing body: $e');
+            print('Stack: $stack');
+          }
 
-            final eventData = json['data'] as Map<String, dynamic>?;
-            final deltaData = eventData?['delta'];
-
-            final refPath = json['ref'] as String? ?? '';
-            final instanceName = json['instance'] as String? ?? instance;
-
-            final snapshot = DataSnapshot(
-              instance: instanceName,
-              ref: refPath,
-              data: deltaData,
-            );
-
-            final params = _extractParams(ref, refPath);
-
+          try {
             final event = DatabaseEvent<DataSnapshot?>(
               data: snapshot,
-              id: json['id'] as String,
-              source: json['source'] as String,
-              specversion: json['specversion'] as String,
-              subject: json['subject'] as String?,
-              time: DateTime.parse(json['time'] as String),
-              type: json['type'] as String,
-              firebaseDatabaseHost:
-                  json['firebasedatabasehost'] as String? ?? '',
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType ?? createdEventType,
+              firebaseDatabaseHost: databaseHost,
               instance: instanceName,
               ref: refPath,
-              location: json['location'] as String? ?? 'us-central1',
+              location: location,
               params: params,
             );
 
             await handler(event);
-            return Response.ok('');
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
           }
-        } on FormatException catch (e) {
-          return Response(400, body: 'Invalid CloudEvent: ${e.message}');
-        } catch (e, stackTrace) {
-          return Response(
-            500,
-            body: 'Error processing Database event: $e\n$stackTrace',
+
+          return Response.ok('');
+        } else {
+          // Structured content mode: full CloudEvent in JSON body
+          final json = await parseAndValidateCloudEvent(request);
+
+          if (!_isCreatedEvent(json['type'] as String)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Database onValueCreated: ${json['type']}',
+            );
+          }
+
+          final eventData = json['data'] as Map<String, dynamic>?;
+          final deltaData = eventData?['delta'];
+
+          final refPath = json['ref'] as String? ?? '';
+          final instanceName = json['instance'] as String? ?? instance;
+
+          final snapshot = DataSnapshot(
+            instance: instanceName,
+            ref: refPath,
+            data: deltaData,
           );
+
+          final params = _extractParams(ref, refPath);
+
+          final event = DatabaseEvent<DataSnapshot?>(
+            data: snapshot,
+            id: json['id'] as String,
+            source: json['source'] as String,
+            specversion: json['specversion'] as String,
+            subject: json['subject'] as String?,
+            time: DateTime.parse(json['time'] as String),
+            type: json['type'] as String,
+            firebaseDatabaseHost: json['firebasedatabasehost'] as String? ?? '',
+            instance: instanceName,
+            ref: refPath,
+            location: json['location'] as String? ?? 'us-central1',
+            params: params,
+          );
+
+          await handler(event);
+          return Response.ok('');
         }
-      },
-      refPattern: _normalizeRefPattern(ref),
-    );
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Database event: $e\n$stackTrace',
+        );
+      }
+    }, refPattern: _normalizeRefPattern(ref));
   }
 
   /// Event handler that triggers when data is updated in Realtime Database.
@@ -222,6 +215,7 @@ class DatabaseNamespace extends FunctionsNamespace {
   /// ```
   void onValueUpdated(
     Future<void> Function(DatabaseEvent<Change<DataSnapshot>?> event) handler, {
+
     /// The database reference path to trigger on.
     /// Supports wildcards: '/users/{userId}', '/users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -234,163 +228,155 @@ class DatabaseNamespace extends FunctionsNamespace {
     final functionName = _refToFunctionName('onValueUpdated', ref);
     final instance = options?.instance ?? '*';
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isUpdatedEvent(ceType)) {
-              return Response(
-                400,
-                body: 'Invalid event type for Database onValueUpdated: $ceType',
-              );
-            }
+          if (ceType != null && !_isUpdatedEvent(ceType)) {
+            return Response(
+              400,
+              body: 'Invalid event type for Database onValueUpdated: $ceType',
+            );
+          }
 
-            final ceId = request.headers['ce-id'] ?? '';
-            final ceSource = request.headers['ce-source'] ?? '';
-            final ceTime =
-                request.headers['ce-time'] ?? DateTime.now().toIso8601String();
-            final ceSubject = request.headers['ce-subject'];
-            final refPath = request.headers['ce-ref'] ?? '';
-            final instanceName = request.headers['ce-instance'] ?? instance;
-            final databaseHost =
-                request.headers['ce-firebasedatabasehost'] ?? '';
-            final location = request.headers['ce-location'] ?? 'us-central1';
+          final ceId = request.headers['ce-id'] ?? '';
+          final ceSource = request.headers['ce-source'] ?? '';
+          final ceTime =
+              request.headers['ce-time'] ?? DateTime.now().toIso8601String();
+          final ceSubject = request.headers['ce-subject'];
+          final refPath = request.headers['ce-ref'] ?? '';
+          final instanceName = request.headers['ce-instance'] ?? instance;
+          final databaseHost = request.headers['ce-firebasedatabasehost'] ?? '';
+          final location = request.headers['ce-location'] ?? 'us-central1';
 
-            final params = _extractParams(ref, refPath);
+          final params = _extractParams(ref, refPath);
 
-            print('Database onValueUpdated triggered!');
-            print('Ref: $refPath');
-            print('Params: $params');
+          print('Database onValueUpdated triggered!');
+          print('Ref: $refPath');
+          print('Params: $params');
 
-            // Parse JSON body
-            Change<DataSnapshot>? change;
-            try {
-              final bodyString = await request.readAsString();
-              if (bodyString.isNotEmpty) {
-                final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
-                // For update events: 'data' is before state, 'delta' is the change
-                final beforeData = bodyJson['data'];
-                final deltaData = bodyJson['delta'];
-                // Apply delta to get after state
-                final afterData = _applyDelta(beforeData, deltaData);
+          // Parse JSON body
+          Change<DataSnapshot>? change;
+          try {
+            final bodyString = await request.readAsString();
+            if (bodyString.isNotEmpty) {
+              final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
+              // For update events: 'data' is before state, 'delta' is the change
+              final beforeData = bodyJson['data'];
+              final deltaData = bodyJson['delta'];
+              // Apply delta to get after state
+              final afterData = _applyDelta(beforeData, deltaData);
 
-                final beforeSnapshot = DataSnapshot(
-                  instance: instanceName,
-                  ref: refPath,
-                  data: beforeData,
-                );
-                final afterSnapshot = DataSnapshot(
-                  instance: instanceName,
-                  ref: refPath,
-                  data: afterData,
-                );
-                change = Change<DataSnapshot>(
-                  before: beforeSnapshot,
-                  after: afterSnapshot,
-                );
-              }
-            } catch (e, stack) {
-              print('Error parsing body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final event = DatabaseEvent<Change<DataSnapshot>?>(
-                data: change,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType ?? updatedEventType,
-                firebaseDatabaseHost: databaseHost,
+              final beforeSnapshot = DataSnapshot(
                 instance: instanceName,
                 ref: refPath,
-                location: location,
-                params: params,
+                data: beforeData,
               );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
-            // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
-            validateCloudEvent(json);
-
-            if (!_isUpdatedEvent(json['type'] as String)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Database onValueUpdated: ${json['type']}',
+              final afterSnapshot = DataSnapshot(
+                instance: instanceName,
+                ref: refPath,
+                data: afterData,
+              );
+              change = Change<DataSnapshot>(
+                before: beforeSnapshot,
+                after: afterSnapshot,
               );
             }
+          } catch (e, stack) {
+            print('Error parsing body: $e');
+            print('Stack: $stack');
+          }
 
-            final eventData = json['data'] as Map<String, dynamic>?;
-            final beforeData = eventData?['data'];
-            final deltaData = eventData?['delta'];
-            final afterData = _applyDelta(beforeData, deltaData);
-
-            final refPath = json['ref'] as String? ?? '';
-            final instanceName = json['instance'] as String? ?? instance;
-
-            final beforeSnapshot = DataSnapshot(
-              instance: instanceName,
-              ref: refPath,
-              data: beforeData,
-            );
-            final afterSnapshot = DataSnapshot(
-              instance: instanceName,
-              ref: refPath,
-              data: afterData,
-            );
-            final change = Change<DataSnapshot>(
-              before: beforeSnapshot,
-              after: afterSnapshot,
-            );
-
-            final params = _extractParams(ref, refPath);
-
+          try {
             final event = DatabaseEvent<Change<DataSnapshot>?>(
               data: change,
-              id: json['id'] as String,
-              source: json['source'] as String,
-              specversion: json['specversion'] as String,
-              subject: json['subject'] as String?,
-              time: DateTime.parse(json['time'] as String),
-              type: json['type'] as String,
-              firebaseDatabaseHost:
-                  json['firebasedatabasehost'] as String? ?? '',
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType ?? updatedEventType,
+              firebaseDatabaseHost: databaseHost,
               instance: instanceName,
               ref: refPath,
-              location: json['location'] as String? ?? 'us-central1',
+              location: location,
               params: params,
             );
 
             await handler(event);
-            return Response.ok('');
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
           }
-        } catch (e, stackTrace) {
-          return Response(
-            500,
-            body: 'Error processing Database event: $e\n$stackTrace',
+
+          return Response.ok('');
+        } else {
+          // Structured content mode: full CloudEvent in JSON body
+          final json = await parseAndValidateCloudEvent(request);
+
+          if (!_isUpdatedEvent(json['type'] as String)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Database onValueUpdated: ${json['type']}',
+            );
+          }
+
+          final eventData = json['data'] as Map<String, dynamic>?;
+          final beforeData = eventData?['data'];
+          final deltaData = eventData?['delta'];
+          final afterData = _applyDelta(beforeData, deltaData);
+
+          final refPath = json['ref'] as String? ?? '';
+          final instanceName = json['instance'] as String? ?? instance;
+
+          final beforeSnapshot = DataSnapshot(
+            instance: instanceName,
+            ref: refPath,
+            data: beforeData,
           );
+          final afterSnapshot = DataSnapshot(
+            instance: instanceName,
+            ref: refPath,
+            data: afterData,
+          );
+          final change = Change<DataSnapshot>(
+            before: beforeSnapshot,
+            after: afterSnapshot,
+          );
+
+          final params = _extractParams(ref, refPath);
+
+          final event = DatabaseEvent<Change<DataSnapshot>?>(
+            data: change,
+            id: json['id'] as String,
+            source: json['source'] as String,
+            specversion: json['specversion'] as String,
+            subject: json['subject'] as String?,
+            time: DateTime.parse(json['time'] as String),
+            type: json['type'] as String,
+            firebaseDatabaseHost: json['firebasedatabasehost'] as String? ?? '',
+            instance: instanceName,
+            ref: refPath,
+            location: json['location'] as String? ?? 'us-central1',
+            params: params,
+          );
+
+          await handler(event);
+          return Response.ok('');
         }
-      },
-      refPattern: _normalizeRefPattern(ref),
-    );
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Database event: $e\n$stackTrace',
+        );
+      }
+    }, refPattern: _normalizeRefPattern(ref));
   }
 
   /// Event handler that triggers when data is deleted in Realtime Database.
@@ -411,6 +397,7 @@ class DatabaseNamespace extends FunctionsNamespace {
   /// ```
   void onValueDeleted(
     Future<void> Function(DatabaseEvent<DataSnapshot?> event) handler, {
+
     /// The database reference path to trigger on.
     /// Supports wildcards: '/users/{userId}', '/users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -423,139 +410,131 @@ class DatabaseNamespace extends FunctionsNamespace {
     final functionName = _refToFunctionName('onValueDeleted', ref);
     final instance = options?.instance ?? '*';
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isDeletedEvent(ceType)) {
-              return Response(
-                400,
-                body: 'Invalid event type for Database onValueDeleted: $ceType',
-              );
-            }
+          if (ceType != null && !_isDeletedEvent(ceType)) {
+            return Response(
+              400,
+              body: 'Invalid event type for Database onValueDeleted: $ceType',
+            );
+          }
 
-            final ceId = request.headers['ce-id'] ?? '';
-            final ceSource = request.headers['ce-source'] ?? '';
-            final ceTime =
-                request.headers['ce-time'] ?? DateTime.now().toIso8601String();
-            final ceSubject = request.headers['ce-subject'];
-            final refPath = request.headers['ce-ref'] ?? '';
-            final instanceName = request.headers['ce-instance'] ?? instance;
-            final databaseHost =
-                request.headers['ce-firebasedatabasehost'] ?? '';
-            final location = request.headers['ce-location'] ?? 'us-central1';
+          final ceId = request.headers['ce-id'] ?? '';
+          final ceSource = request.headers['ce-source'] ?? '';
+          final ceTime =
+              request.headers['ce-time'] ?? DateTime.now().toIso8601String();
+          final ceSubject = request.headers['ce-subject'];
+          final refPath = request.headers['ce-ref'] ?? '';
+          final instanceName = request.headers['ce-instance'] ?? instance;
+          final databaseHost = request.headers['ce-firebasedatabasehost'] ?? '';
+          final location = request.headers['ce-location'] ?? 'us-central1';
 
-            final params = _extractParams(ref, refPath);
+          final params = _extractParams(ref, refPath);
 
-            print('Database onValueDeleted triggered!');
-            print('Ref: $refPath');
-            print('Params: $params');
+          print('Database onValueDeleted triggered!');
+          print('Ref: $refPath');
+          print('Params: $params');
 
-            // Parse JSON body
-            DataSnapshot? snapshot;
-            try {
-              final bodyString = await request.readAsString();
-              if (bodyString.isNotEmpty) {
-                final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
-                // For delete events, the deleted data is in 'data'
-                final deletedData = bodyJson['data'];
-                snapshot = DataSnapshot(
-                  instance: instanceName,
-                  ref: refPath,
-                  data: deletedData,
-                );
-              }
-            } catch (e, stack) {
-              print('Error parsing body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final event = DatabaseEvent<DataSnapshot?>(
-                data: snapshot,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType ?? deletedEventType,
-                firebaseDatabaseHost: databaseHost,
+          // Parse JSON body
+          DataSnapshot? snapshot;
+          try {
+            final bodyString = await request.readAsString();
+            if (bodyString.isNotEmpty) {
+              final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
+              // For delete events, the deleted data is in 'data'
+              final deletedData = bodyJson['data'];
+              snapshot = DataSnapshot(
                 instance: instanceName,
                 ref: refPath,
-                location: location,
-                params: params,
-              );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
-            // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
-            validateCloudEvent(json);
-
-            if (!_isDeletedEvent(json['type'] as String)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Database onValueDeleted: ${json['type']}',
+                data: deletedData,
               );
             }
+          } catch (e, stack) {
+            print('Error parsing body: $e');
+            print('Stack: $stack');
+          }
 
-            final eventData = json['data'] as Map<String, dynamic>?;
-            final deletedData = eventData?['data'];
-
-            final refPath = json['ref'] as String? ?? '';
-            final instanceName = json['instance'] as String? ?? instance;
-
-            final snapshot = DataSnapshot(
-              instance: instanceName,
-              ref: refPath,
-              data: deletedData,
-            );
-
-            final params = _extractParams(ref, refPath);
-
+          try {
             final event = DatabaseEvent<DataSnapshot?>(
               data: snapshot,
-              id: json['id'] as String,
-              source: json['source'] as String,
-              specversion: json['specversion'] as String,
-              subject: json['subject'] as String?,
-              time: DateTime.parse(json['time'] as String),
-              type: json['type'] as String,
-              firebaseDatabaseHost:
-                  json['firebasedatabasehost'] as String? ?? '',
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType ?? deletedEventType,
+              firebaseDatabaseHost: databaseHost,
               instance: instanceName,
               ref: refPath,
-              location: json['location'] as String? ?? 'us-central1',
+              location: location,
               params: params,
             );
 
             await handler(event);
-            return Response.ok('');
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
           }
-        } catch (e, stackTrace) {
-          return Response(
-            500,
-            body: 'Error processing Database event: $e\n$stackTrace',
+
+          return Response.ok('');
+        } else {
+          // Structured content mode: full CloudEvent in JSON body
+          final json = await parseAndValidateCloudEvent(request);
+
+          if (!_isDeletedEvent(json['type'] as String)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Database onValueDeleted: ${json['type']}',
+            );
+          }
+
+          final eventData = json['data'] as Map<String, dynamic>?;
+          final deletedData = eventData?['data'];
+
+          final refPath = json['ref'] as String? ?? '';
+          final instanceName = json['instance'] as String? ?? instance;
+
+          final snapshot = DataSnapshot(
+            instance: instanceName,
+            ref: refPath,
+            data: deletedData,
           );
+
+          final params = _extractParams(ref, refPath);
+
+          final event = DatabaseEvent<DataSnapshot?>(
+            data: snapshot,
+            id: json['id'] as String,
+            source: json['source'] as String,
+            specversion: json['specversion'] as String,
+            subject: json['subject'] as String?,
+            time: DateTime.parse(json['time'] as String),
+            type: json['type'] as String,
+            firebaseDatabaseHost: json['firebasedatabasehost'] as String? ?? '',
+            instance: instanceName,
+            ref: refPath,
+            location: json['location'] as String? ?? 'us-central1',
+            params: params,
+          );
+
+          await handler(event);
+          return Response.ok('');
         }
-      },
-      refPattern: _normalizeRefPattern(ref),
-    );
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Database event: $e\n$stackTrace',
+        );
+      }
+    }, refPattern: _normalizeRefPattern(ref));
   }
 
   /// Event handler that triggers on any write to a database reference
@@ -587,6 +566,7 @@ class DatabaseNamespace extends FunctionsNamespace {
   /// ```
   void onValueWritten(
     Future<void> Function(DatabaseEvent<Change<DataSnapshot>?> event) handler, {
+
     /// The database reference path to trigger on.
     /// Supports wildcards: '/users/{userId}', '/users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -599,173 +579,165 @@ class DatabaseNamespace extends FunctionsNamespace {
     final functionName = _refToFunctionName('onValueWritten', ref);
     final instance = options?.instance ?? '*';
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isWrittenEvent(ceType)) {
-              return Response(
-                400,
-                body: 'Invalid event type for Database onValueWritten: $ceType',
-              );
-            }
+          if (ceType != null && !_isWrittenEvent(ceType)) {
+            return Response(
+              400,
+              body: 'Invalid event type for Database onValueWritten: $ceType',
+            );
+          }
 
-            final ceId = request.headers['ce-id'] ?? '';
-            final ceSource = request.headers['ce-source'] ?? '';
-            final ceTime =
-                request.headers['ce-time'] ?? DateTime.now().toIso8601String();
-            final ceSubject = request.headers['ce-subject'];
-            final refPath = request.headers['ce-ref'] ?? '';
-            final instanceName = request.headers['ce-instance'] ?? instance;
-            final databaseHost =
-                request.headers['ce-firebasedatabasehost'] ?? '';
-            final location = request.headers['ce-location'] ?? 'us-central1';
+          final ceId = request.headers['ce-id'] ?? '';
+          final ceSource = request.headers['ce-source'] ?? '';
+          final ceTime =
+              request.headers['ce-time'] ?? DateTime.now().toIso8601String();
+          final ceSubject = request.headers['ce-subject'];
+          final refPath = request.headers['ce-ref'] ?? '';
+          final instanceName = request.headers['ce-instance'] ?? instance;
+          final databaseHost = request.headers['ce-firebasedatabasehost'] ?? '';
+          final location = request.headers['ce-location'] ?? 'us-central1';
 
-            final params = _extractParams(ref, refPath);
+          final params = _extractParams(ref, refPath);
 
-            print('Database onValueWritten triggered!');
-            print('Ref: $refPath');
-            print('Params: $params');
+          print('Database onValueWritten triggered!');
+          print('Ref: $refPath');
+          print('Params: $params');
 
-            // Parse JSON body
-            Change<DataSnapshot>? change;
-            try {
-              final bodyString = await request.readAsString();
-              if (bodyString.isNotEmpty) {
-                final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
-                // 'data' is before state, 'delta' is the change
-                final beforeData = bodyJson['data'];
-                final deltaData = bodyJson['delta'];
-                // Apply delta to get after state
-                final afterData = _applyDelta(beforeData, deltaData);
+          // Parse JSON body
+          Change<DataSnapshot>? change;
+          try {
+            final bodyString = await request.readAsString();
+            if (bodyString.isNotEmpty) {
+              final bodyJson = jsonDecode(bodyString) as Map<String, dynamic>;
+              // 'data' is before state, 'delta' is the change
+              final beforeData = bodyJson['data'];
+              final deltaData = bodyJson['delta'];
+              // Apply delta to get after state
+              final afterData = _applyDelta(beforeData, deltaData);
 
-                final beforeSnapshot = DataSnapshot(
-                  instance: instanceName,
-                  ref: refPath,
-                  data: beforeData,
-                );
-                final afterSnapshot = DataSnapshot(
-                  instance: instanceName,
-                  ref: refPath,
-                  data: afterData,
-                );
-
-                // Determine operation type
-                if (beforeData == null && afterData != null) {
-                  print('  Operation: CREATE');
-                } else if (beforeData != null && afterData == null) {
-                  print('  Operation: DELETE');
-                } else {
-                  print('  Operation: UPDATE');
-                }
-
-                change = Change<DataSnapshot>(
-                  before: beforeSnapshot,
-                  after: afterSnapshot,
-                );
-              }
-            } catch (e, stack) {
-              print('Error parsing body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final event = DatabaseEvent<Change<DataSnapshot>?>(
-                data: change,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType ?? writtenEventType,
-                firebaseDatabaseHost: databaseHost,
+              final beforeSnapshot = DataSnapshot(
                 instance: instanceName,
                 ref: refPath,
-                location: location,
-                params: params,
+                data: beforeData,
+              );
+              final afterSnapshot = DataSnapshot(
+                instance: instanceName,
+                ref: refPath,
+                data: afterData,
               );
 
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
+              // Determine operation type
+              if (beforeData == null && afterData != null) {
+                print('  Operation: CREATE');
+              } else if (beforeData != null && afterData == null) {
+                print('  Operation: DELETE');
+              } else {
+                print('  Operation: UPDATE');
+              }
 
-            return Response.ok('');
-          } else {
-            // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
-            validateCloudEvent(json);
-
-            if (!_isWrittenEvent(json['type'] as String)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Database onValueWritten: ${json['type']}',
+              change = Change<DataSnapshot>(
+                before: beforeSnapshot,
+                after: afterSnapshot,
               );
             }
+          } catch (e, stack) {
+            print('Error parsing body: $e');
+            print('Stack: $stack');
+          }
 
-            final eventData = json['data'] as Map<String, dynamic>?;
-            final beforeData = eventData?['data'];
-            final deltaData = eventData?['delta'];
-            final afterData = _applyDelta(beforeData, deltaData);
-
-            final refPath = json['ref'] as String? ?? '';
-            final instanceName = json['instance'] as String? ?? instance;
-
-            final beforeSnapshot = DataSnapshot(
-              instance: instanceName,
-              ref: refPath,
-              data: beforeData,
-            );
-            final afterSnapshot = DataSnapshot(
-              instance: instanceName,
-              ref: refPath,
-              data: afterData,
-            );
-            final change = Change<DataSnapshot>(
-              before: beforeSnapshot,
-              after: afterSnapshot,
-            );
-
-            final params = _extractParams(ref, refPath);
-
+          try {
             final event = DatabaseEvent<Change<DataSnapshot>?>(
               data: change,
-              id: json['id'] as String,
-              source: json['source'] as String,
-              specversion: json['specversion'] as String,
-              subject: json['subject'] as String?,
-              time: DateTime.parse(json['time'] as String),
-              type: json['type'] as String,
-              firebaseDatabaseHost:
-                  json['firebasedatabasehost'] as String? ?? '',
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType ?? writtenEventType,
+              firebaseDatabaseHost: databaseHost,
               instance: instanceName,
               ref: refPath,
-              location: json['location'] as String? ?? 'us-central1',
+              location: location,
               params: params,
             );
 
             await handler(event);
-            return Response.ok('');
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
           }
-        } catch (e, stackTrace) {
-          return Response(
-            500,
-            body: 'Error processing Database event: $e\n$stackTrace',
+
+          return Response.ok('');
+        } else {
+          // Structured content mode: full CloudEvent in JSON body
+          final json = await parseAndValidateCloudEvent(request);
+
+          if (!_isWrittenEvent(json['type'] as String)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Database onValueWritten: ${json['type']}',
+            );
+          }
+
+          final eventData = json['data'] as Map<String, dynamic>?;
+          final beforeData = eventData?['data'];
+          final deltaData = eventData?['delta'];
+          final afterData = _applyDelta(beforeData, deltaData);
+
+          final refPath = json['ref'] as String? ?? '';
+          final instanceName = json['instance'] as String? ?? instance;
+
+          final beforeSnapshot = DataSnapshot(
+            instance: instanceName,
+            ref: refPath,
+            data: beforeData,
           );
+          final afterSnapshot = DataSnapshot(
+            instance: instanceName,
+            ref: refPath,
+            data: afterData,
+          );
+          final change = Change<DataSnapshot>(
+            before: beforeSnapshot,
+            after: afterSnapshot,
+          );
+
+          final params = _extractParams(ref, refPath);
+
+          final event = DatabaseEvent<Change<DataSnapshot>?>(
+            data: change,
+            id: json['id'] as String,
+            source: json['source'] as String,
+            specversion: json['specversion'] as String,
+            subject: json['subject'] as String?,
+            time: DateTime.parse(json['time'] as String),
+            type: json['type'] as String,
+            firebaseDatabaseHost: json['firebasedatabasehost'] as String? ?? '',
+            instance: instanceName,
+            ref: refPath,
+            location: json['location'] as String? ?? 'us-central1',
+            params: params,
+          );
+
+          await handler(event);
+          return Response.ok('');
         }
-      },
-      refPattern: _normalizeRefPattern(ref),
-    );
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Database event: $e\n$stackTrace',
+        );
+      }
+    }, refPattern: _normalizeRefPattern(ref));
   }
 
   /// Normalizes a ref pattern by removing leading/trailing slashes.

@@ -2,8 +2,8 @@ import 'package:firebase_functions/firebase_functions.dart';
 
 /// Comprehensive example testing ALL HTTP function options.
 /// This validates that the builder correctly extracts and exports all 21 options.
-void main(List<String> args) {
-  fireUp(args, (firebase) {
+void main(List<String> args) async {
+  await fireUp(args, (firebase) async {
     // Test 1: HTTPS onRequest with ALL GlobalOptions + cors
     firebase.https.onRequest(
       name: 'httpsFull',
@@ -25,10 +25,7 @@ void main(List<String> args) {
         ),
         ingressSettings: Ingress(IngressSetting.allowAll),
         invoker: Invoker.public(),
-        labels: {
-          'environment': 'test',
-          'team': 'backend',
-        },
+        labels: {'environment': 'test', 'team': 'backend'},
         omit: Omit(false),
         // Runtime-only options (NOT in manifest)
         preserveExternalChanges: PreserveExternalChanges(true),
@@ -49,9 +46,7 @@ void main(List<String> args) {
         maxInstances: Instances(100),
         concurrency: Concurrency(80),
         invoker: Invoker.private(),
-        labels: {
-          'type': 'callable',
-        },
+        labels: {'type': 'callable'},
         // Runtime-only options (NOT in manifest)
         enforceAppCheck: EnforceAppCheck(true),
         consumeAppCheckToken: ConsumeAppCheckToken(true),
@@ -66,9 +61,7 @@ void main(List<String> args) {
     // Test 3: GCF Gen1 CPU option
     firebase.https.onRequest(
       name: 'httpsGen1',
-      options: const HttpsOptions(
-        cpu: Cpu.gcfGen1(),
-      ),
+      options: const HttpsOptions(cpu: Cpu.gcfGen1()),
       (request) async => Response.ok('GCF Gen1 CPU'),
     );
 

@@ -1,4 +1,6 @@
-import 'dart:convert';
+import 'package:shelf/shelf.dart';
+
+import 'utilities.dart';
 
 /// Represents a CloudEvents v1.0 event.
 ///
@@ -24,16 +26,15 @@ class CloudEvent<T extends Object?> {
   factory CloudEvent.fromJson(
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) dataDecoder,
-  ) =>
-      CloudEvent<T>(
-        data: dataDecoder(json['data'] as Map<String, dynamic>),
-        id: json['id'] as String,
-        source: json['source'] as String,
-        specversion: json['specversion'] as String,
-        subject: json['subject'] as String?,
-        time: DateTime.parse(json['time'] as String),
-        type: json['type'] as String,
-      );
+  ) => CloudEvent<T>(
+    data: dataDecoder(json['data'] as Map<String, dynamic>),
+    id: json['id'] as String,
+    source: json['source'] as String,
+    specversion: json['specversion'] as String,
+    subject: json['subject'] as String?,
+    time: DateTime.parse(json['time'] as String),
+    type: json['type'] as String,
+  );
 
   /// The event data. Type depends on the event source.
   /// May be null in emulator mode when protobuf parsing is not available.
@@ -70,23 +71,10 @@ class CloudEvent<T extends Object?> {
       };
 }
 
-/// Parses a raw CloudEvent JSON string into a Map.
-Map<String, dynamic> parseCloudEventJson(String body) {
-  try {
-    final decoded = jsonDecode(body);
-    if (decoded is! Map<String, dynamic>) {
-      throw FormatException(
-        'CloudEvent body must be a JSON object',
-      );
-    }
-    return decoded;
-  } on FormatException catch (e) {
-    throw FormatException('Invalid CloudEvent JSON: ${e.message}');
-  }
-}
+/// Reads the request body, parses it as a CloudEvent JSON, and validates it.
+Future<Map<String, dynamic>> parseAndValidateCloudEvent(Request request) async {
+  final json = await readAsJsonMap(request);
 
-/// Validates that a JSON object has the required CloudEvent fields.
-void validateCloudEvent(Map<String, dynamic> json) {
   const requiredFields = ['specversion', 'id', 'source', 'type', 'time'];
 
   for (final field in requiredFields) {
@@ -100,4 +88,6 @@ void validateCloudEvent(Map<String, dynamic> json) {
       'Unsupported CloudEvent version: ${json['specversion']}',
     );
   }
+
+  return json;
 }

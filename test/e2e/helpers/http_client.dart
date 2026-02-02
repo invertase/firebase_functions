@@ -25,10 +25,7 @@ class FunctionsHttpClient {
 
     return await _client.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        ...?headers,
-      },
+      headers: {'Content-Type': 'application/json', ...?headers},
       body: body != null ? jsonEncode(body) : null,
     );
   }
@@ -46,10 +43,7 @@ class FunctionsHttpClient {
 
     return await _client.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-        ...?headers,
-      },
+      headers: {'Content-Type': 'application/json', ...?headers},
       body: body,
     );
   }

@@ -41,9 +41,9 @@ class FirestoreNamespace extends FunctionsNamespace {
   /// );
   /// ```
   void onDocumentCreated(
-    Future<void> Function(
-      FirestoreEvent<EmulatorDocumentSnapshot?> event,
-    ) handler, {
+    Future<void> Function(FirestoreEvent<EmulatorDocumentSnapshot?> event)
+    handler, {
+
     /// The Firestore document path to trigger on.
     /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -56,174 +56,161 @@ class FirestoreNamespace extends FunctionsNamespace {
     // Use the document path as the function name (sanitized)
     final functionName = _documentToFunctionName('onDocumentCreated', document);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          // Check if this is binary content mode (CloudEvent in headers)
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        // Check if this is binary content mode (CloudEvent in headers)
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            // Binary content mode: metadata in headers, data in body (protobuf)
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          // Binary content mode: metadata in headers, data in body (protobuf)
+          final ceType = request.headers['ce-type'];
 
-            // Verify it's a Firestore document created event
-            if (ceType != null && !_isFirestoreCreatedEvent(ceType)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Firestore onDocumentCreated: $ceType',
-              );
-            }
+          // Verify it's a Firestore document created event
+          if (ceType != null && !_isFirestoreCreatedEvent(ceType)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentCreated: $ceType',
+            );
+          }
 
-            // Extract metadata from CloudEvent headers
-            final ceId = request.headers['ce-id'];
-            final ceSource = request.headers['ce-source'];
-            final ceTime = request.headers['ce-time'];
-            final ceSubject = request.headers['ce-subject'];
-            final documentPath = request.headers['ce-document'];
-            final database = request.headers['ce-database'] ?? '(default)';
-            final namespace = request.headers['ce-namespace'] ?? '(default)';
+          // Extract metadata from CloudEvent headers
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
 
-            if (ceId == null ||
-                ceSource == null ||
-                ceTime == null ||
-                documentPath == null) {
-              return Response(
-                400,
-                body: 'Missing required CloudEvent headers',
-              );
-            }
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
 
-            // Extract path parameters from document path
-            final params = _extractParams(document, documentPath);
+          // Extract path parameters from document path
+          final params = _extractParams(document, documentPath);
 
-            // Print event information for debugging
-            print('Firestore onDocumentCreated triggered!');
-            print('Document: $documentPath');
-            print('Database: $database');
-            print('Namespace: $namespace');
-            print('Params: $params');
-            print('Event ID: $ceId');
-            print('Event time: $ceTime');
+          // Print event information for debugging
+          print('Firestore onDocumentCreated triggered!');
+          print('Document: $documentPath');
+          print('Database: $database');
+          print('Namespace: $namespace');
+          print('Params: $params');
+          print('Event ID: $ceId');
+          print('Event time: $ceTime');
 
-            // Parse protobuf body to get document snapshot
-            EmulatorDocumentSnapshot? snapshot;
-            try {
-              final bodyBytes = await request.read().fold<List<int>>(
-                [],
-                (previous, element) => previous..addAll(element),
-              );
-
-              if (bodyBytes.isNotEmpty) {
-                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
-                final parsed =
-                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
-
-                if (parsed != null) {
-                  snapshot = parsed['value'];
-                  print('Protobuf parsing successful!');
-                  if (snapshot != null) {
-                    print('  Document ID: ${snapshot.id}');
-                    print('  Document path: ${snapshot.path}');
-                    print('  Document data: ${snapshot.data()}');
-                  } else {
-                    print('  Warning: value field is null');
-                  }
-                } else {
-                  print('Warning: Protobuf parsing returned null');
-                }
-              } else {
-                print('Warning: Request body is empty');
-              }
-            } catch (e, stack) {
-              print('Error parsing protobuf body: $e');
-              print('Stack: $stack');
-            }
-
-            // Create event with parsed document snapshot
-            print('');
-            print('Calling user handler...');
-            if (snapshot != null) {
-              print(
-                'event.data available - use event.data.data() to access fields',
-              );
-            } else {
-              print('Note: event.data is null - could not fetch from emulator');
-            }
-
-            try {
-              final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
-                data: snapshot,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType!,
-                location: 'us-central1',
-                project: _extractProject(ceSource),
-                database: database,
-                namespace: namespace,
-                document: documentPath,
-                params: params,
-              );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
-            // Structured content mode: full CloudEvent in JSON body
-            final bodyString = await request.readAsString();
-            final json = parseCloudEventJson(bodyString);
-
-            // Validate CloudEvent structure
-            validateCloudEvent(json);
-
-            // Verify it's a Firestore document created event
-            if (!_isFirestoreCreatedEvent(json['type'] as String)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Firestore onDocumentCreated: ${json['type']}',
-              );
-            }
-
-            // Parse CloudEvent with EmulatorDocumentSnapshot data
-            final event = FirestoreEvent<EmulatorDocumentSnapshot?>.fromJson(
-              json,
-              (data) {
-                // TODO: Parse protobuf data from structured CloudEvent
-                // For now, return null until protobuf parsing is implemented
-                return null;
-              },
+          // Parse protobuf body to get document snapshot
+          EmulatorDocumentSnapshot? snapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
             );
 
-            // Execute handler
-            await handler(event);
+            if (bodyBytes.isNotEmpty) {
+              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
 
-            return Response.ok('');
+              if (parsed != null) {
+                snapshot = parsed['value'];
+                print('Protobuf parsing successful!');
+                if (snapshot != null) {
+                  print('  Document ID: ${snapshot.id}');
+                  print('  Document path: ${snapshot.path}');
+                  print('  Document data: ${snapshot.data()}');
+                } else {
+                  print('  Warning: value field is null');
+                }
+              } else {
+                print('Warning: Protobuf parsing returned null');
+              }
+            } else {
+              print('Warning: Request body is empty');
+            }
+          } catch (e, stack) {
+            print('Error parsing protobuf body: $e');
+            print('Stack: $stack');
           }
-        } on FormatException catch (e) {
-          return Response(
-            400,
-            body: 'Invalid CloudEvent: ${e.message}',
+
+          // Create event with parsed document snapshot
+          print('');
+          print('Calling user handler...');
+          if (snapshot != null) {
+            print(
+              'event.data available - use event.data.data() to access fields',
+            );
+          } else {
+            print('Note: event.data is null - could not fetch from emulator');
+          }
+
+          try {
+            final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
+              data: snapshot,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+            );
+
+            await handler(event);
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
+          // Structured content mode: full CloudEvent in JSON body
+          final json = await parseAndValidateCloudEvent(request);
+
+          // Verify it's a Firestore document created event
+          if (!_isFirestoreCreatedEvent(json['type'] as String)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentCreated: ${json['type']}',
+            );
+          }
+
+          // Parse CloudEvent with EmulatorDocumentSnapshot data
+          final event = FirestoreEvent<EmulatorDocumentSnapshot?>.fromJson(
+            json,
+            (data) {
+              // TODO: Parse protobuf data from structured CloudEvent
+              // For now, return null until protobuf parsing is implemented
+              return null;
+            },
           );
-        } catch (e, stackTrace) {
-          return Response(
-            500,
-            body: 'Error processing Firestore event: $e\n$stackTrace',
-          );
+
+          // Execute handler
+          await handler(event);
+
+          return Response.ok('');
         }
-      },
-      documentPattern: document,
-    );
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
   }
 
   /// Event handler that triggers when a document is updated in Firestore.
@@ -248,7 +235,9 @@ class FirestoreNamespace extends FunctionsNamespace {
   void onDocumentUpdated(
     Future<void> Function(
       FirestoreEvent<Change<EmulatorDocumentSnapshot>?> event,
-    ) handler, {
+    )
+    handler, {
+
     /// The Firestore document path to trigger on.
     /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -260,135 +249,129 @@ class FirestoreNamespace extends FunctionsNamespace {
   }) {
     final functionName = _documentToFunctionName('onDocumentUpdated', document);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isFirestoreUpdatedEvent(ceType)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Firestore onDocumentUpdated: $ceType',
-              );
-            }
-
-            final ceId = request.headers['ce-id'];
-            final ceSource = request.headers['ce-source'];
-            final ceTime = request.headers['ce-time'];
-            final ceSubject = request.headers['ce-subject'];
-            final documentPath = request.headers['ce-document'];
-            final database = request.headers['ce-database'] ?? '(default)';
-            final namespace = request.headers['ce-namespace'] ?? '(default)';
-
-            if (ceId == null ||
-                ceSource == null ||
-                ceTime == null ||
-                documentPath == null) {
-              return Response(
-                400,
-                body: 'Missing required CloudEvent headers',
-              );
-            }
-
-            final params = _extractParams(document, documentPath);
-
-            print('Firestore onDocumentUpdated triggered!');
-            print('Document: $documentPath');
-            print('Params: $params');
-
-            // Parse protobuf body to get before/after snapshots
-            EmulatorDocumentSnapshot? beforeSnapshot;
-            EmulatorDocumentSnapshot? afterSnapshot;
-            try {
-              final bodyBytes = await request.read().fold<List<int>>(
-                [],
-                (previous, element) => previous..addAll(element),
-              );
-
-              if (bodyBytes.isNotEmpty) {
-                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
-                final parsed =
-                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
-
-                if (parsed != null) {
-                  beforeSnapshot = parsed['old_value'];
-                  afterSnapshot = parsed['value'];
-                  print('Protobuf parsing successful!');
-                  if (beforeSnapshot != null) {
-                    print('  Before - Document ID: ${beforeSnapshot.id}');
-                    print('  Before - Document data: ${beforeSnapshot.data()}');
-                  } else {
-                    print('  Warning: old_value field is null');
-                  }
-                  if (afterSnapshot != null) {
-                    print('  After - Document ID: ${afterSnapshot.id}');
-                    print('  After - Document data: ${afterSnapshot.data()}');
-                  } else {
-                    print('  Warning: value field is null');
-                  }
-                } else {
-                  print('Warning: Protobuf parsing returned null');
-                }
-              } else {
-                print('Warning: Request body is empty');
-              }
-            } catch (e, stack) {
-              print('Error parsing protobuf body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final change = Change<EmulatorDocumentSnapshot>(
-                before: beforeSnapshot,
-                after: afterSnapshot,
-              );
-
-              final event = FirestoreEvent<Change<EmulatorDocumentSnapshot>?>(
-                data: change,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType!,
-                location: 'us-central1',
-                project: _extractProject(ceSource),
-                database: database,
-                namespace: namespace,
-                document: documentPath,
-                params: params,
-              );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
+          if (ceType != null && !_isFirestoreUpdatedEvent(ceType)) {
             return Response(
-              501,
+              400,
               body:
-                  'Structured CloudEvent mode not yet supported for onDocumentUpdated',
+                  'Invalid event type for Firestore onDocumentUpdated: $ceType',
             );
           }
-        } catch (e, stackTrace) {
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          print('Firestore onDocumentUpdated triggered!');
+          print('Document: $documentPath');
+          print('Params: $params');
+
+          // Parse protobuf body to get before/after snapshots
+          EmulatorDocumentSnapshot? beforeSnapshot;
+          EmulatorDocumentSnapshot? afterSnapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                beforeSnapshot = parsed['old_value'];
+                afterSnapshot = parsed['value'];
+                print('Protobuf parsing successful!');
+                if (beforeSnapshot != null) {
+                  print('  Before - Document ID: ${beforeSnapshot.id}');
+                  print('  Before - Document data: ${beforeSnapshot.data()}');
+                } else {
+                  print('  Warning: old_value field is null');
+                }
+                if (afterSnapshot != null) {
+                  print('  After - Document ID: ${afterSnapshot.id}');
+                  print('  After - Document data: ${afterSnapshot.data()}');
+                } else {
+                  print('  Warning: value field is null');
+                }
+              } else {
+                print('Warning: Protobuf parsing returned null');
+              }
+            } else {
+              print('Warning: Request body is empty');
+            }
+          } catch (e, stack) {
+            print('Error parsing protobuf body: $e');
+            print('Stack: $stack');
+          }
+
+          try {
+            final change = Change<EmulatorDocumentSnapshot>(
+              before: beforeSnapshot,
+              after: afterSnapshot,
+            );
+
+            final event = FirestoreEvent<Change<EmulatorDocumentSnapshot>?>(
+              data: change,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+            );
+
+            await handler(event);
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
           return Response(
-            500,
-            body: 'Error processing Firestore event: $e\n$stackTrace',
+            501,
+            body:
+                'Structured CloudEvent mode not yet supported for onDocumentUpdated',
           );
         }
-      },
-      documentPattern: document,
-    );
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
   }
 
   /// Event handler that triggers when a document is deleted in Firestore.
@@ -407,9 +390,9 @@ class FirestoreNamespace extends FunctionsNamespace {
   /// );
   /// ```
   void onDocumentDeleted(
-    Future<void> Function(
-      FirestoreEvent<EmulatorDocumentSnapshot?> event,
-    ) handler, {
+    Future<void> Function(FirestoreEvent<EmulatorDocumentSnapshot?> event)
+    handler, {
+
     /// The Firestore document path to trigger on.
     /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -421,123 +404,117 @@ class FirestoreNamespace extends FunctionsNamespace {
   }) {
     final functionName = _documentToFunctionName('onDocumentDeleted', document);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isFirestoreDeletedEvent(ceType)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Firestore onDocumentDeleted: $ceType',
-              );
-            }
-
-            final ceId = request.headers['ce-id'];
-            final ceSource = request.headers['ce-source'];
-            final ceTime = request.headers['ce-time'];
-            final ceSubject = request.headers['ce-subject'];
-            final documentPath = request.headers['ce-document'];
-            final database = request.headers['ce-database'] ?? '(default)';
-            final namespace = request.headers['ce-namespace'] ?? '(default)';
-
-            if (ceId == null ||
-                ceSource == null ||
-                ceTime == null ||
-                documentPath == null) {
-              return Response(
-                400,
-                body: 'Missing required CloudEvent headers',
-              );
-            }
-
-            final params = _extractParams(document, documentPath);
-
-            print('Firestore onDocumentDeleted triggered!');
-            print('Document: $documentPath');
-            print('Params: $params');
-
-            // Parse protobuf body to get deleted document snapshot
-            EmulatorDocumentSnapshot? snapshot;
-            try {
-              final bodyBytes = await request.read().fold<List<int>>(
-                [],
-                (previous, element) => previous..addAll(element),
-              );
-
-              if (bodyBytes.isNotEmpty) {
-                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
-                final parsed =
-                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
-
-                if (parsed != null) {
-                  // For delete events, the document state before deletion is in 'value'
-                  snapshot = parsed['value'];
-                  print('Protobuf parsing successful!');
-                  if (snapshot != null) {
-                    print('  Deleted document ID: ${snapshot.id}');
-                    print('  Deleted document data: ${snapshot.data()}');
-                  } else {
-                    print('  Warning: value field is null');
-                  }
-                } else {
-                  print('Warning: Protobuf parsing returned null');
-                }
-              } else {
-                print('Warning: Request body is empty');
-              }
-            } catch (e, stack) {
-              print('Error parsing protobuf body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
-                data: snapshot,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType!,
-                location: 'us-central1',
-                project: _extractProject(ceSource),
-                database: database,
-                namespace: namespace,
-                document: documentPath,
-                params: params,
-              );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
+          if (ceType != null && !_isFirestoreDeletedEvent(ceType)) {
             return Response(
-              501,
+              400,
               body:
-                  'Structured CloudEvent mode not yet supported for onDocumentDeleted',
+                  'Invalid event type for Firestore onDocumentDeleted: $ceType',
             );
           }
-        } catch (e, stackTrace) {
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          print('Firestore onDocumentDeleted triggered!');
+          print('Document: $documentPath');
+          print('Params: $params');
+
+          // Parse protobuf body to get deleted document snapshot
+          EmulatorDocumentSnapshot? snapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                // For delete events, the document state before deletion is in 'value'
+                snapshot = parsed['value'];
+                print('Protobuf parsing successful!');
+                if (snapshot != null) {
+                  print('  Deleted document ID: ${snapshot.id}');
+                  print('  Deleted document data: ${snapshot.data()}');
+                } else {
+                  print('  Warning: value field is null');
+                }
+              } else {
+                print('Warning: Protobuf parsing returned null');
+              }
+            } else {
+              print('Warning: Request body is empty');
+            }
+          } catch (e, stack) {
+            print('Error parsing protobuf body: $e');
+            print('Stack: $stack');
+          }
+
+          try {
+            final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
+              data: snapshot,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+            );
+
+            await handler(event);
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
           return Response(
-            500,
-            body: 'Error processing Firestore event: $e\n$stackTrace',
+            501,
+            body:
+                'Structured CloudEvent mode not yet supported for onDocumentDeleted',
           );
         }
-      },
-      documentPattern: document,
-    );
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
   }
 
   /// Event handler that triggers on any write to a document (create, update, or delete).
@@ -566,7 +543,9 @@ class FirestoreNamespace extends FunctionsNamespace {
   void onDocumentWritten(
     Future<void> Function(
       FirestoreEvent<Change<EmulatorDocumentSnapshot>?> event,
-    ) handler, {
+    )
+    handler, {
+
     /// The Firestore document path to trigger on.
     /// Supports wildcards: 'users/{userId}', 'users/{userId}/posts/{postId}'
     // ignore: experimental_member_use
@@ -578,141 +557,135 @@ class FirestoreNamespace extends FunctionsNamespace {
   }) {
     final functionName = _documentToFunctionName('onDocumentWritten', document);
 
-    firebase.registerFunction(
-      functionName,
-      (request) async {
-        try {
-          final isBinaryMode = request.headers.containsKey('ce-type');
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
 
-          if (isBinaryMode) {
-            final ceType = request.headers['ce-type'];
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
 
-            if (ceType != null && !_isFirestoreWrittenEvent(ceType)) {
-              return Response(
-                400,
-                body:
-                    'Invalid event type for Firestore onDocumentWritten: $ceType',
-              );
-            }
-
-            final ceId = request.headers['ce-id'];
-            final ceSource = request.headers['ce-source'];
-            final ceTime = request.headers['ce-time'];
-            final ceSubject = request.headers['ce-subject'];
-            final documentPath = request.headers['ce-document'];
-            final database = request.headers['ce-database'] ?? '(default)';
-            final namespace = request.headers['ce-namespace'] ?? '(default)';
-
-            if (ceId == null ||
-                ceSource == null ||
-                ceTime == null ||
-                documentPath == null) {
-              return Response(
-                400,
-                body: 'Missing required CloudEvent headers',
-              );
-            }
-
-            final params = _extractParams(document, documentPath);
-
-            print('Firestore onDocumentWritten triggered!');
-            print('Document: $documentPath');
-            print('Params: $params');
-
-            // Parse protobuf body to get before/after snapshots
-            EmulatorDocumentSnapshot? beforeSnapshot;
-            EmulatorDocumentSnapshot? afterSnapshot;
-            try {
-              final bodyBytes = await request.read().fold<List<int>>(
-                [],
-                (previous, element) => previous..addAll(element),
-              );
-
-              if (bodyBytes.isNotEmpty) {
-                print('Parsing protobuf body (${bodyBytes.length} bytes)...');
-                final parsed =
-                    parseDocumentEventData(Uint8List.fromList(bodyBytes));
-
-                if (parsed != null) {
-                  beforeSnapshot = parsed['old_value'];
-                  afterSnapshot = parsed['value'];
-                  print('Protobuf parsing successful!');
-
-                  // Determine operation type
-                  if (beforeSnapshot == null && afterSnapshot != null) {
-                    print('  Operation: CREATE');
-                  } else if (beforeSnapshot != null && afterSnapshot == null) {
-                    print('  Operation: DELETE');
-                  } else if (beforeSnapshot != null && afterSnapshot != null) {
-                    print('  Operation: UPDATE');
-                  }
-
-                  if (beforeSnapshot != null) {
-                    print('  Before - Document ID: ${beforeSnapshot.id}');
-                    print('  Before - Document data: ${beforeSnapshot.data()}');
-                  }
-                  if (afterSnapshot != null) {
-                    print('  After - Document ID: ${afterSnapshot.id}');
-                    print('  After - Document data: ${afterSnapshot.data()}');
-                  }
-                } else {
-                  print('Warning: Protobuf parsing returned null');
-                }
-              } else {
-                print('Warning: Request body is empty');
-              }
-            } catch (e, stack) {
-              print('Error parsing protobuf body: $e');
-              print('Stack: $stack');
-            }
-
-            try {
-              final change = Change<EmulatorDocumentSnapshot>(
-                before: beforeSnapshot,
-                after: afterSnapshot,
-              );
-
-              final event = FirestoreEvent<Change<EmulatorDocumentSnapshot>?>(
-                data: change,
-                id: ceId,
-                source: ceSource,
-                specversion: '1.0',
-                subject: ceSubject,
-                time: DateTime.parse(ceTime),
-                type: ceType!,
-                location: 'us-central1',
-                project: _extractProject(ceSource),
-                database: database,
-                namespace: namespace,
-                document: documentPath,
-                params: params,
-              );
-
-              await handler(event);
-              print('Handler completed successfully');
-            } catch (e, stack) {
-              print('Handler error: $e');
-              print('Stack: $stack');
-              return Response(500, body: 'Handler error: $e');
-            }
-
-            return Response.ok('');
-          } else {
+          if (ceType != null && !_isFirestoreWrittenEvent(ceType)) {
             return Response(
-              501,
+              400,
               body:
-                  'Structured CloudEvent mode not yet supported for onDocumentWritten',
+                  'Invalid event type for Firestore onDocumentWritten: $ceType',
             );
           }
-        } catch (e, stackTrace) {
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          print('Firestore onDocumentWritten triggered!');
+          print('Document: $documentPath');
+          print('Params: $params');
+
+          // Parse protobuf body to get before/after snapshots
+          EmulatorDocumentSnapshot? beforeSnapshot;
+          EmulatorDocumentSnapshot? afterSnapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                beforeSnapshot = parsed['old_value'];
+                afterSnapshot = parsed['value'];
+                print('Protobuf parsing successful!');
+
+                // Determine operation type
+                if (beforeSnapshot == null && afterSnapshot != null) {
+                  print('  Operation: CREATE');
+                } else if (beforeSnapshot != null && afterSnapshot == null) {
+                  print('  Operation: DELETE');
+                } else if (beforeSnapshot != null && afterSnapshot != null) {
+                  print('  Operation: UPDATE');
+                }
+
+                if (beforeSnapshot != null) {
+                  print('  Before - Document ID: ${beforeSnapshot.id}');
+                  print('  Before - Document data: ${beforeSnapshot.data()}');
+                }
+                if (afterSnapshot != null) {
+                  print('  After - Document ID: ${afterSnapshot.id}');
+                  print('  After - Document data: ${afterSnapshot.data()}');
+                }
+              } else {
+                print('Warning: Protobuf parsing returned null');
+              }
+            } else {
+              print('Warning: Request body is empty');
+            }
+          } catch (e, stack) {
+            print('Error parsing protobuf body: $e');
+            print('Stack: $stack');
+          }
+
+          try {
+            final change = Change<EmulatorDocumentSnapshot>(
+              before: beforeSnapshot,
+              after: afterSnapshot,
+            );
+
+            final event = FirestoreEvent<Change<EmulatorDocumentSnapshot>?>(
+              data: change,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+            );
+
+            await handler(event);
+            print('Handler completed successfully');
+          } catch (e, stack) {
+            print('Handler error: $e');
+            print('Stack: $stack');
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
           return Response(
-            500,
-            body: 'Error processing Firestore event: $e\n$stackTrace',
+            501,
+            body:
+                'Structured CloudEvent mode not yet supported for onDocumentWritten',
           );
         }
-      },
-      documentPattern: document,
-    );
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
   }
 
   /// Converts a document path to a function name.

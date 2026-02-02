@@ -26,11 +26,9 @@ class CallableResult<T extends Object> {
 
   /// Converts this result to a Shelf Response.
   Response toResponse() => Response.ok(
-        jsonEncode({'result': data}),
-        headers: {
-          HttpHeaders.contentTypeHeader: 'application/json',
-        },
-      );
+    jsonEncode({'result': data}),
+    headers: {HttpHeaders.contentTypeHeader: 'application/json'},
+  );
 }
 
 /// A callable result that returns JSON data.
@@ -54,10 +52,7 @@ class JsonResult extends CallableResult<Map<String, dynamic>> {
 ///
 /// Contains information about the authenticated user.
 class AuthData {
-  const AuthData({
-    required this.uid,
-    this.token,
-  });
+  const AuthData({required this.uid, this.token});
 
   /// The user's unique ID.
   final String uid;
@@ -70,11 +65,7 @@ class AuthData {
 ///
 /// Contains information about the verified App Check token.
 class AppCheckData {
-  const AppCheckData({
-    required this.appId,
-    this.token,
-    this.alreadyConsumed,
-  });
+  const AppCheckData({required this.appId, this.token, this.alreadyConsumed});
 
   /// The App ID from the App Check token.
   final String appId;
@@ -132,7 +123,7 @@ class CallableRequest<T extends Object?> {
       );
     }
 
-    return _jsonDecoder!(decoded);
+    return _jsonDecoder(decoded);
   }
 
   /// Whether the client accepts streaming (SSE) responses.
@@ -233,7 +224,7 @@ class CallableResponse<T extends Object> {
 
     _streamSubscription = dataStream.listen(
       (result) {
-        sendChunk(result.data);
+        unawaited(sendChunk(result.data));
       },
       onError: (Object error) {
         // Log error but don't close the stream - let handler complete
@@ -306,7 +297,7 @@ class CallableResponse<T extends Object> {
   /// Marks the stream as aborted.
   void abort() {
     _aborted = true;
-    _streamSubscription?.cancel();
+    unawaited(_streamSubscription?.cancel());
     _streamSubscription = null;
     clearHeartbeat();
   }
@@ -460,8 +451,9 @@ extension RequestValidation on Request {
       return false;
     }
 
-    final extraKeys =
-        requestBody.keys.where((field) => field != 'data').toList();
+    final extraKeys = requestBody.keys
+        .where((field) => field != 'data')
+        .toList();
     if (extraKeys.isNotEmpty) {
       return false;
     }

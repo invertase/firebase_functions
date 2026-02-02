@@ -104,33 +104,37 @@ class FirestoreClient {
   }
 
   /// Helper to create a string field value.
-  static Map<String, dynamic> stringValue(String value) =>
-      {'stringValue': value};
+  static Map<String, dynamic> stringValue(String value) => {
+    'stringValue': value,
+  };
 
   /// Helper to create an integer field value.
-  static Map<String, dynamic> intValue(int value) =>
-      {'integerValue': value.toString()};
+  static Map<String, dynamic> intValue(int value) => {
+    'integerValue': value.toString(),
+  };
 
   /// Helper to create a double field value.
-  static Map<String, dynamic> doubleValue(double value) =>
-      {'doubleValue': value};
+  static Map<String, dynamic> doubleValue(double value) => {
+    'doubleValue': value,
+  };
 
   /// Helper to create a boolean field value.
-  static Map<String, dynamic> boolValue({required bool value}) =>
-      {'booleanValue': value};
+  static Map<String, dynamic> boolValue({required bool value}) => {
+    'booleanValue': value,
+  };
 
   /// Helper to create a null field value.
   static Map<String, dynamic> nullValue() => {'nullValue': null};
 
   /// Helper to create a map field value.
   static Map<String, dynamic> mapValue(Map<String, dynamic> fields) => {
-        'mapValue': {'fields': fields},
-      };
+    'mapValue': {'fields': fields},
+  };
 
   /// Helper to create an array field value.
   static Map<String, dynamic> arrayValue(List<Map<String, dynamic>> values) => {
-        'arrayValue': {'values': values},
-      };
+    'arrayValue': {'values': values},
+  };
 
   /// Automatically converts a Dart value to Firestore field format.
   ///

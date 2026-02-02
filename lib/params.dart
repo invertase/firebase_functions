@@ -70,7 +70,7 @@
 ///   handler,
 /// );
 /// ```
-library params;
+library;
 
 import 'src/common/params.dart' as internal;
 
