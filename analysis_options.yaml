@@ -30,6 +30,8 @@ linter:
     - avoid_returning_this
     - avoid_void_async
     - directives_ordering
+    - discarded_futures
+    - library_private_types_in_public_api
     - omit_local_variable_types
     - parameter_assignments
     - prefer_asserts_with_message
@@ -51,6 +53,5 @@ linter:
     # - avoid_catches_without_on_clauses (sometimes catching all exceptions is intentional)
     # - avoid_dynamic_calls (necessary when working with JSON/dynamic data)
     # - cascade_invocations (not always clearer)
-    # - discarded_futures (fire-and-forget is sometimes intentional)
     # - lines_longer_than_80_chars (too restrictive for modern screens)
     # - prefer_expression_function_bodies (block bodies can be clearer)
