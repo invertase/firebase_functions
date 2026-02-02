@@ -112,9 +112,7 @@ class CrashlyticsNamespace {
 
     _firebase.registerFunction(functionName, (request) async {
       try {
-        final bodyString = await request.readAsString();
-        final json = parseCloudEventJson(bodyString);
-        validateCloudEvent(json);
+        final json = await parseAndValidateCloudEvent(request);
 
         if (!_isAlertEvent(json['type'] as String)) {
           return Response(

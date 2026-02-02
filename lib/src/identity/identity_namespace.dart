@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
+import '../common/utilities.dart';
 import '../firebase.dart';
 import '../https/error.dart';
 import 'auth_blocking_event.dart';
@@ -206,8 +207,7 @@ class IdentityNamespace extends FunctionsNamespace {
         }
 
         // Parse request body
-        final bodyString = await request.readAsString();
-        final body = jsonDecode(bodyString) as Map<String, dynamic>;
+        final body = await readAsJsonMap(request);
 
         // Extract JWT from request body
         final data = body['data'] as Map<String, dynamic>?;
