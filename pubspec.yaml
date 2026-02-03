@@ -11,9 +11,15 @@ dependencies:
   shelf: ^1.4.2
   meta: ^1.18.0
   dart_firebase_admin:
-    path: ../dart_firebase_admin/packages/dart_firebase_admin
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/dart_firebase_admin
   googleapis_firestore:
-    path: ../dart_firebase_admin/packages/googleapis_firestore
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_firestore
   protobuf: ^6.0.0
   http: ^1.6.0
   jose: ^0.3.5
@@ -32,8 +38,17 @@ dev_dependencies:
 
 dependency_overrides:
   googleapis_firestore:
-    path: ../dart_firebase_admin/packages/googleapis_firestore
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_firestore
   googleapis_auth_utils:
-    path: ../dart_firebase_admin/packages/googleapis_auth_utils
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_auth_utils
   googleapis_storage:
-    path: ../dart_firebase_admin/packages/googleapis_storage
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_storage

@@ -22,16 +22,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout dart_firebase_admin
-        uses: actions/checkout@v4
-        with:
-          repository: invertase/dart_firebase_admin
-          ref: next
-          path: dart_firebase_admin
-
-      - name: Create symlink for dart_firebase_admin
-        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
-
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
         with:
@@ -62,16 +52,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Checkout dart_firebase_admin
-        uses: actions/checkout@v4
-        with:
-          repository: invertase/dart_firebase_admin
-          ref: next
-          path: dart_firebase_admin
-
-      - name: Create symlink for dart_firebase_admin
-        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
@@ -118,16 +98,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Checkout dart_firebase_admin
-        uses: actions/checkout@v4
-        with:
-          repository: invertase/dart_firebase_admin
-          ref: next
-          path: dart_firebase_admin
-
-      - name: Create symlink for dart_firebase_admin
-        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
@@ -282,16 +252,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Checkout dart_firebase_admin
-        uses: actions/checkout@v4
-        with:
-          repository: invertase/dart_firebase_admin
-          ref: next
-          path: dart_firebase_admin
-
-      - name: Create symlink for dart_firebase_admin
-        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
 
       - name: Checkout custom firebase-tools
         uses: actions/checkout@v4
