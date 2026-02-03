@@ -11,9 +11,9 @@ void main(List<String> args) {
   final ai = Genkit(plugins: [gemini]);
   Flow<String, String, String, Object> flow = ai.defineFlow(
     name: name,
-    inputType: stringType(),
-    outputType: stringType(),
-    streamType: stringType(),
+    inputSchema: stringSchema(),
+    outputSchema: stringSchema(),
+    streamSchema: stringSchema(),
     fn: (jokeType, context) async {
       final prompt = 'Tell me a $jokeType joke.';
       final stream = ai.generateStream(
