@@ -26,6 +26,10 @@ void main(List<String> args) {
   );
 
   fireUp(args, (firebase) {
-    firebase.https.onCallGenkit(name: name, flow: flow);
+    firebase.https.onCallGenkit(
+      name: name,
+      flow: flow,
+      contextProvider: (context) => {'auth': context.auth?.token?['email']},
+    );
   });
 }
