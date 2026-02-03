@@ -23,10 +23,7 @@ enum TokenStatus {
 
 /// Result of checking auth and app check tokens.
 class TokenVerificationResult {
-  const TokenVerificationResult({
-    required this.auth,
-    required this.app,
-  });
+  const TokenVerificationResult({required this.auth, required this.app});
 
   final TokenStatus auth;
   final TokenStatus app;
@@ -46,7 +43,9 @@ JsonWebKeyStore? _cachedKeyStore;
 DateTime? _keysExpireAt;
 
 /// Regular expression for validating JWT format.
-final _jwtRegex = RegExp(r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$');
+final _jwtRegex = RegExp(
+  r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$',
+);
 
 /// HTTP client for fetching keys (can be replaced for testing).
 http.Client? _httpClient;
@@ -79,8 +78,10 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
   }
 
   // Parse "Bearer <token>" format
-  final match = RegExp(r'^Bearer\s+(.*)$', caseSensitive: false)
-      .firstMatch(authorization);
+  final match = RegExp(
+    r'^Bearer\s+(.*)$',
+    caseSensitive: false,
+  ).firstMatch(authorization);
   if (match == null) {
     return (TokenStatus.invalid, null);
   }
@@ -98,7 +99,8 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
       decodedToken = await _verifyIdToken(idToken);
     }
 
-    final uid = decodedToken['uid'] as String? ??
+    final uid =
+        decodedToken['uid'] as String? ??
         decodedToken['sub'] as String? ??
         decodedToken['user_id'] as String?;
 
@@ -108,11 +110,7 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
 
     return (
       TokenStatus.valid,
-      AuthData(
-        uid: uid,
-        token: decodedToken,
-        rawToken: idToken,
-      ),
+      AuthData(uid: uid, token: decodedToken, rawToken: idToken),
     );
   } catch (e) {
     return (TokenStatus.invalid, null);
@@ -148,8 +146,8 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
       decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
     }
 
-    final appId = decodedToken['app_id'] as String? ??
-        decodedToken['sub'] as String?;
+    final appId =
+        decodedToken['app_id'] as String? ?? decodedToken['sub'] as String?;
 
     if (appId == null || appId.isEmpty) {
       return (TokenStatus.invalid, null);
@@ -157,10 +155,7 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
 
     return (
       TokenStatus.valid,
-      AppCheckData(
-        appId: appId,
-        token: appCheckToken,
-      ),
+      AppCheckData(appId: appId, token: appCheckToken),
     );
   } catch (e) {
     return (TokenStatus.invalid, null);
@@ -170,14 +165,14 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
 /// Checks both auth and app check tokens on a request.
 ///
 /// Returns a record containing the verification result and extracted data.
-Future<({
-  TokenVerificationResult result,
-  AuthData? authData,
-  AppCheckData? appCheckData,
-})> checkTokens(
-  Request request, {
-  required bool skipTokenVerification,
-}) async {
+Future<
+  ({
+    TokenVerificationResult result,
+    AuthData? authData,
+    AppCheckData? appCheckData,
+  })
+>
+checkTokens(Request request, {required bool skipTokenVerification}) async {
   final (authStatus, authData) = await extractAuthToken(
     request,
     skipTokenVerification: skipTokenVerification,

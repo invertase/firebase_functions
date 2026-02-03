@@ -23,26 +23,26 @@ void main() {
       expect(auth, isNull);
     });
 
-    test('returns invalid when Authorization header is not Bearer format',
-        () async {
-      final request = _createRequest(
-        headers: {'authorization': 'Basic abc123'},
-      );
+    test(
+      'returns invalid when Authorization header is not Bearer format',
+      () async {
+        final request = _createRequest(
+          headers: {'authorization': 'Basic abc123'},
+        );
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+        final (status, auth) = await extractAuthToken(
+          request,
+          skipTokenVerification: true,
+        );
 
-      expect(status, TokenStatus.invalid);
-      expect(auth, isNull);
-    });
+        expect(status, TokenStatus.invalid);
+        expect(auth, isNull);
+      },
+    );
 
     test('returns invalid when token has no uid/sub claim', () async {
       final jwt = _createJwt({'email': 'test@example.com'});
-      final request = _createRequest(
-        headers: {'authorization': 'Bearer $jwt'},
-      );
+      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
       final (status, auth) = await extractAuthToken(
         request,
@@ -59,9 +59,7 @@ void main() {
         'email': 'test@example.com',
         'custom_claim': 'value',
       });
-      final request = _createRequest(
-        headers: {'authorization': 'Bearer $jwt'},
-      );
+      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
       final (status, auth) = await extractAuthToken(
         request,
@@ -78,9 +76,7 @@ void main() {
 
     test('extracts uid from user_id claim as fallback', () async {
       final jwt = _createJwt({'user_id': 'user456'});
-      final request = _createRequest(
-        headers: {'authorization': 'Bearer $jwt'},
-      );
+      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
       final (status, auth) = await extractAuthToken(
         request,
@@ -93,9 +89,7 @@ void main() {
 
     test('handles case-insensitive Bearer prefix', () async {
       final jwt = _createJwt({'sub': 'user123'});
-      final request = _createRequest(
-        headers: {'authorization': 'bearer $jwt'},
-      );
+      final request = _createRequest(headers: {'authorization': 'bearer $jwt'});
 
       final (status, auth) = await extractAuthToken(
         request,
@@ -122,9 +116,7 @@ void main() {
 
     test('returns invalid for JWT with empty payload', () async {
       final jwt = _createJwt({});
-      final request = _createRequest(
-        headers: {'authorization': 'Bearer $jwt'},
-      );
+      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
       final (status, auth) = await extractAuthToken(
         request,
@@ -151,9 +143,7 @@ void main() {
 
     test('returns invalid when token has no sub claim', () async {
       final jwt = _createJwt({'other': 'value'});
-      final request = _createRequest(
-        headers: {'x-firebase-appcheck': jwt},
-      );
+      final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
       final (status, appCheck) = await extractAppCheckToken(
         request,
@@ -166,9 +156,7 @@ void main() {
 
     test('returns valid with AppCheckData for valid token', () async {
       final jwt = _createJwt({'sub': 'app123'});
-      final request = _createRequest(
-        headers: {'x-firebase-appcheck': jwt},
-      );
+      final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
       final (status, appCheck) = await extractAppCheckToken(
         request,
@@ -183,9 +171,7 @@ void main() {
 
     test('extracts app_id from explicit claim', () async {
       final jwt = _createJwt({'sub': 'sub-value', 'app_id': 'explicit-app-id'});
-      final request = _createRequest(
-        headers: {'x-firebase-appcheck': jwt},
-      );
+      final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
       final (status, appCheck) = await extractAppCheckToken(
         request,
@@ -208,10 +194,7 @@ void main() {
         },
       );
 
-      final result = await checkTokens(
-        request,
-        skipTokenVerification: true,
-      );
+      final result = await checkTokens(request, skipTokenVerification: true);
 
       expect(result.result.auth, TokenStatus.valid);
       expect(result.result.app, TokenStatus.valid);
@@ -222,10 +205,7 @@ void main() {
     test('returns missing status when headers are absent', () async {
       final request = _createRequest();
 
-      final result = await checkTokens(
-        request,
-        skipTokenVerification: true,
-      );
+      final result = await checkTokens(request, skipTokenVerification: true);
 
       expect(result.result.auth, TokenStatus.missing);
       expect(result.result.app, TokenStatus.missing);
@@ -243,10 +223,7 @@ void main() {
         },
       );
 
-      final result = await checkTokens(
-        request,
-        skipTokenVerification: true,
-      );
+      final result = await checkTokens(request, skipTokenVerification: true);
 
       expect(result.result.auth, TokenStatus.valid);
       expect(result.result.app, TokenStatus.invalid);
@@ -257,10 +234,7 @@ void main() {
 
   group('AuthData', () {
     test('rawToken field is accessible', () {
-      const auth = AuthData(
-        uid: 'user123',
-        rawToken: 'raw-token-value',
-      );
+      const auth = AuthData(uid: 'user123', rawToken: 'raw-token-value');
 
       expect(auth.rawToken, 'raw-token-value');
     });
