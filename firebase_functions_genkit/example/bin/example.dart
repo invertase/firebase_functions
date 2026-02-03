@@ -16,6 +16,8 @@ void main(List<String> args) {
     streamSchema: stringSchema(),
     fn: (jokeType, context) async {
       final prompt = 'Tell me a $jokeType joke.';
+      /// gemini.model does not have a generic type
+      // ignore: inference_failure_on_function_invocation
       final stream = ai.generateStream(
         model: gemini.model('gemini-2.5-flash'),
         prompt: prompt,
