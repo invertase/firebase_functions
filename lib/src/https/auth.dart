@@ -1,0 +1,258 @@
+/// Authentication and App Check token extraction for callable functions.
+library;
+
+import 'dart:convert';
+
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:shelf/shelf.dart';
+
+import 'callable.dart';
+
+/// Status of token validation.
+enum TokenStatus {
+  /// Token is missing from request.
+  missing,
+
+  /// Token is present but invalid.
+  invalid,
+
+  /// Token is present and valid.
+  valid,
+}
+
+/// Result of checking auth and app check tokens.
+class TokenVerificationResult {
+  const TokenVerificationResult({required this.auth, required this.app});
+
+  final TokenStatus auth;
+  final TokenStatus app;
+}
+
+/// Regular expression for validating JWT format.
+final _jwtRegex = RegExp(
+  r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$',
+);
+
+/// Extracts and validates auth token from request.
+///
+/// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
+/// but not verified. In production, tokens are verified using the Firebase
+/// Admin SDK.
+///
+/// The [adminApp] is required for production token verification.
+///
+/// Returns a tuple of (TokenStatus, AuthData?).
+Future<(TokenStatus, AuthData?)> extractAuthToken(
+  Request request, {
+  required bool skipTokenVerification,
+  FirebaseApp? adminApp,
+}) async {
+  final authorization = request.headers['authorization'];
+  if (authorization == null || authorization.isEmpty) {
+    return (TokenStatus.missing, null);
+  }
+
+  // Parse "Bearer <token>" format
+  final match = RegExp(
+    r'^Bearer\s+(.*)$',
+    caseSensitive: false,
+  ).firstMatch(authorization);
+  if (match == null) {
+    return (TokenStatus.invalid, null);
+  }
+
+  final idToken = match.group(1)!;
+
+  try {
+    String uid;
+    Map<String, dynamic>? decodedToken;
+
+    if (skipTokenVerification) {
+      // In emulator mode, just decode without verification
+      decodedToken = _unsafeDecodeIdToken(idToken);
+
+      uid =
+          decodedToken['uid'] as String? ??
+          decodedToken['sub'] as String? ??
+          decodedToken['user_id'] as String? ??
+          '';
+    } else {
+      // In production, verify the token using Firebase Admin SDK
+      if (adminApp == null) {
+        // Can't verify without admin app
+        return (TokenStatus.invalid, null);
+      }
+
+      final auth = adminApp.auth();
+      final decoded = await auth.verifyIdToken(idToken);
+      uid = decoded.uid;
+      decodedToken = {
+        'uid': decoded.uid,
+        'sub': decoded.sub,
+        'aud': decoded.aud,
+        'iss': decoded.iss,
+        'iat': decoded.iat,
+        'exp': decoded.exp,
+        if (decoded.email != null) 'email': decoded.email,
+        if (decoded.emailVerified != null)
+          'email_verified': decoded.emailVerified,
+        if (decoded.phoneNumber != null) 'phone_number': decoded.phoneNumber,
+        if (decoded.picture != null) 'picture': decoded.picture,
+      };
+    }
+
+    if (uid.isEmpty) {
+      return (TokenStatus.invalid, null);
+    }
+
+    return (
+      TokenStatus.valid,
+      AuthData(uid: uid, token: decodedToken, rawToken: idToken),
+    );
+  } catch (e) {
+    return (TokenStatus.invalid, null);
+  }
+}
+
+/// Extracts and validates App Check token from request.
+///
+/// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
+/// but not verified. In production, tokens are verified using the Firebase
+/// Admin SDK.
+///
+/// The [adminApp] is required for production token verification.
+///
+/// Returns a tuple of (TokenStatus, AppCheckData?).
+Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
+  Request request, {
+  required bool skipTokenVerification,
+  FirebaseApp? adminApp,
+}) async {
+  final appCheckToken = request.headers['x-firebase-appcheck'];
+  if (appCheckToken == null || appCheckToken.isEmpty) {
+    return (TokenStatus.missing, null);
+  }
+
+  try {
+    String appId;
+
+    if (skipTokenVerification) {
+      // In emulator mode, just decode without verification
+      final decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
+
+      appId =
+          decodedToken['app_id'] as String? ??
+          decodedToken['sub'] as String? ??
+          '';
+    } else {
+      // In production, verify the token using Firebase Admin SDK
+      if (adminApp == null) {
+        // Can't verify without admin app
+        return (TokenStatus.invalid, null);
+      }
+
+      final appCheck = adminApp.appCheck();
+      final decoded = await appCheck.verifyToken(appCheckToken);
+      appId = decoded.appId;
+    }
+
+    if (appId.isEmpty) {
+      return (TokenStatus.invalid, null);
+    }
+
+    return (
+      TokenStatus.valid,
+      AppCheckData(appId: appId, token: appCheckToken),
+    );
+  } catch (e) {
+    return (TokenStatus.invalid, null);
+  }
+}
+
+/// Checks both auth and app check tokens on a request.
+///
+/// Returns a record containing the verification result and extracted data.
+Future<
+  ({
+    TokenVerificationResult result,
+    AuthData? authData,
+    AppCheckData? appCheckData,
+  })
+>
+checkTokens(
+  Request request, {
+  required bool skipTokenVerification,
+  FirebaseApp? adminApp,
+}) async {
+  final (authStatus, authData) = await extractAuthToken(
+    request,
+    skipTokenVerification: skipTokenVerification,
+    adminApp: adminApp,
+  );
+
+  final (appStatus, appCheckData) = await extractAppCheckToken(
+    request,
+    skipTokenVerification: skipTokenVerification,
+    adminApp: adminApp,
+  );
+
+  return (
+    result: TokenVerificationResult(auth: authStatus, app: appStatus),
+    authData: authData,
+    appCheckData: appCheckData,
+  );
+}
+
+// --- Private unsafe decode functions (for emulator mode only) ---
+
+/// Decodes a JWT token without verification.
+///
+/// **WARNING**: Only use in emulator mode.
+Map<String, dynamic> _unsafeDecodeToken(String token) {
+  if (!_jwtRegex.hasMatch(token)) {
+    return {};
+  }
+
+  final parts = token.split('.');
+  if (parts.length != 3) {
+    return {};
+  }
+
+  try {
+    final payloadBase64 = parts[1];
+    final normalized = base64Url.normalize(payloadBase64);
+    final payloadJson = utf8.decode(base64Url.decode(normalized));
+    final payload = jsonDecode(payloadJson);
+
+    if (payload is Map<String, dynamic>) {
+      return payload;
+    }
+    return {};
+  } catch (e) {
+    return {};
+  }
+}
+
+/// Decodes an ID token without verification.
+///
+/// **WARNING**: Only use in emulator mode.
+Map<String, dynamic> _unsafeDecodeIdToken(String token) {
+  final decoded = _unsafeDecodeToken(token);
+  // Set uid from sub claim if not already present
+  if (!decoded.containsKey('uid') && decoded.containsKey('sub')) {
+    decoded['uid'] = decoded['sub'];
+  }
+  return decoded;
+}
+
+/// Decodes an App Check token without verification.
+///
+/// **WARNING**: Only use in emulator mode.
+Map<String, dynamic> _unsafeDecodeAppCheckToken(String token) {
+  final decoded = _unsafeDecodeToken(token);
+  // Set app_id from sub claim if not already present
+  if (!decoded.containsKey('app_id') && decoded.containsKey('sub')) {
+    decoded['app_id'] = decoded['sub'];
+  }
+  return decoded;
+}

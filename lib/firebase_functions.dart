@@ -53,8 +53,8 @@
 /// - [onInit] for safe initialization with secrets
 library;
 
-// Re-export dart_firebase_admin types for convenience
-export 'package:dart_firebase_admin/firestore.dart'
+// Re-export Firestore types for convenience
+export 'package:googleapis_firestore/googleapis_firestore.dart'
     show DocumentData, DocumentSnapshot, QueryDocumentSnapshot;
 // Re-export Shelf types for convenience
 export 'package:shelf/shelf.dart' show Request, Response;

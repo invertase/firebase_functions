@@ -13,3 +13,20 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.10.5
   lints: ^6.0.0
+
+dependency_overrides:
+  googleapis_firestore:
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_firestore
+  googleapis_auth_utils:
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_auth_utils
+  googleapis_storage:
+    git:
+      url: https://github.com/invertase/dart_firebase_admin.git
+      ref: next
+      path: packages/googleapis_storage

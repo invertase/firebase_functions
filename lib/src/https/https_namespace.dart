@@ -1,13 +1,29 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../firebase.dart';
+import 'auth.dart';
 import 'callable.dart';
 import 'error.dart';
 import 'options.dart';
+
+/// Checks if token verification should be skipped (emulator mode).
+bool _shouldSkipTokenVerification() {
+  final debugFeatures = Platform.environment['FIREBASE_DEBUG_FEATURES'];
+  if (debugFeatures == null) {
+    return false;
+  }
+  try {
+    final features = jsonDecode(debugFeatures);
+    return features['skipTokenVerification'] as bool? ?? false;
+  } catch (_) {
+    return false;
+  }
+}
 
 /// HTTPS triggers namespace.
 ///
@@ -92,7 +108,53 @@ class HttpsNamespace extends FunctionsNamespace {
           // Invalid JSON - body stays null, validation will fail
         }
       }
-      final callableRequest = CallableRequest(request, body?['data'], null);
+
+      // Extract auth and app check tokens
+      final skipVerification = _shouldSkipTokenVerification();
+      final tokens = await checkTokens(
+        request,
+        skipTokenVerification: skipVerification,
+        adminApp: firebase.adminApp,
+      );
+
+      // Check for invalid auth token
+      if (tokens.result.auth == TokenStatus.invalid) {
+        final error = UnauthenticatedError('Unauthenticated');
+        return Response(
+          error.httpStatusCode,
+          body: jsonEncode(error.toErrorResponse()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
+      // Check for invalid or missing app check token if enforced
+      final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
+      if (tokens.result.app == TokenStatus.invalid) {
+        if (enforceAppCheck) {
+          final error = UnauthenticatedError('Unauthenticated');
+          return Response(
+            error.httpStatusCode,
+            body: jsonEncode(error.toErrorResponse()),
+            headers: {'Content-Type': 'application/json'},
+          );
+        }
+      }
+      if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
+        final error = UnauthenticatedError('Unauthenticated');
+        return Response(
+          error.httpStatusCode,
+          body: jsonEncode(error.toErrorResponse()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
+      final callableRequest = CallableRequest(
+        request,
+        body?['data'],
+        null,
+        auth: tokens.authData,
+        app: tokens.appCheckData,
+      );
 
       return _handleCallable<Object?, T, CallableResult<T>>(
         request,
@@ -141,10 +203,52 @@ class HttpsNamespace extends FunctionsNamespace {
   }) {
     firebase.registerFunction(name, (request) async {
       final body = await request.json as Map<String, dynamic>?;
+
+      // Extract auth and app check tokens
+      final skipVerification = _shouldSkipTokenVerification();
+      final tokens = await checkTokens(
+        request,
+        skipTokenVerification: skipVerification,
+        adminApp: firebase.adminApp,
+      );
+
+      // Check for invalid auth token
+      if (tokens.result.auth == TokenStatus.invalid) {
+        final error = UnauthenticatedError('Unauthenticated');
+        return Response(
+          error.httpStatusCode,
+          body: jsonEncode(error.toErrorResponse()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
+      // Check for invalid or missing app check token if enforced
+      final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
+      if (tokens.result.app == TokenStatus.invalid) {
+        if (enforceAppCheck) {
+          final error = UnauthenticatedError('Unauthenticated');
+          return Response(
+            error.httpStatusCode,
+            body: jsonEncode(error.toErrorResponse()),
+            headers: {'Content-Type': 'application/json'},
+          );
+        }
+      }
+      if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
+        final error = UnauthenticatedError('Unauthenticated');
+        return Response(
+          error.httpStatusCode,
+          body: jsonEncode(error.toErrorResponse()),
+          headers: {'Content-Type': 'application/json'},
+        );
+      }
+
       final callableRequest = CallableRequest<Input>(
         request,
         body?['data'],
         fromJson,
+        auth: tokens.authData,
+        app: tokens.appCheckData,
       );
 
       return _handleCallable<Input, Output, Output>(

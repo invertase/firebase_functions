@@ -52,13 +52,18 @@ class JsonResult extends CallableResult<Map<String, dynamic>> {
 ///
 /// Contains information about the authenticated user.
 class AuthData {
-  const AuthData({required this.uid, this.token});
+  const AuthData({required this.uid, this.token, this.rawToken});
 
   /// The user's unique ID.
   final String uid;
 
   /// The decoded ID token claims.
   final Map<String, dynamic>? token;
+
+  /// The raw JWT token string.
+  ///
+  /// This can be used to pass the token to other services or for debugging.
+  final String? rawToken;
 }
 
 /// Firebase App Check context data for a callable request.

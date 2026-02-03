@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:dart_firebase_admin/firestore.dart';
+import 'package:googleapis_firestore/googleapis_firestore.dart' as gfs;
 import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
@@ -21,8 +21,8 @@ class Firebase {
     _initializeAdminSDK();
   }
 
-  FirebaseAdminApp? _adminApp;
-  Firestore? _firestoreInstance;
+  FirebaseApp? _adminApp;
+  gfs.Firestore? _firestoreInstance;
 
   /// Initialize the Firebase Admin SDK
   void _initializeAdminSDK() {
@@ -52,13 +52,15 @@ class Firebase {
       print('Initializing Firebase Admin SDK (project: $projectId)');
 
       // Initialize Admin SDK
-      _adminApp = FirebaseAdminApp.initializeApp(
-        projectId,
-        Credential.fromApplicationDefaultCredentials(),
+      _adminApp = FirebaseApp.initializeApp(
+        options: AppOptions(
+          credential: Credential.fromApplicationDefaultCredentials(),
+          projectId: projectId,
+        ),
       );
 
       // Create Firestore instance
-      _firestoreInstance = Firestore(_adminApp!);
+      _firestoreInstance = _adminApp!.firestore();
 
       print('Firebase Admin SDK initialized successfully');
     } catch (e) {
@@ -68,7 +70,10 @@ class Firebase {
   }
 
   /// Get the Firestore instance
-  Firestore? get firestoreAdmin => _firestoreInstance;
+  gfs.Firestore? get firestoreAdmin => _firestoreInstance;
+
+  /// Get the Firebase Admin App instance
+  FirebaseApp? get adminApp => _adminApp;
 
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
