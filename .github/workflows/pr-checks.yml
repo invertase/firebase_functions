@@ -23,7 +23,10 @@ jobs:
         with:
           repository: invertase/dart_firebase_admin
           ref: next
-          path: ../dart_firebase_admin
+          path: dart_firebase_admin
+
+      - name: Create symlink for dart_firebase_admin
+        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
@@ -52,7 +55,10 @@ jobs:
         with:
           repository: invertase/dart_firebase_admin
           ref: next
-          path: ../dart_firebase_admin
+          path: dart_firebase_admin
+
+      - name: Create symlink for dart_firebase_admin
+        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
@@ -105,7 +111,10 @@ jobs:
         with:
           repository: invertase/dart_firebase_admin
           ref: next
-          path: ../dart_firebase_admin
+          path: dart_firebase_admin
+
+      - name: Create symlink for dart_firebase_admin
+        run: ln -s $GITHUB_WORKSPACE/dart_firebase_admin ../dart_firebase_admin
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
