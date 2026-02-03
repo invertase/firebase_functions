@@ -114,6 +114,7 @@ class HttpsNamespace extends FunctionsNamespace {
       final tokens = await checkTokens(
         request,
         skipTokenVerification: skipVerification,
+        adminApp: firebase.adminApp,
       );
 
       // Check for invalid auth token
@@ -208,6 +209,7 @@ class HttpsNamespace extends FunctionsNamespace {
       final tokens = await checkTokens(
         request,
         skipTokenVerification: skipVerification,
+        adminApp: firebase.adminApp,
       );
 
       // Check for invalid auth token

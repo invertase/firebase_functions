@@ -1,4 +1,5 @@
-import 'package:dart_firebase_admin/firestore.dart' show DocumentData;
+import 'package:googleapis_firestore/googleapis_firestore.dart'
+    show DocumentData;
 
 export '../common/change.dart';
 

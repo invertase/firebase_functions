@@ -15,3 +15,11 @@ dev_dependencies:
   test: ^1.29.0
   http: ^1.6.0
   lints: ^6.0.0
+
+dependency_overrides:
+  googleapis_firestore:
+    path: ../../../dart_firebase_admin/packages/googleapis_firestore
+  googleapis_auth_utils:
+    path: ../../../dart_firebase_admin/packages/googleapis_auth_utils
+  googleapis_storage:
+    path: ../../../dart_firebase_admin/packages/googleapis_storage

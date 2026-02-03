@@ -3,8 +3,7 @@ library;
 
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-import 'package:jose/jose.dart';
+import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:shelf/shelf.dart';
 
 import 'callable.dart';
@@ -29,48 +28,24 @@ class TokenVerificationResult {
   final TokenStatus app;
 }
 
-/// URL to fetch Google's public keys in JWK format for JWT verification.
-/// This endpoint returns keys directly as JWKs, no certificate parsing needed.
-const _googleJwksUrl = 'https://www.googleapis.com/oauth2/v3/certs';
-
-/// Cache duration for Google keys (1 hour default).
-const _keysCacheDuration = Duration(hours: 1);
-
-/// Cached JsonWebKeyStore with Google's public keys.
-JsonWebKeyStore? _cachedKeyStore;
-
-/// When the cached keys expire.
-DateTime? _keysExpireAt;
-
 /// Regular expression for validating JWT format.
 final _jwtRegex = RegExp(
   r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$',
 );
 
-/// HTTP client for fetching keys (can be replaced for testing).
-http.Client? _httpClient;
-
-/// Sets a custom HTTP client (for testing).
-void setHttpClientForTesting(http.Client? client) {
-  _httpClient = client;
-}
-
-/// Clears the key cache (useful for testing).
-void clearCertificateCache() {
-  _cachedKeyStore = null;
-  _keysExpireAt = null;
-}
-
 /// Extracts and validates auth token from request.
 ///
 /// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
-/// but not verified. In production, tokens are verified using Google's public
-/// certificates.
+/// but not verified. In production, tokens are verified using the Firebase
+/// Admin SDK.
+///
+/// The [adminApp] is required for production token verification.
 ///
 /// Returns a tuple of (TokenStatus, AuthData?).
 Future<(TokenStatus, AuthData?)> extractAuthToken(
   Request request, {
   required bool skipTokenVerification,
+  FirebaseApp? adminApp,
 }) async {
   final authorization = request.headers['authorization'];
   if (authorization == null || authorization.isEmpty) {
@@ -89,22 +64,44 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
   final idToken = match.group(1)!;
 
   try {
-    Map<String, dynamic> decodedToken;
+    String uid;
+    Map<String, dynamic>? decodedToken;
 
     if (skipTokenVerification) {
       // In emulator mode, just decode without verification
       decodedToken = _unsafeDecodeIdToken(idToken);
+
+      uid =
+          decodedToken['uid'] as String? ??
+          decodedToken['sub'] as String? ??
+          decodedToken['user_id'] as String? ??
+          '';
     } else {
-      // In production, verify the token signature
-      decodedToken = await _verifyIdToken(idToken);
+      // In production, verify the token using Firebase Admin SDK
+      if (adminApp == null) {
+        // Can't verify without admin app
+        return (TokenStatus.invalid, null);
+      }
+
+      final auth = adminApp.auth();
+      final decoded = await auth.verifyIdToken(idToken);
+      uid = decoded.uid;
+      decodedToken = {
+        'uid': decoded.uid,
+        'sub': decoded.sub,
+        'aud': decoded.aud,
+        'iss': decoded.iss,
+        'iat': decoded.iat,
+        'exp': decoded.exp,
+        if (decoded.email != null) 'email': decoded.email,
+        if (decoded.emailVerified != null)
+          'email_verified': decoded.emailVerified,
+        if (decoded.phoneNumber != null) 'phone_number': decoded.phoneNumber,
+        if (decoded.picture != null) 'picture': decoded.picture,
+      };
     }
 
-    final uid =
-        decodedToken['uid'] as String? ??
-        decodedToken['sub'] as String? ??
-        decodedToken['user_id'] as String?;
-
-    if (uid == null || uid.isEmpty) {
+    if (uid.isEmpty) {
       return (TokenStatus.invalid, null);
     }
 
@@ -120,13 +117,16 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
 /// Extracts and validates App Check token from request.
 ///
 /// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
-/// but not verified. In production, tokens should be verified using the
-/// Firebase Admin SDK.
+/// but not verified. In production, tokens are verified using the Firebase
+/// Admin SDK.
+///
+/// The [adminApp] is required for production token verification.
 ///
 /// Returns a tuple of (TokenStatus, AppCheckData?).
 Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
   Request request, {
   required bool skipTokenVerification,
+  FirebaseApp? adminApp,
 }) async {
   final appCheckToken = request.headers['x-firebase-appcheck'];
   if (appCheckToken == null || appCheckToken.isEmpty) {
@@ -134,22 +134,29 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
   }
 
   try {
-    Map<String, dynamic> decodedToken;
+    String appId;
 
     if (skipTokenVerification) {
       // In emulator mode, just decode without verification
-      decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
+      final decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
+
+      appId =
+          decodedToken['app_id'] as String? ??
+          decodedToken['sub'] as String? ??
+          '';
     } else {
-      // In production, App Check tokens should be verified using Firebase Admin SDK.
-      // For now, we decode without verification and note this limitation.
-      // TODO: Integrate with Firebase Admin SDK for App Check verification.
-      decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
+      // In production, verify the token using Firebase Admin SDK
+      if (adminApp == null) {
+        // Can't verify without admin app
+        return (TokenStatus.invalid, null);
+      }
+
+      final appCheck = adminApp.appCheck();
+      final decoded = await appCheck.verifyToken(appCheckToken);
+      appId = decoded.appId;
     }
 
-    final appId =
-        decodedToken['app_id'] as String? ?? decodedToken['sub'] as String?;
-
-    if (appId == null || appId.isEmpty) {
+    if (appId.isEmpty) {
       return (TokenStatus.invalid, null);
     }
 
@@ -172,15 +179,21 @@ Future<
     AppCheckData? appCheckData,
   })
 >
-checkTokens(Request request, {required bool skipTokenVerification}) async {
+checkTokens(
+  Request request, {
+  required bool skipTokenVerification,
+  FirebaseApp? adminApp,
+}) async {
   final (authStatus, authData) = await extractAuthToken(
     request,
     skipTokenVerification: skipTokenVerification,
+    adminApp: adminApp,
   );
 
   final (appStatus, appCheckData) = await extractAppCheckToken(
     request,
     skipTokenVerification: skipTokenVerification,
+    adminApp: adminApp,
   );
 
   return (
@@ -188,86 +201,6 @@ checkTokens(Request request, {required bool skipTokenVerification}) async {
     authData: authData,
     appCheckData: appCheckData,
   );
-}
-
-/// Verifies an ID token using Google's public certificates.
-///
-/// This validates the JWT signature against Google's public keys.
-Future<Map<String, dynamic>> _verifyIdToken(String token) async {
-  final keyStore = await _getGoogleKeyStore();
-
-  JsonWebToken jwt;
-  try {
-    jwt = await JsonWebToken.decodeAndVerify(token, keyStore);
-  } on JoseException catch (e) {
-    throw Exception('Invalid JWT: ${e.message}');
-  }
-
-  final payload = jwt.claims.toJson();
-
-  // Set uid from sub claim if not already present
-  if (!payload.containsKey('uid') && payload.containsKey('sub')) {
-    payload['uid'] = payload['sub'];
-  }
-
-  return payload;
-}
-
-/// Fetches Google's public keys and creates a JsonWebKeyStore.
-///
-/// Uses the JWK endpoint which returns keys directly in JSON Web Key format,
-/// so no manual certificate parsing is needed.
-Future<JsonWebKeyStore> _getGoogleKeyStore() async {
-  // Return cached key store if still valid
-  if (_cachedKeyStore != null &&
-      _keysExpireAt != null &&
-      DateTime.now().isBefore(_keysExpireAt!)) {
-    return _cachedKeyStore!;
-  }
-
-  // Fetch keys from Google's JWK endpoint
-  final client = _httpClient ?? http.Client();
-  final response = await client.get(Uri.parse(_googleJwksUrl));
-
-  if (response.statusCode != 200) {
-    throw Exception(
-      'Failed to fetch Google public keys: ${response.statusCode}',
-    );
-  }
-
-  // Parse the JWK Set response
-  final jwksJson = jsonDecode(response.body) as Map<String, dynamic>;
-  final keyStore = JsonWebKeyStore();
-
-  // The response contains a "keys" array with JWK objects
-  final keys = jwksJson['keys'] as List<dynamic>?;
-  if (keys != null) {
-    for (final keyJson in keys) {
-      try {
-        final jwk = JsonWebKey.fromJson(keyJson as Map<String, dynamic>);
-        keyStore.addKey(jwk);
-      } catch (e) {
-        // Skip keys that fail to parse
-        continue;
-      }
-    }
-  }
-
-  // Cache with expiration from Cache-Control header or default
-  final cacheControl = response.headers['cache-control'];
-  var cacheDuration = _keysCacheDuration;
-
-  if (cacheControl != null) {
-    final maxAgeMatch = RegExp(r'max-age=(\d+)').firstMatch(cacheControl);
-    if (maxAgeMatch != null) {
-      cacheDuration = Duration(seconds: int.parse(maxAgeMatch.group(1)!));
-    }
-  }
-
-  _cachedKeyStore = keyStore;
-  _keysExpireAt = DateTime.now().add(cacheDuration);
-
-  return keyStore;
 }
 
 // --- Private unsafe decode functions (for emulator mode only) ---

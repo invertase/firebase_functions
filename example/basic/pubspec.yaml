@@ -14,3 +14,11 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.10.5
   lints: ^6.0.0
+
+dependency_overrides:
+  googleapis_firestore:
+    path: ../../../dart_firebase_admin/packages/googleapis_firestore
+  googleapis_auth_utils:
+    path: ../../../dart_firebase_admin/packages/googleapis_auth_utils
+  googleapis_storage:
+    path: ../../../dart_firebase_admin/packages/googleapis_storage

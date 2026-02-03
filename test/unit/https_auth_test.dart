@@ -272,13 +272,6 @@ void main() {
       expect(result.app, TokenStatus.missing);
     });
   });
-
-  group('certificate cache', () {
-    test('clearCertificateCache clears the cache', () {
-      // This just verifies the function exists and doesn't throw
-      clearCertificateCache();
-    });
-  });
 }
 
 /// Creates a minimal JWT token for testing.
