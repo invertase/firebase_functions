@@ -9,7 +9,7 @@ const name = 'jokeTeller';
 void main(List<String> args) {
   final gemini = googleAI();
   final ai = Genkit(plugins: [gemini]);
-  Flow<String, String, String, Object> flow = ai.defineFlow(
+  final flow = ai.defineFlow(
     name: name,
     inputSchema: stringSchema(),
     outputSchema: stringSchema(),
