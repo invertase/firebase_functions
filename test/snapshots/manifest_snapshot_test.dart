@@ -59,9 +59,9 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(26),
+        equals(27),
         reason:
-            'Should discover 26 functions (4 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 2 Scheduler)',
+            'Should discover 27 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 2 Scheduler)',
       );
     });
 
