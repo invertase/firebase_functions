@@ -247,9 +247,14 @@ FutureOr<Response> _routeByPath(
   }
 
   // Not a CloudEvent, try path-based routing for HTTPS functions
-  // Extract the function name from the path
-  // HTTPS functions come as: /{functionName} (already stripped by firebase-tools)
-  final functionName = _extractFunctionName(requestPath);
+  // Extract the function name from the path (/{functionName})
+  // The firebase-tools emulator sets X-Firebase-Function header for Dart runtimes
+  var functionName = _extractFunctionName(requestPath);
+
+  // Fallback: Check for X-Firebase-Function header set by firebase-tools
+  if (functionName.isEmpty) {
+    functionName = currentRequest.headers['x-firebase-function'] ?? '';
+  }
 
   // Try to find a matching function by name
   for (final function in functions) {
@@ -268,7 +273,7 @@ FutureOr<Response> _routeByPath(
 
   // No matching function found
   return Response.notFound(
-    'Function not found: $requestPath\n'
+    'Function not found: $functionName\n'
     'Available functions: ${functions.map((f) => f.name).join(", ")}',
   );
 }
