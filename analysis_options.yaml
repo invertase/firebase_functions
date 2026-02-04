@@ -31,7 +31,6 @@ linter:
     - avoid_void_async
     - directives_ordering
     - discarded_futures
-    - library_private_types_in_public_api
     - omit_local_variable_types
     - parameter_assignments
     - prefer_asserts_with_message
