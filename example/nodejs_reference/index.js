@@ -76,6 +76,26 @@ exports.countdown = onCall(
   }
 );
 
+// Callable function demonstrating auth data extraction
+exports.getAuthInfo = onCall((request) => {
+  const auth = request.auth;
+
+  if (!auth) {
+    // User is not authenticated
+    return {
+      authenticated: false,
+      message: "No authentication provided",
+    };
+  }
+
+  // User is authenticated - return auth info
+  return {
+    authenticated: true,
+    uid: auth.uid,
+    token: auth.token, // Decoded JWT claims (email, name, etc.)
+  };
+});
+
 // =============================================================================
 // HTTPS onRequest Functions
 // =============================================================================

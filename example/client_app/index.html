@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Functions Client Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #1a73e8;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    button {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #1557b0;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    input, select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    .result {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 15px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .result.error {
+      background: #fff5f5;
+      border-color: #ffcccc;
+      color: #cc0000;
+    }
+    .result.success {
+      background: #f0fff4;
+      border-color: #c6f6d5;
+    }
+    .config {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .config label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Firebase Functions Client Demo</h1>
+
+  <div class="config">
+    <label for="baseUrl">Functions Base URL:</label>
+    <input type="text" id="baseUrl" value="http://127.0.0.1:5001/demo-test/us-central1" style="width: 100%;">
+    <small>Update this to match your emulator or deployed functions URL</small>
+  </div>
+
+  <!-- onRequest Demo -->
+  <div class="card">
+    <h2>1. onRequest - Simple HTTP Endpoint</h2>
+    <p>Calls a simple HTTP function using <code>fetch()</code>. No Firebase SDK needed.</p>
+
+    <div>
+      <input type="text" id="requestName" placeholder="Your name" value="World">
+      <button onclick="callOnRequest()">Call helloWorld</button>
+    </div>
+
+    <div id="requestResult" class="result" style="display: none;"></div>
+  </div>
+
+  <!-- onCall Demo -->
+  <div class="card">
+    <h2>2. onCall - Callable Function</h2>
+    <p>Calls a callable function using the Firebase JS SDK's <code>httpsCallable()</code>.</p>
+
+    <div>
+      <input type="text" id="callName" placeholder="Your name" value="Dart Developer">
+      <button onclick="callOnCall()">Call greet (onCall)</button>
+    </div>
+
+    <div id="callResult" class="result" style="display: none;"></div>
+  </div>
+
+  <!-- onCall with error handling -->
+  <div class="card">
+    <h2>3. onCall - Division with Error Handling</h2>
+    <p>Demonstrates error handling in callable functions.</p>
+
+    <div>
+      <input type="number" id="divA" placeholder="Number A" value="10" style="width: 80px;">
+      <span>÷</span>
+      <input type="number" id="divB" placeholder="Number B" value="2" style="width: 80px;">
+      <button onclick="callDivide()">Call divide</button>
+      <button onclick="callDivideByZero()">Divide by Zero (error)</button>
+    </div>
+
+    <div id="divideResult" class="result" style="display: none;"></div>
+  </div>
+
+  <!-- onCallWithData - Typed -->
+  <div class="card">
+    <h2>4. onCallWithData - Typed Callable Function</h2>
+    <p>Calls a typed callable function that expects specific input/output types.</p>
+
+    <div>
+      <input type="text" id="typedName" placeholder="Your name" value="TypeScript Dev">
+      <button onclick="callGreetTyped()">Call greetTyped</button>
+    </div>
+
+    <div id="typedResult" class="result" style="display: none;"></div>
+  </div>
+
+  <!-- Auth Info Demo -->
+  <div class="card">
+    <h2>5. onCall with Auth - Get User Info</h2>
+    <p>Demonstrates extracting authentication data from callable requests. Sign in first, then call the function.</p>
+
+    <div>
+      <input type="email" id="authEmail" placeholder="Email" value="test@example.com">
+      <input type="password" id="authPassword" placeholder="Password" value="password123">
+      <button onclick="signIn()">Sign In</button>
+      <button onclick="signOut()">Sign Out</button>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <button onclick="callGetAuthInfo()">Call getAuthInfo</button>
+      <button onclick="callGetAuthInfoUnauthenticated()">Call without Auth</button>
+    </div>
+
+    <div id="authStatus" class="result" style="display: block; background: #e3f2fd;">Not signed in</div>
+    <div id="authResult" class="result" style="display: none;"></div>
+  </div>
+
+  <!-- Raw POST to callable -->
+  <div class="card">
+    <h2>6. Raw POST to Callable (without SDK)</h2>
+    <p>Demonstrates calling a callable function with raw <code>fetch()</code> using the callable protocol.</p>
+
+    <div>
+      <input type="text" id="rawName" placeholder="Your name" value="Raw Caller">
+      <button onclick="callRawCallable()">Call greet (raw POST)</button>
+    </div>
+
+    <div id="rawResult" class="result" style="display: none;"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
+    import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js';
+    import { getAuth, connectAuthEmulator, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+
+    // Initialize Firebase (minimal config for Functions)
+    const firebaseConfig = {
+      projectId: 'demo-test',
+      apiKey: 'fake-api-key', // Not needed for emulator
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const functions = getFunctions(app, 'us-central1');
+    const auth = getAuth(app);
+
+    // Connect to emulators
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+
+    // Track auth state
+    onAuthStateChanged(auth, (user) => {
+      const statusEl = document.getElementById('authStatus');
+      if (user) {
+        statusEl.textContent = `Signed in as: ${user.email} (UID: ${user.uid})`;
+        statusEl.style.background = '#c8e6c9';
+      } else {
+        statusEl.textContent = 'Not signed in';
+        statusEl.style.background = '#e3f2fd';
+      }
+    });
+
+    // Expose to window for button handlers
+    window.functions = functions;
+    window.httpsCallable = httpsCallable;
+    window.auth = auth;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.firebaseSignOut = firebaseSignOut;
+
+    console.log('Firebase initialized and connected to emulators (Functions + Auth)');
+  </script>
+
+  <script>
+    // Helper to show results
+    function showResult(elementId, data, isError = false) {
+      const el = document.getElementById(elementId);
+      el.style.display = 'block';
+      el.className = 'result ' + (isError ? 'error' : 'success');
+      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    // 1. onRequest - Simple fetch
+    async function callOnRequest() {
+      const name = document.getElementById('requestName').value || 'World';
+      const baseUrl = document.getElementById('baseUrl').value;
+
+      try {
+        const response = await fetch(`${baseUrl}/helloWorld?name=${encodeURIComponent(name)}`);
+        const text = await response.text();
+
+        showResult('requestResult', {
+          status: response.status,
+          statusText: response.statusText,
+          body: text
+        });
+      } catch (error) {
+        showResult('requestResult', `Error: ${error.message}`, true);
+      }
+    }
+    window.callOnRequest = callOnRequest;
+
+    // 2. onCall - Using Firebase SDK
+    async function callOnCall() {
+      const name = document.getElementById('callName').value || 'World';
+
+      try {
+        const greet = window.httpsCallable(window.functions, 'greet');
+        const result = await greet({ name: name });
+
+        showResult('callResult', {
+          data: result.data
+        });
+      } catch (error) {
+        showResult('callResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+    }
+    window.callOnCall = callOnCall;
+
+    // 3. onCall - Division with error handling
+    async function callDivide() {
+      const a = parseFloat(document.getElementById('divA').value) || 0;
+      const b = parseFloat(document.getElementById('divB').value) || 0;
+
+      try {
+        const divide = window.httpsCallable(window.functions, 'divide');
+        const result = await divide({ a: a, b: b });
+
+        showResult('divideResult', {
+          input: { a, b },
+          result: result.data
+        });
+      } catch (error) {
+        showResult('divideResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+    }
+    window.callDivide = callDivide;
+
+    async function callDivideByZero() {
+      try {
+        const divide = window.httpsCallable(window.functions, 'divide');
+        const result = await divide({ a: 10, b: 0 });
+
+        showResult('divideResult', {
+          result: result.data
+        });
+      } catch (error) {
+        showResult('divideResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+    }
+    window.callDivideByZero = callDivideByZero;
+
+    // 4. onCallWithData - Typed callable
+    async function callGreetTyped() {
+      const name = document.getElementById('typedName').value || 'World';
+
+      try {
+        const greetTyped = window.httpsCallable(window.functions, 'greetTyped');
+        const result = await greetTyped({ name: name });
+
+        showResult('typedResult', {
+          input: { name },
+          result: result.data
+        });
+      } catch (error) {
+        showResult('typedResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+    }
+    window.callGreetTyped = callGreetTyped;
+
+    // 5. Auth functions
+    async function signIn() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+
+      try {
+        // Try to sign in, or create account if doesn't exist
+        try {
+          await window.signInWithEmailAndPassword(window.auth, email, password);
+        } catch (e) {
+          if (e.code === 'auth/user-not-found') {
+            // Create the user in emulator
+            await window.createUserWithEmailAndPassword(window.auth, email, password);
+          } else {
+            throw e;
+          }
+        }
+        showResult('authResult', { status: 'Signed in successfully!' });
+      } catch (error) {
+        showResult('authResult', { error: error.code, message: error.message }, true);
+      }
+    }
+    window.signIn = signIn;
+
+    async function signOut() {
+      try {
+        await window.firebaseSignOut(window.auth);
+        showResult('authResult', { status: 'Signed out successfully!' });
+      } catch (error) {
+        showResult('authResult', { error: error.message }, true);
+      }
+    }
+    window.signOut = signOut;
+
+    async function callGetAuthInfo() {
+      try {
+        const getAuthInfo = window.httpsCallable(window.functions, 'getAuthInfo');
+        const result = await getAuthInfo({});
+
+        showResult('authResult', {
+          note: 'Auth data extracted from Firebase ID token',
+          result: result.data
+        });
+      } catch (error) {
+        showResult('authResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+    }
+    window.callGetAuthInfo = callGetAuthInfo;
+
+    async function callGetAuthInfoUnauthenticated() {
+      // Temporarily sign out to make unauthenticated call
+      const currentUser = window.auth.currentUser;
+      if (currentUser) {
+        await window.firebaseSignOut(window.auth);
+      }
+
+      try {
+        const getAuthInfo = window.httpsCallable(window.functions, 'getAuthInfo');
+        const result = await getAuthInfo({});
+
+        showResult('authResult', {
+          note: 'Called without authentication',
+          result: result.data
+        });
+      } catch (error) {
+        showResult('authResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+
+      // Re-authenticate if was signed in
+      if (currentUser) {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        try {
+          await window.signInWithEmailAndPassword(window.auth, email, password);
+        } catch (e) {
+          // Ignore re-auth errors
+        }
+      }
+    }
+    window.callGetAuthInfoUnauthenticated = callGetAuthInfoUnauthenticated;
+
+    // 6. Raw POST to callable (without SDK)
+    async function callRawCallable() {
+      const name = document.getElementById('rawName').value || 'World';
+      const baseUrl = document.getElementById('baseUrl').value;
+
+      try {
+        const response = await fetch(`${baseUrl}/greet`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: { name: name } })
+        });
+
+        const json = await response.json();
+
+        showResult('rawResult', {
+          status: response.status,
+          response: json
+        });
+      } catch (error) {
+        showResult('rawResult', `Error: ${error.message}`, true);
+      }
+    }
+    window.callRawCallable = callRawCallable;
+  </script>
+</body>
+</html>

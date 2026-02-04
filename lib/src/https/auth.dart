@@ -29,8 +29,9 @@ class TokenVerificationResult {
 }
 
 /// Regular expression for validating JWT format.
+/// Allows empty signature for emulator tokens (alg: none).
 final _jwtRegex = RegExp(
-  r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$',
+  r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*$',
 );
 
 /// Extracts and validates auth token from request.

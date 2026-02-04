@@ -76,7 +76,7 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 
   // Build request handler with middleware pipeline
   final handler = const Pipeline()
-      .addMiddleware(logRequests())
+      .addMiddleware(_logRequestsWithFunctionName())
       .addMiddleware(_corsMiddleware(emulatorEnv))
       .addHandler((request) => _routeRequest(request, firebase, emulatorEnv));
 
@@ -87,6 +87,68 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
   print(
     'Firebase Functions serving at http://${server.address.host}:${server.port}',
   );
+}
+
+/// Custom logging middleware that includes the function name from the header.
+///
+/// Firebase-tools sets the `x-firebase-function` header for Dart runtimes
+/// when routing requests. This middleware logs the function name from the
+/// header when the path is empty or just `/`.
+Middleware _logRequestsWithFunctionName() {
+  return (innerHandler) {
+    return (request) {
+      final startTime = DateTime.now();
+      final watch = Stopwatch()..start();
+
+      return Future.sync(() => innerHandler(request)).then(
+        (response) {
+          // Get the path to log - use function name from header if path is empty
+          var logPath = request.url.path;
+          if (logPath.isEmpty || logPath == '/') {
+            final functionName = request.headers['x-firebase-function'];
+            if (functionName != null && functionName.isNotEmpty) {
+              logPath = '/$functionName';
+            } else {
+              logPath = '/';
+            }
+          } else if (!logPath.startsWith('/')) {
+            logPath = '/$logPath';
+          }
+
+          final method = request.method.toUpperCase().padRight(7);
+          final statusCode = response.statusCode;
+          final elapsed = watch.elapsed;
+          final timestamp = startTime.toIso8601String();
+
+          print('$timestamp  $elapsed $method [$statusCode] $logPath');
+
+          return response;
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          var logPath = request.url.path;
+          if (logPath.isEmpty || logPath == '/') {
+            final functionName = request.headers['x-firebase-function'];
+            if (functionName != null && functionName.isNotEmpty) {
+              logPath = '/$functionName';
+            } else {
+              logPath = '/';
+            }
+          } else if (!logPath.startsWith('/')) {
+            logPath = '/$logPath';
+          }
+
+          final method = request.method.toUpperCase().padRight(7);
+          final elapsed = watch.elapsed;
+          final timestamp = startTime.toIso8601String();
+
+          print('$timestamp  $elapsed $method [ERROR] $logPath');
+          print('  Error: $error');
+
+          throw error;
+        },
+      );
+    };
+  };
 }
 
 /// CORS middleware for emulator mode.
@@ -127,12 +189,6 @@ FutureOr<Response> _routeRequest(
 ) {
   final functions = firebase.functions;
   final requestPath = request.url.path;
-
-  // Debug: Log full request details
-  print('DEBUG: Full request URL: ${request.requestedUri}');
-  print('DEBUG: Request path: $requestPath');
-  print('DEBUG: Request method: ${request.method}');
-  print('DEBUG: Headers: ${request.headers}');
 
   // Handle special Node.js-compatible endpoints
   if (requestPath == '__/health') {
@@ -247,9 +303,14 @@ FutureOr<Response> _routeByPath(
   }
 
   // Not a CloudEvent, try path-based routing for HTTPS functions
-  // Extract the function name from the path
-  // HTTPS functions come as: /{functionName} (already stripped by firebase-tools)
-  final functionName = _extractFunctionName(requestPath);
+  // Extract the function name from the path (/{functionName})
+  // The firebase-tools emulator sets X-Firebase-Function header for Dart runtimes
+  var functionName = _extractFunctionName(requestPath);
+
+  // Fallback: Check for X-Firebase-Function header set by firebase-tools
+  if (functionName.isEmpty) {
+    functionName = currentRequest.headers['x-firebase-function'] ?? '';
+  }
 
   // Try to find a matching function by name
   for (final function in functions) {
@@ -268,7 +329,7 @@ FutureOr<Response> _routeByPath(
 
   // No matching function found
   return Response.notFound(
-    'Function not found: $requestPath\n'
+    'Function not found: $functionName\n'
     'Available functions: ${functions.map((f) => f.name).join(", ")}',
   );
 }
@@ -287,9 +348,6 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
   List<FirebaseFunctionDeclaration> functions,
 ) async {
   try {
-    print('DEBUG: Trying to match CloudEvent function...');
-    print('DEBUG: Content-Type: ${request.headers['content-type']}');
-
     String? bodyString; // Only set for structured mode
     final isBinaryMode =
         request.headers.containsKey('ce-type') &&
@@ -300,19 +358,15 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
 
     // Check for binary content mode (CloudEvent metadata in headers)
     if (isBinaryMode) {
-      print('DEBUG: Detected CloudEvent binary content mode');
       final ceType = request.headers['ce-type'];
       final ceSource = request.headers['ce-source'];
 
       if (ceType == null || ceSource == null) {
-        print('DEBUG: Missing ce-type or ce-source header');
         return (request, null);
       }
 
       type = ceType;
       source = ceSource;
-      print('DEBUG: ce-type: $type');
-      print('DEBUG: ce-source: $source');
     } else {
       // Check content-type to see if this might be structured mode
       final contentType = request.headers['content-type'];
@@ -320,20 +374,16 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
       final isCloudEvent =
           contentType?.contains('application/cloudevents') ?? false;
       if (!isJson && !isCloudEvent) {
-        print('DEBUG: Not a CloudEvent (no ce-* headers and not JSON)');
         return (request, null);
       }
 
       // Structured content mode - try to parse JSON body
-      print('DEBUG: Trying structured content mode (JSON body)');
       bodyString = await request.readAsString();
-      print('DEBUG: Body length: ${bodyString.length} chars');
 
       final body = jsonDecode(bodyString) as Map<String, dynamic>;
 
       // Check if this is a valid CloudEvent - if not, return reconstructed request
       if (!body.containsKey('source') || !body.containsKey('type')) {
-        print('DEBUG: Not a CloudEvent (missing source or type in JSON body)');
         // Return the reconstructed request since we consumed the body
         return (request.change(body: bodyString), null);
       }
@@ -383,10 +433,8 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
       String? documentPath;
       if (isBinaryMode && request.headers.containsKey('ce-document')) {
         documentPath = request.headers['ce-document'];
-        print('DEBUG: Using ce-document header: $documentPath');
       } else if (source.contains('/documents/')) {
         documentPath = source.split('/documents/').last;
-        print('DEBUG: Extracted document path from source: $documentPath');
       }
 
       if (documentPath != null) {
@@ -396,7 +444,6 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
           print(
             'DEBUG: Looking for Firestore function with method: $methodName',
           );
-          print('DEBUG: Document path to match: $documentPath');
 
           // Try to find a matching function by pattern matching
           for (final function in functions) {
@@ -440,7 +487,6 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
       String? refPath;
       if (isBinaryMode && request.headers.containsKey('ce-ref')) {
         refPath = request.headers['ce-ref'];
-        print('DEBUG: Using ce-ref header: $refPath');
       }
 
       if (refPath != null) {
@@ -450,7 +496,6 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
           print(
             'DEBUG: Looking for Database function with method: $methodName',
           );
-          print('DEBUG: Ref path to match: $refPath');
 
           // Try to find a matching function by pattern matching
           for (final function in functions) {
@@ -503,21 +548,15 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
 /// For event triggers, the triggerId may include region prefix like "us-central1-functionName"
 /// We need to extract just the function name part.
 String _extractFunctionName(String requestPath) {
-  print('DEBUG: Extracting function name from path: $requestPath');
-
   // Remove leading slash
   var path = requestPath;
   if (path.startsWith('/')) {
     path = path.substring(1);
   }
 
-  print('DEBUG: Path after removing leading slash: $path');
-
   // Event trigger path: functions/projects/{project}/triggers/{triggerId}
   if (path.startsWith('functions/projects/')) {
-    print('DEBUG: Detected event trigger path');
     final parts = path.split('/');
-    print('DEBUG: Path parts: $parts (length: ${parts.length})');
     if (parts.length >= 5 && parts[3] == 'triggers') {
       // Extract trigger ID from: functions/projects/{project}/triggers/{triggerId}
       var triggerId = parts[4];
@@ -532,7 +571,6 @@ String _extractFunctionName(String requestPath) {
       // Remove numeric suffix (e.g., "-0", "-1")
       triggerId = triggerId.replaceFirst(RegExp(r'-\d+$'), '');
 
-      print('DEBUG: Extracted function name from trigger: $triggerId');
       return triggerId;
     }
   }
