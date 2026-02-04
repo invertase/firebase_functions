@@ -10,7 +10,7 @@ A simple web client demonstrating how to call Firebase Functions (both `onReques
 cd ../basic
 dart pub get
 dart run build_runner build --delete-conflicting-outputs
-firebase emulators:start --only functions
+firebase emulators:start --only functions,auth
 ```
 
 2. Note the Functions URL from the emulator output (usually `http://127.0.0.1:5001/demo-test/us-central1`).
@@ -64,7 +64,50 @@ Demonstrates how callable functions handle errors. The `divide` function throws 
 
 Calls the `greetTyped` function which uses typed request/response classes on the server side.
 
-### 5. Raw POST to Callable
+### 5. onCall with Auth - Get User Info
+
+Demonstrates extracting authentication data from callable function requests. The `getAuthInfo` function returns the authenticated user's information:
+
+```dart
+// Server-side (Dart)
+firebase.https.onCall(name: 'getAuthInfo', (request, response) async {
+  final auth = request.auth;
+
+  if (auth == null) {
+    return CallableResult({
+      'authenticated': false,
+      'message': 'No authentication provided',
+    });
+  }
+
+  return CallableResult({
+    'authenticated': true,
+    'uid': auth.uid,
+    'token': auth.token, // Decoded JWT claims
+  });
+});
+```
+
+```javascript
+// Client-side (JavaScript)
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+
+// Sign in first
+const auth = getAuth(app);
+await signInWithEmailAndPassword(auth, 'test@example.com', 'password123');
+
+// Call the function - Firebase SDK automatically attaches the ID token
+const getAuthInfo = httpsCallable(functions, 'getAuthInfo');
+const result = await getAuthInfo({});
+// result.data = { authenticated: true, uid: '...', token: { email: '...', ... } }
+```
+
+The `request.auth` object contains:
+- `uid` - The user's unique Firebase UID
+- `token` - Decoded ID token claims (email, name, custom claims, etc.)
+- `rawToken` - The raw JWT string (for passing to other services)
+
+### 6. Raw POST to Callable
 
 Shows how to call a callable function without the Firebase SDK using the callable protocol:
 
@@ -111,3 +154,4 @@ The Firebase callable protocol wraps data in a specific format:
 - **CORS errors**: Make sure you're running the Firebase emulator and the Functions URL is correct.
 - **Connection refused**: Ensure the emulator is running on the expected port.
 - **Function not found**: Verify the function names match between client and server.
+- **Auth not working**: Make sure you started the emulator with `--only functions,auth`.

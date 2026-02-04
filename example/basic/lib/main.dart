@@ -71,6 +71,27 @@ void main(List<String> args) async {
       return CallableResult({'result': a / b});
     });
 
+    // Callable function demonstrating auth data extraction
+    firebase.https.onCall(name: 'getAuthInfo', (request, response) async {
+      final auth = request.auth;
+
+      if (auth == null) {
+        // User is not authenticated
+        return CallableResult({
+          'authenticated': false,
+          'message': 'No authentication provided',
+        });
+      }
+
+      // User is authenticated - return auth info
+      return CallableResult({
+        'authenticated': true,
+        'uid': auth.uid,
+        'token': auth.token, // Decoded JWT claims (email, name, etc.)
+        // Note: auth.rawToken contains the raw JWT string if needed
+      });
+    });
+
     // Callable function with streaming support
     firebase.https.onCall(
       name: 'countdown',

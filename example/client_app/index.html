@@ -160,9 +160,30 @@
     <div id="typedResult" class="result" style="display: none;"></div>
   </div>
 
+  <!-- Auth Info Demo -->
+  <div class="card">
+    <h2>5. onCall with Auth - Get User Info</h2>
+    <p>Demonstrates extracting authentication data from callable requests. Sign in first, then call the function.</p>
+
+    <div>
+      <input type="email" id="authEmail" placeholder="Email" value="test@example.com">
+      <input type="password" id="authPassword" placeholder="Password" value="password123">
+      <button onclick="signIn()">Sign In</button>
+      <button onclick="signOut()">Sign Out</button>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <button onclick="callGetAuthInfo()">Call getAuthInfo</button>
+      <button onclick="callGetAuthInfoUnauthenticated()">Call without Auth</button>
+    </div>
+
+    <div id="authStatus" class="result" style="display: block; background: #e3f2fd;">Not signed in</div>
+    <div id="authResult" class="result" style="display: none;"></div>
+  </div>
+
   <!-- Raw POST to callable -->
   <div class="card">
-    <h2>5. Raw POST to Callable (without SDK)</h2>
+    <h2>6. Raw POST to Callable (without SDK)</h2>
     <p>Demonstrates calling a callable function with raw <code>fetch()</code> using the callable protocol.</p>
 
     <div>
@@ -176,8 +197,9 @@
   <!-- Firebase SDK -->
   <script type="module">
     // Import Firebase SDK
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js';
-    import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/11.1.0/firebase-functions.js';
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
+    import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js';
+    import { getAuth, connectAuthEmulator, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
 
     // Initialize Firebase (minimal config for Functions)
     const firebaseConfig = {
@@ -187,15 +209,33 @@
 
     const app = initializeApp(firebaseConfig);
     const functions = getFunctions(app, 'us-central1');
+    const auth = getAuth(app);
 
-    // Connect to emulator
+    // Connect to emulators
     connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
 
-    // Expose functions to window for button handlers
+    // Track auth state
+    onAuthStateChanged(auth, (user) => {
+      const statusEl = document.getElementById('authStatus');
+      if (user) {
+        statusEl.textContent = `Signed in as: ${user.email} (UID: ${user.uid})`;
+        statusEl.style.background = '#c8e6c9';
+      } else {
+        statusEl.textContent = 'Not signed in';
+        statusEl.style.background = '#e3f2fd';
+      }
+    });
+
+    // Expose to window for button handlers
     window.functions = functions;
     window.httpsCallable = httpsCallable;
+    window.auth = auth;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.firebaseSignOut = firebaseSignOut;
 
-    console.log('Firebase initialized and connected to emulator');
+    console.log('Firebase initialized and connected to emulators (Functions + Auth)');
   </script>
 
   <script>
@@ -311,7 +351,96 @@
     }
     window.callGreetTyped = callGreetTyped;
 
-    // 5. Raw POST to callable (without SDK)
+    // 5. Auth functions
+    async function signIn() {
+      const email = document.getElementById('authEmail').value;
+      const password = document.getElementById('authPassword').value;
+
+      try {
+        // Try to sign in, or create account if doesn't exist
+        try {
+          await window.signInWithEmailAndPassword(window.auth, email, password);
+        } catch (e) {
+          if (e.code === 'auth/user-not-found') {
+            // Create the user in emulator
+            await window.createUserWithEmailAndPassword(window.auth, email, password);
+          } else {
+            throw e;
+          }
+        }
+        showResult('authResult', { status: 'Signed in successfully!' });
+      } catch (error) {
+        showResult('authResult', { error: error.code, message: error.message }, true);
+      }
+    }
+    window.signIn = signIn;
+
+    async function signOut() {
+      try {
+        await window.firebaseSignOut(window.auth);
+        showResult('authResult', { status: 'Signed out successfully!' });
+      } catch (error) {
+        showResult('authResult', { error: error.message }, true);
+      }
+    }
+    window.signOut = signOut;
+
+    async function callGetAuthInfo() {
+      try {
+        const getAuthInfo = window.httpsCallable(window.functions, 'getAuthInfo');
+        const result = await getAuthInfo({});
+
+        showResult('authResult', {
+          note: 'Auth data extracted from Firebase ID token',
+          result: result.data
+        });
+      } catch (error) {
+        showResult('authResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+    }
+    window.callGetAuthInfo = callGetAuthInfo;
+
+    async function callGetAuthInfoUnauthenticated() {
+      // Temporarily sign out to make unauthenticated call
+      const currentUser = window.auth.currentUser;
+      if (currentUser) {
+        await window.firebaseSignOut(window.auth);
+      }
+
+      try {
+        const getAuthInfo = window.httpsCallable(window.functions, 'getAuthInfo');
+        const result = await getAuthInfo({});
+
+        showResult('authResult', {
+          note: 'Called without authentication',
+          result: result.data
+        });
+      } catch (error) {
+        showResult('authResult', {
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }, true);
+      }
+
+      // Re-authenticate if was signed in
+      if (currentUser) {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        try {
+          await window.signInWithEmailAndPassword(window.auth, email, password);
+        } catch (e) {
+          // Ignore re-auth errors
+        }
+      }
+    }
+    window.callGetAuthInfoUnauthenticated = callGetAuthInfoUnauthenticated;
+
+    // 6. Raw POST to callable (without SDK)
     async function callRawCallable() {
       const name = document.getElementById('rawName').value || 'World';
       const baseUrl = document.getElementById('baseUrl').value;
