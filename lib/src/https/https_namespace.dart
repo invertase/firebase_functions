@@ -60,9 +60,10 @@ class HttpsNamespace extends FunctionsNamespace {
           body: jsonEncode(e.toErrorResponse()),
           headers: {'Content-Type': 'application/json'},
         );
-      } catch (e) {
-        // Unexpected error - return internal error
-        final error = InternalError(e.toString());
+      } catch (e, stackTrace) {
+        // Unexpected error - log server-side but don't expose details to client
+        print('Unexpected error in onRequest function "$name": $e\n$stackTrace');
+        final error = InternalError();
         return Response(
           error.httpStatusCode,
           body: jsonEncode(error.toErrorResponse()),
@@ -335,9 +336,10 @@ class HttpsNamespace extends FunctionsNamespace {
         body: jsonEncode(e.toErrorResponse()),
         headers: {'Content-Type': 'application/json'},
       );
-    } catch (e) {
-      // Unexpected error
-      final error = InternalError(e.toString());
+    } catch (e, stackTrace) {
+      // Unexpected error - log server-side but don't expose details to client
+      print('Unexpected error in callable function: $e\n$stackTrace');
+      final error = InternalError();
 
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         callableResponse.writeSSE(error.toErrorResponse());
