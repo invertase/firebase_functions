@@ -7,6 +7,11 @@ publish_to: none
 environment:
   sdk: ^3.9.0
 
+workspace:
+  - example/basic
+  - example/with_options
+  - example/firestore_test
+
 dependencies:
   shelf: ^1.4.2
   meta: ^1.18.0
