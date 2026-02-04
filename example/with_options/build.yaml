@@ -3,5 +3,3 @@ targets:
     builders:
       firebase_functions|spec_builder:
         enabled: true
-        generate_for:
-          - lib/**
