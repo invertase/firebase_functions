@@ -62,7 +62,9 @@ class HttpsNamespace extends FunctionsNamespace {
         );
       } catch (e, stackTrace) {
         // Unexpected error - log server-side but don't expose details to client
-        print('Unexpected error in onRequest function "$name": $e\n$stackTrace');
+        print(
+          'Unexpected error in onRequest function "$name": $e\n$stackTrace',
+        );
         final error = InternalError();
         return Response(
           error.httpStatusCode,
