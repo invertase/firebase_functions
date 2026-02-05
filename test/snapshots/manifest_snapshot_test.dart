@@ -35,11 +35,9 @@ void main() {
       // Generate Node.js manifest via extract script
       print('Generating Node.js manifest via extract-manifest.js...');
       await _ensureNodeModules('example/nodejs_reference');
-      final nodeResult = await Process.run(
-        'node',
-        ['extract-manifest.js'],
-        workingDirectory: 'example/nodejs_reference',
-      );
+      final nodeResult = await Process.run('node', [
+        'extract-manifest.js',
+      ], workingDirectory: 'example/nodejs_reference');
       if (nodeResult.exitCode != 0) {
         throw Exception(
           'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
@@ -1112,11 +1110,9 @@ void main() {
       // Generate Node.js manifest via extract script
       print('Generating Node.js manifest via extract-manifest.js...');
       await _ensureNodeModules('example/with_options_nodejs');
-      final nodeResult = await Process.run(
-        'node',
-        ['extract-manifest.js'],
-        workingDirectory: 'example/with_options_nodejs',
-      );
+      final nodeResult = await Process.run('node', [
+        'extract-manifest.js',
+      ], workingDirectory: 'example/with_options_nodejs');
       if (nodeResult.exitCode != 0) {
         throw Exception(
           'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
