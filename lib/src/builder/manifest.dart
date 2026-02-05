@@ -5,6 +5,8 @@
 /// `Map<String, dynamic>` then converts to YAML.
 library;
 
+import 'package:yaml_edit/yaml_edit.dart';
+
 import 'spec.dart';
 
 /// Generates the YAML manifest string from discovered params and endpoints.
@@ -13,7 +15,9 @@ String generateManifestYaml(
   Map<String, EndpointSpec> endpoints,
 ) {
   final map = _buildManifestMap(params, endpoints);
-  return mapToYaml(map);
+  final editor = YamlEditor('');
+  editor.update([], map);
+  return editor.toString();
 }
 
 /// Builds the full manifest as a structured map.
@@ -314,116 +318,3 @@ String _mapDatabaseEventType(String methodName) => switch (methodName) {
   'onValueWritten' => 'google.firebase.database.ref.v1.written',
   _ => throw ArgumentError('Unknown Database event type: $methodName'),
 };
-
-/// Converts a map to a YAML string.
-///
-/// This is a simple converter that handles the subset of types
-/// used in Firebase Functions manifests.
-String mapToYaml(Map<String, dynamic> map) {
-  final buffer = StringBuffer();
-  _writeMap(buffer, map, 0, isRoot: true);
-  return buffer.toString();
-}
-
-void _writeMap(
-  StringBuffer buffer,
-  Map<String, dynamic> map,
-  int indent, {
-  bool isRoot = false,
-}) {
-  if (map.isEmpty) {
-    buffer.writeln('{}');
-    return;
-  }
-
-  final entries = map.entries.toList();
-  for (var i = 0; i < entries.length; i++) {
-    final entry = entries[i];
-    final key = entry.key;
-    final value = entry.value;
-    final prefix = ' ' * indent;
-
-    if (value == null) continue;
-
-    if (value is Map<String, dynamic>) {
-      buffer.write('$prefix$key:');
-      if (value.isEmpty) {
-        buffer.writeln(' {}');
-      } else {
-        buffer.writeln();
-        _writeMap(buffer, value, indent + 2);
-      }
-    } else if (value is List) {
-      buffer.write('$prefix$key:');
-      if (value.isEmpty) {
-        buffer.writeln(' []');
-      } else {
-        buffer.writeln();
-        _writeList(buffer, value, indent + 2);
-      }
-    } else {
-      buffer.writeln('$prefix$key: ${_formatValue(value)}');
-    }
-
-    // Add blank line after top-level sections (params, requiredAPIs)
-    // but not after the last entry
-    if (isRoot && i < entries.length - 1) {
-      // Add blank line after certain top-level keys for readability
-      if (key == 'specVersion' || key == 'params' || key == 'requiredAPIs') {
-        buffer.writeln();
-      }
-    }
-  }
-}
-
-void _writeList(StringBuffer buffer, List<dynamic> list, int indent) {
-  final prefix = ' ' * indent;
-  for (final item in list) {
-    if (item is Map<String, dynamic>) {
-      // Write first key on the `- ` line, rest indented
-      final entries = item.entries.toList();
-      if (entries.isEmpty) {
-        buffer.writeln('$prefix- {}');
-        continue;
-      }
-
-      final first = entries.first;
-      buffer.write('$prefix- ${first.key}: ${_formatValue(first.value)}');
-      buffer.writeln();
-
-      for (var i = 1; i < entries.length; i++) {
-        final e = entries[i];
-        final v = e.value;
-        if (v is Map<String, dynamic>) {
-          buffer.write('$prefix  ${e.key}:');
-          if (v.isEmpty) {
-            buffer.writeln(' {}');
-          } else {
-            buffer.writeln();
-            _writeMap(buffer, v, indent + 4);
-          }
-        } else if (v is List) {
-          buffer.write('$prefix  ${e.key}:');
-          if (v.isEmpty) {
-            buffer.writeln(' []');
-          } else {
-            buffer.writeln();
-            _writeList(buffer, v, indent + 4);
-          }
-        } else {
-          buffer.writeln('$prefix  ${e.key}: ${_formatValue(v)}');
-        }
-      }
-    } else {
-      buffer.writeln('$prefix- ${_formatValue(item)}');
-    }
-  }
-}
-
-/// Formats a scalar value for YAML output.
-String _formatValue(dynamic value) {
-  if (value is String) return '"$value"';
-  if (value is bool) return value.toString();
-  if (value is num) return value.toString();
-  return value.toString();
-}
