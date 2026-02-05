@@ -4,7 +4,8 @@ library;
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:jose/jose.dart';
+import 'package:jose/jose.dart'
+    show JoseException, JsonWebKey, JsonWebKeyStore, JsonWebToken;
 
 import '../https/error.dart';
 
