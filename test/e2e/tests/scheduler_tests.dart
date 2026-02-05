@@ -51,7 +51,7 @@ void runSchedulerTests(
       );
       expect(
         manifestContent,
-        contains('schedule: "0 0 * * *"'),
+        contains('schedule: 0 0 * * *'),
         reason: 'Manifest should have schedule cron expression',
       );
     });
@@ -68,7 +68,7 @@ void runSchedulerTests(
       );
       expect(
         manifestContent,
-        contains('timeZone: "America/New_York"'),
+        contains('timeZone: America/New_York'),
         reason: 'Manifest should have timeZone',
       );
       expect(

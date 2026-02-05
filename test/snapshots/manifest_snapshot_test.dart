@@ -54,8 +54,191 @@ void main() {
       expect(dartManifest['specVersion'], equals('v1alpha1'));
     });
 
+    // =========================================================================
+    // Params Tests
+    // =========================================================================
+
+    test('should have matching params section', () {
+      final dartParams = dartManifest['params'] as List;
+      final nodejsParams = nodejsManifest['params'] as List;
+
+      expect(
+        dartParams.length,
+        equals(nodejsParams.length),
+        reason: 'Should have same number of params',
+      );
+      expect(dartParams.length, equals(3));
+    });
+
+    test('should have WELCOME_MESSAGE string param', () {
+      final dartParam = _getParam(dartManifest, 'WELCOME_MESSAGE');
+      final nodejsParam = _getParam(nodejsManifest, 'WELCOME_MESSAGE');
+
+      expect(dartParam, isNotNull);
+      expect(nodejsParam, isNotNull);
+
+      expect(dartParam!['type'], equals('string'));
+      expect(nodejsParam!['type'], equals('string'));
+
+      expect(dartParam['default'], equals('Hello from Dart Functions!'));
+      expect(nodejsParam['default'], equals('Hello from Dart Functions!'));
+
+      expect(dartParam['label'], equals('Welcome Message'));
+      expect(nodejsParam['label'], equals('Welcome Message'));
+
+      expect(dartParam['description'], equals(nodejsParam['description']));
+    });
+
+    test('should have MIN_INSTANCES int param', () {
+      final dartParam = _getParam(dartManifest, 'MIN_INSTANCES');
+      final nodejsParam = _getParam(nodejsManifest, 'MIN_INSTANCES');
+
+      expect(dartParam, isNotNull);
+      expect(nodejsParam, isNotNull);
+
+      expect(dartParam!['type'], equals('int'));
+      expect(nodejsParam!['type'], equals('int'));
+
+      expect(dartParam['default'], equals(0));
+      expect(nodejsParam['default'], equals(0));
+
+      expect(dartParam['label'], equals('Minimum Instances'));
+      expect(nodejsParam['label'], equals('Minimum Instances'));
+    });
+
+    test('should have IS_PRODUCTION boolean param', () {
+      final dartParam = _getParam(dartManifest, 'IS_PRODUCTION');
+      final nodejsParam = _getParam(nodejsManifest, 'IS_PRODUCTION');
+
+      expect(dartParam, isNotNull);
+      expect(nodejsParam, isNotNull);
+
+      expect(dartParam!['type'], equals('boolean'));
+      expect(nodejsParam!['type'], equals('boolean'));
+
+      expect(dartParam['default'], equals(false));
+      expect(nodejsParam['default'], equals(false));
+
+      expect(dartParam['description'], equals(nodejsParam['description']));
+    });
+
+    // =========================================================================
+    // RequiredAPIs Tests
+    // =========================================================================
+
+    test('should have matching requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      expect(
+        dartAPIs.length,
+        equals(nodejsAPIs.length),
+        reason: 'Should have same number of requiredAPIs',
+      );
+      expect(dartAPIs.length, equals(3));
+
+      // Check each API matches
+      for (final nodejsApi in nodejsAPIs) {
+        final apiName = (nodejsApi as Map)['api'] as String;
+        final dartApi = dartAPIs.firstWhere(
+          (api) => (api as Map)['api'] == apiName,
+          orElse: () => null,
+        );
+        expect(
+          dartApi,
+          isNotNull,
+          reason: 'Dart manifest should include $apiName',
+        );
+        expect(
+          (dartApi as Map)['reason'],
+          equals(nodejsApi['reason']),
+          reason: 'Reason for $apiName should match',
+        );
+      }
+    });
+
+    test('should include cloudfunctions API in requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      final dartApi = dartAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudfunctions.googleapis.com',
+        orElse: () => null,
+      );
+      final nodejsApi = nodejsAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudfunctions.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(dartApi, isNotNull);
+      expect(nodejsApi, isNotNull);
+      expect(
+        (dartApi as Map)['reason'],
+        equals('Required for Cloud Functions'),
+      );
+      expect(
+        (nodejsApi as Map)['reason'],
+        equals('Required for Cloud Functions'),
+      );
+    });
+
+    test('should include identitytoolkit API in requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      final dartApi = dartAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'identitytoolkit.googleapis.com',
+        orElse: () => null,
+      );
+      final nodejsApi = nodejsAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'identitytoolkit.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(dartApi, isNotNull);
+      expect(nodejsApi, isNotNull);
+      expect(
+        (dartApi as Map)['reason'],
+        equals('Needed for auth blocking functions'),
+      );
+      expect(
+        (nodejsApi as Map)['reason'],
+        equals('Needed for auth blocking functions'),
+      );
+    });
+
+    test('should include cloudscheduler API in requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      final dartApi = dartAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudscheduler.googleapis.com',
+        orElse: () => null,
+      );
+      final nodejsApi = nodejsAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudscheduler.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(dartApi, isNotNull);
+      expect(nodejsApi, isNotNull);
+      expect(
+        (dartApi as Map)['reason'],
+        equals('Needed for scheduled functions'),
+      );
+      expect(
+        (nodejsApi as Map)['reason'],
+        equals('Needed for scheduled functions'),
+      );
+    });
+
+    // =========================================================================
+    // Endpoint Count Tests
+    // =========================================================================
+
     test('should discover correct number of endpoints', () {
       final dartEndpoints = dartManifest['endpoints'] as Map;
+      final nodejsEndpoints = nodejsManifest['endpoints'] as Map;
 
       expect(
         dartEndpoints.keys.length,
@@ -63,6 +246,20 @@ void main() {
         reason:
             'Should discover 27 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 2 Scheduler)',
       );
+      expect(
+        nodejsEndpoints.keys.length,
+        equals(27),
+        reason: 'Node.js reference should also have 27 endpoints',
+      );
+
+      // Verify both manifests have the same endpoint names
+      for (final name in dartEndpoints.keys) {
+        expect(
+          nodejsEndpoints.containsKey(name),
+          isTrue,
+          reason: 'Node.js manifest should contain endpoint "$name"',
+        );
+      }
     });
 
     // =========================================================================
@@ -77,9 +274,11 @@ void main() {
       expect(nodejsFunc, isNotNull);
 
       expect(dartFunc!['entryPoint'], equals('greet'));
+      expect(nodejsFunc!['entryPoint'], equals('greet'));
       expect(dartFunc['platform'], equals('gcfv2'));
+      expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['callableTrigger'], isNotNull);
-      expect(nodejsFunc!['callableTrigger'], isNotNull);
+      expect(nodejsFunc['callableTrigger'], isNotNull);
 
       // Callable functions should NOT have httpsTrigger
       expect(dartFunc['httpsTrigger'], isNull);
@@ -94,8 +293,9 @@ void main() {
       expect(nodejsFunc, isNotNull);
 
       expect(dartFunc!['entryPoint'], equals('greetTyped'));
+      expect(nodejsFunc!['entryPoint'], equals('greetTyped'));
       expect(dartFunc['callableTrigger'], isNotNull);
-      expect(nodejsFunc!['callableTrigger'], isNotNull);
+      expect(nodejsFunc['callableTrigger'], isNotNull);
     });
 
     test('should have callable function with error handling (divide)', () {
@@ -105,8 +305,23 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['callableTrigger'], isNotNull);
-      expect(nodejsFunc!['callableTrigger'], isNotNull);
+      expect(dartFunc!['entryPoint'], equals('divide'));
+      expect(nodejsFunc!['entryPoint'], equals('divide'));
+      expect(dartFunc['callableTrigger'], isNotNull);
+      expect(nodejsFunc['callableTrigger'], isNotNull);
+    });
+
+    test('should have callable function with auth (getAuthInfo)', () {
+      final dartFunc = _getEndpoint(dartManifest, 'getAuthInfo');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'getAuthInfo');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['entryPoint'], equals('getAuthInfo'));
+      expect(nodejsFunc!['entryPoint'], equals('getAuthInfo'));
+      expect(dartFunc['callableTrigger'], isNotNull);
+      expect(nodejsFunc['callableTrigger'], isNotNull);
     });
 
     test('should have callable function with streaming (countdown)', () {
@@ -116,12 +331,18 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['callableTrigger'], isNotNull);
-      expect(nodejsFunc!['callableTrigger'], isNotNull);
+      expect(dartFunc!['entryPoint'], equals('countdown'));
+      expect(nodejsFunc!['entryPoint'], equals('countdown'));
+      expect(dartFunc['callableTrigger'], isNotNull);
+      expect(nodejsFunc['callableTrigger'], isNotNull);
 
       // heartbeatSeconds is a runtime option, NOT in manifest
       expect(dartFunc['heartbeatSeconds'], isNull);
     });
+
+    // =========================================================================
+    // HTTPS Functions Tests
+    // =========================================================================
 
     test('should have matching HTTPS onRequest function', () {
       final dartFunc = _getEndpoint(dartManifest, 'helloWorld');
@@ -131,9 +352,48 @@ void main() {
       expect(nodejsFunc, isNotNull);
 
       expect(dartFunc!['entryPoint'], equals('helloWorld'));
+      expect(nodejsFunc!['entryPoint'], equals('helloWorld'));
       expect(dartFunc['platform'], equals('gcfv2'));
+      expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['httpsTrigger'], isNotNull);
+      expect(nodejsFunc['httpsTrigger'], isNotNull);
     });
+
+    test('should have correct CEL expression for minInstances param', () {
+      final dartFunc = _getEndpoint(dartManifest, 'helloWorld')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'helloWorld')!;
+
+      expect(
+        dartFunc['minInstances'],
+        equals('{{ params.MIN_INSTANCES }}'),
+        reason: 'Dart should output CEL expression for minInstances',
+      );
+      expect(
+        nodejsFunc['minInstances'],
+        equals('{{ params.MIN_INSTANCES }}'),
+        reason: 'Node.js should output CEL expression for minInstances',
+      );
+    });
+
+    test('should have correct CEL expression for conditional memory', () {
+      final dartFunc = _getEndpoint(dartManifest, 'configuredEndpoint')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'configuredEndpoint')!;
+
+      expect(
+        dartFunc['availableMemoryMb'],
+        equals('{{ params.IS_PRODUCTION ? 2048 : 512 }}'),
+        reason: 'Dart should output CEL ternary expression for memory',
+      );
+      expect(
+        nodejsFunc['availableMemoryMb'],
+        equals('{{ params.IS_PRODUCTION ? 2048 : 512 }}'),
+        reason: 'Node.js should output CEL ternary expression for memory',
+      );
+    });
+
+    // =========================================================================
+    // Pub/Sub Tests
+    // =========================================================================
 
     test('should have Pub/Sub function with correct naming', () {
       final dartFunc = _getEndpoint(dartManifest, 'onMessagePublished_mytopic');
@@ -145,8 +405,10 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['eventTrigger'], isNotNull);
-      expect(nodejsFunc!['eventTrigger'], isNotNull);
+      expect(dartFunc!['entryPoint'], equals('onMessagePublished_mytopic'));
+      expect(nodejsFunc!['entryPoint'], equals('onMessagePublished_mytopic'));
+      expect(dartFunc['eventTrigger'], isNotNull);
+      expect(nodejsFunc['eventTrigger'], isNotNull);
     });
 
     test('should use eventFilters format for Pub/Sub', () {
@@ -184,20 +446,46 @@ void main() {
       expect(nodejsTrigger['retry'], equals(false));
     });
 
+    // =========================================================================
+    // Firestore Tests
+    // =========================================================================
+
     test('should have Firestore onDocumentCreated trigger', () {
       final dartFunc = _getEndpoint(
         dartManifest,
         'onDocumentCreated_users_userId',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentCreated_users_userId',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
         equals('google.cloud.firestore.document.v1.created'),
       );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.created'),
+      );
+
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+      expect(dartFilters['database'], equals('(default)'));
+      expect(nodejsFilters['database'], equals('(default)'));
+      expect(dartFilters['namespace'], equals('(default)'));
+      expect(nodejsFilters['namespace'], equals('(default)'));
+
+      final dartPatterns = dartTrigger['eventFilterPathPatterns'] as Map;
+      final nodejsPatterns = nodejsTrigger['eventFilterPathPatterns'] as Map;
+      expect(dartPatterns['document'], equals('users/{userId}'));
+      expect(nodejsPatterns['document'], equals('users/{userId}'));
     });
 
     test('should have Firestore onDocumentUpdated trigger', () {
@@ -205,13 +493,23 @@ void main() {
         dartManifest,
         'onDocumentUpdated_users_userId',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentUpdated_users_userId',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.updated'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('google.cloud.firestore.document.v1.updated'),
       );
     });
@@ -221,13 +519,23 @@ void main() {
         dartManifest,
         'onDocumentDeleted_users_userId',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentDeleted_users_userId',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.deleted'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('google.cloud.firestore.document.v1.deleted'),
       );
     });
@@ -237,13 +545,23 @@ void main() {
         dartManifest,
         'onDocumentWritten_users_userId',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentWritten_users_userId',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.written'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('google.cloud.firestore.document.v1.written'),
       );
     });
@@ -253,16 +571,41 @@ void main() {
         dartManifest,
         'onDocumentCreated_posts_postId_comments_commentId',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentCreated_posts_postId_comments_commentId',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
         equals('google.cloud.firestore.document.v1.created'),
       );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.cloud.firestore.document.v1.created'),
+      );
+
+      final dartPatterns = dartTrigger['eventFilterPathPatterns'] as Map;
+      final nodejsPatterns = nodejsTrigger['eventFilterPathPatterns'] as Map;
+      expect(
+        dartPatterns['document'],
+        equals('posts/{postId}/comments/{commentId}'),
+      );
+      expect(
+        nodejsPatterns['document'],
+        equals('posts/{postId}/comments/{commentId}'),
+      );
     });
+
+    // =========================================================================
+    // Database Tests
+    // =========================================================================
 
     test('should have Database onValueCreated trigger', () {
       final dartFunc = _getEndpoint(
@@ -392,6 +735,12 @@ void main() {
         nodejsTrigger['eventType'],
         equals('google.firebase.database.ref.v1.written'),
       );
+
+      final dartPatterns = dartTrigger['eventFilterPathPatterns'] as Map;
+      final nodejsPatterns = nodejsTrigger['eventFilterPathPatterns'] as Map;
+
+      expect(dartPatterns['ref'], equals('users/{userId}/status'));
+      expect(nodejsPatterns['ref'], equals('users/{userId}/status'));
     });
 
     test('should use eventFilterPathPatterns format for Database', () {
@@ -436,27 +785,45 @@ void main() {
       expect(nodejsTrigger['retry'], equals(false));
     });
 
+    // =========================================================================
+    // Firebase Alerts Tests
+    // =========================================================================
+
     test('should have Crashlytics newFatalIssue alert trigger', () {
       final dartFunc = _getEndpoint(
         dartManifest,
         'onAlertPublished_crashlytics_newFatalIssue',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onAlertPublished_crashlytics_newFatalIssue',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
         equals('google.firebase.firebasealerts.alerts.v1.published'),
       );
-      expect(dartTrigger['eventFilters'], isNotNull);
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.firebasealerts.alerts.v1.published'),
+      );
 
-      final filters = dartTrigger['eventFilters'] as Map;
-      expect(filters['alerttype'], equals('crashlytics.newFatalIssue'));
-      expect(filters['appid'], isNull); // No appId filter
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['alerttype'], equals('crashlytics.newFatalIssue'));
+      expect(nodejsFilters['alerttype'], equals('crashlytics.newFatalIssue'));
+      expect(dartFilters['appid'], isNull); // No appId filter
+      expect(nodejsFilters['appid'], isNull);
 
       expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
     });
 
     test('should have Billing planUpdate alert trigger', () {
@@ -464,18 +831,31 @@ void main() {
         dartManifest,
         'onAlertPublished_billing_planUpdate',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onAlertPublished_billing_planUpdate',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
         equals('google.firebase.firebasealerts.alerts.v1.published'),
       );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.firebasealerts.alerts.v1.published'),
+      );
 
-      final filters = dartTrigger['eventFilters'] as Map;
-      expect(filters['alerttype'], equals('billing.planUpdate'));
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['alerttype'], equals('billing.planUpdate'));
+      expect(nodejsFilters['alerttype'], equals('billing.planUpdate'));
     });
 
     test('should have Performance threshold alert with appId filter', () {
@@ -483,19 +863,33 @@ void main() {
         dartManifest,
         'onAlertPublished_performance_threshold',
       );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onAlertPublished_performance_threshold',
+      );
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['eventTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
       expect(
         dartTrigger['eventType'],
         equals('google.firebase.firebasealerts.alerts.v1.published'),
       );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.firebasealerts.alerts.v1.published'),
+      );
 
-      final filters = dartTrigger['eventFilters'] as Map;
-      expect(filters['alerttype'], equals('performance.threshold'));
-      expect(filters['appid'], equals('1:123456789:ios:abcdef'));
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['alerttype'], equals('performance.threshold'));
+      expect(nodejsFilters['alerttype'], equals('performance.threshold'));
+      expect(dartFilters['appid'], equals('1:123456789:ios:abcdef'));
+      expect(nodejsFilters['appid'], equals('1:123456789:ios:abcdef'));
     });
 
     // =========================================================================
@@ -504,83 +898,113 @@ void main() {
 
     test('should have beforeCreate blocking trigger with token options', () {
       final dartFunc = _getEndpoint(dartManifest, 'beforeCreate');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'beforeCreate');
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['blockingTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final trigger = dartFunc['blockingTrigger'] as Map;
+      expect(dartFunc!['blockingTrigger'], isNotNull);
+      expect(nodejsFunc!['blockingTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['blockingTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['blockingTrigger'] as Map;
+
       expect(
-        trigger['eventType'],
+        dartTrigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeCreate'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('providers/cloud.auth/eventTypes/user.beforeCreate'),
       );
 
-      final options = trigger['options'] as Map;
-      expect(options['idToken'], isTrue);
-      expect(options['accessToken'], isTrue);
+      final dartOptions = dartTrigger['options'] as Map;
+      final nodejsOptions = nodejsTrigger['options'] as Map;
+
+      expect(dartOptions['idToken'], isTrue);
+      expect(nodejsOptions['idToken'], isTrue);
+      expect(dartOptions['accessToken'], isTrue);
+      expect(nodejsOptions['accessToken'], isTrue);
     });
 
     test('should have beforeSignIn blocking trigger with idToken only', () {
       final dartFunc = _getEndpoint(dartManifest, 'beforeSignIn');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'beforeSignIn');
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['blockingTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final trigger = dartFunc['blockingTrigger'] as Map;
+      final dartTrigger = dartFunc!['blockingTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['blockingTrigger'] as Map;
+
       expect(
-        trigger['eventType'],
+        dartTrigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeSignIn'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('providers/cloud.auth/eventTypes/user.beforeSignIn'),
       );
 
-      final options = trigger['options'] as Map;
-      expect(options['idToken'], isTrue);
-      expect(options.containsKey('accessToken'), isFalse);
+      final dartOptions = dartTrigger['options'] as Map;
+      final nodejsOptions = nodejsTrigger['options'] as Map;
+
+      expect(dartOptions['idToken'], isTrue);
+      expect(nodejsOptions['idToken'], isTrue);
+      expect(dartOptions.containsKey('accessToken'), isFalse);
+      expect(nodejsOptions.containsKey('accessToken'), isFalse);
     });
 
     test('should have beforeSendEmail blocking trigger with empty options', () {
       final dartFunc = _getEndpoint(dartManifest, 'beforeSendEmail');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'beforeSendEmail');
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['blockingTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final trigger = dartFunc['blockingTrigger'] as Map;
+      final dartTrigger = dartFunc!['blockingTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['blockingTrigger'] as Map;
+
       expect(
-        trigger['eventType'],
+        dartTrigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeSendEmail'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('providers/cloud.auth/eventTypes/user.beforeSendEmail'),
       );
 
-      final options = trigger['options'] as Map;
-      expect(options, isEmpty);
+      final dartOptions = dartTrigger['options'] as Map;
+      final nodejsOptions = nodejsTrigger['options'] as Map;
+
+      expect(dartOptions, isEmpty);
+      expect(nodejsOptions, isEmpty);
     });
 
     test('should have beforeSendSms blocking trigger with empty options', () {
       final dartFunc = _getEndpoint(dartManifest, 'beforeSendSms');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'beforeSendSms');
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['blockingTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final trigger = dartFunc['blockingTrigger'] as Map;
+      final dartTrigger = dartFunc!['blockingTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['blockingTrigger'] as Map;
+
       expect(
-        trigger['eventType'],
+        dartTrigger['eventType'],
+        equals('providers/cloud.auth/eventTypes/user.beforeSendSms'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
         equals('providers/cloud.auth/eventTypes/user.beforeSendSms'),
       );
 
-      final options = trigger['options'] as Map;
-      expect(options, isEmpty);
-    });
+      final dartOptions = dartTrigger['options'] as Map;
+      final nodejsOptions = nodejsTrigger['options'] as Map;
 
-    test('should include identitytoolkit API in requiredAPIs', () {
-      final requiredAPIs = dartManifest['requiredAPIs'] as List;
-
-      final identityApi = requiredAPIs.firstWhere(
-        (api) => (api as Map)['api'] == 'identitytoolkit.googleapis.com',
-        orElse: () => null,
-      );
-
-      expect(identityApi, isNotNull);
-      expect(
-        (identityApi as Map)['reason'],
-        equals('Needed for auth blocking functions'),
-      );
+      expect(dartOptions, isEmpty);
+      expect(nodejsOptions, isEmpty);
     });
 
     // =========================================================================
@@ -589,52 +1013,65 @@ void main() {
 
     test('should have basic scheduled function', () {
       final dartFunc = _getEndpoint(dartManifest, 'onSchedule_0_0___');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onSchedule_0_0___');
 
       expect(dartFunc, isNotNull);
-      expect(dartFunc!['scheduleTrigger'], isNotNull);
+      expect(nodejsFunc, isNotNull);
 
-      final trigger = dartFunc['scheduleTrigger'] as Map;
-      expect(trigger['schedule'], equals('0 0 * * *'));
+      expect(dartFunc!['scheduleTrigger'], isNotNull);
+      expect(nodejsFunc!['scheduleTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['scheduleTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['scheduleTrigger'] as Map;
+
+      expect(dartTrigger['schedule'], equals('0 0 * * *'));
+      expect(nodejsTrigger['schedule'], equals('0 0 * * *'));
     });
 
     test('should have scheduled function with options', () {
       final dartFunc = _getEndpoint(dartManifest, 'onSchedule_0_9___15');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onSchedule_0_9___15');
 
       expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
       expect(dartFunc!['scheduleTrigger'], isNotNull);
+      expect(nodejsFunc!['scheduleTrigger'], isNotNull);
 
-      final trigger = dartFunc['scheduleTrigger'] as Map;
-      expect(trigger['schedule'], equals('0 9 * * 1-5'));
-      expect(trigger['timeZone'], equals('America/New_York'));
-      expect(trigger['retryConfig'], isNotNull);
+      final dartTrigger = dartFunc['scheduleTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['scheduleTrigger'] as Map;
 
-      final retryConfig = trigger['retryConfig'] as Map;
-      expect(retryConfig['retryCount'], equals(3));
-      expect(retryConfig['maxRetrySeconds'], equals(60));
-      expect(retryConfig['minBackoffSeconds'], equals(5));
-      expect(retryConfig['maxBackoffSeconds'], equals(30));
-    });
+      expect(dartTrigger['schedule'], equals('0 9 * * 1-5'));
+      expect(nodejsTrigger['schedule'], equals('0 9 * * 1-5'));
 
-    test('should include cloudscheduler API in requiredAPIs', () {
-      final requiredAPIs = dartManifest['requiredAPIs'] as List;
+      expect(dartTrigger['timeZone'], equals('America/New_York'));
+      expect(nodejsTrigger['timeZone'], equals('America/New_York'));
 
-      final schedulerApi = requiredAPIs.firstWhere(
-        (api) => (api as Map)['api'] == 'cloudscheduler.googleapis.com',
-        orElse: () => null,
-      );
+      expect(dartTrigger['retryConfig'], isNotNull);
+      expect(nodejsTrigger['retryConfig'], isNotNull);
 
-      expect(schedulerApi, isNotNull);
-      expect(
-        (schedulerApi as Map)['reason'],
-        equals('Needed for scheduled functions'),
-      );
+      final dartRetry = dartTrigger['retryConfig'] as Map;
+      final nodejsRetry = nodejsTrigger['retryConfig'] as Map;
+
+      expect(dartRetry['retryCount'], equals(3));
+      expect(nodejsRetry['retryCount'], equals(3));
+      expect(dartRetry['maxRetrySeconds'], equals(60));
+      expect(nodejsRetry['maxRetrySeconds'], equals(60));
+      expect(dartRetry['minBackoffSeconds'], equals(5));
+      expect(nodejsRetry['minBackoffSeconds'], equals(5));
+      expect(dartRetry['maxBackoffSeconds'], equals(30));
+      expect(nodejsRetry['maxBackoffSeconds'], equals(30));
     });
 
     test('scheduled function should have memory option', () {
       final dartFunc = _getEndpoint(dartManifest, 'onSchedule_0_9___15');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onSchedule_0_9___15');
 
       expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
       expect(dartFunc!['availableMemoryMb'], equals(256));
+      expect(nodejsFunc!['availableMemoryMb'], equals(256));
     });
   });
 
@@ -672,12 +1109,43 @@ void main() {
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });
 
+    test('should have same specVersion', () {
+      expect(dartManifest['specVersion'], equals('v1alpha1'));
+      expect(nodejsManifest['specVersion'], equals('v1alpha1'));
+    });
+
+    test('should have matching requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      expect(dartAPIs.length, equals(1));
+      expect(nodejsAPIs.length, equals(1));
+
+      expect(
+        (dartAPIs[0] as Map)['api'],
+        equals('cloudfunctions.googleapis.com'),
+      );
+      expect(
+        (nodejsAPIs[0] as Map)['api'],
+        equals('cloudfunctions.googleapis.com'),
+      );
+    });
+
     test('should discover 5 functions', () {
       final dartEndpoints = dartManifest['endpoints'] as Map;
       final nodejsEndpoints = nodejsManifest['endpoints'] as Map;
 
       expect(dartEndpoints.keys.length, equals(5));
       expect(nodejsEndpoints.keys.length, equals(5));
+
+      // Verify both have the same endpoint names
+      for (final name in dartEndpoints.keys) {
+        expect(
+          nodejsEndpoints.containsKey(name),
+          isTrue,
+          reason: 'Node.js manifest should contain endpoint "$name"',
+        );
+      }
     });
 
     test('httpsFull should have all GlobalOptions in manifest', () {
@@ -811,23 +1279,6 @@ void main() {
       expect(dartRegion, contains('us-west1'));
       expect(nodejsRegion, contains('us-west1'));
     });
-
-    test('snapshot comparison report', () {
-      print('\n========== OPTIONS MANIFEST COMPARISON ==========\n');
-
-      print('Dart Manifest:');
-      print(
-        '  - Functions: ${(dartManifest['endpoints'] as Map).keys.join(', ')}',
-      );
-
-      print('\nNode.js Manifest:');
-      print(
-        '  - Functions: ${(nodejsManifest['endpoints'] as Map).keys.join(', ')}',
-      );
-
-      print('\n✅ All 21 HTTP function options tested and validated!');
-      print('==============================================\n');
-    });
   });
 }
 
@@ -835,6 +1286,18 @@ void main() {
 Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
   final endpoints = manifest['endpoints'] as Map?;
   return endpoints?[name] as Map<String, dynamic>?;
+}
+
+/// Gets a param from the manifest by name.
+Map<String, dynamic>? _getParam(Map<String, dynamic> manifest, String name) {
+  final params = manifest['params'] as List?;
+  if (params == null) return null;
+  for (final param in params) {
+    if ((param as Map)['name'] == name) {
+      return param as Map<String, dynamic>;
+    }
+  }
+  return null;
 }
 
 /// Converts YAML objects (YamlMap, YamlList) to JSON-compatible Dart types.
