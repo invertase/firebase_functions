@@ -21,9 +21,7 @@ Map<String, dynamic> _buildManifestMap(
   Map<String, ParamSpec> params,
   Map<String, EndpointSpec> endpoints,
 ) {
-  final manifest = <String, dynamic>{
-    'specVersion': 'v1alpha1',
-  };
+  final manifest = <String, dynamic>{'specVersion': 'v1alpha1'};
 
   // Params section
   if (params.isNotEmpty) {
@@ -48,10 +46,7 @@ Map<String, dynamic> _buildManifestMap(
 
 /// Builds a single param entry as a map.
 Map<String, dynamic> _buildParamMap(ParamSpec param) {
-  final map = <String, dynamic>{
-    'name': param.name,
-    'type': param.type,
-  };
+  final map = <String, dynamic>{'name': param.name, 'type': param.type};
 
   if (param.format case final String format) {
     map['format'] = format;
@@ -241,22 +236,20 @@ void _addTrigger(
       };
 
     case 'alert' when endpoint.alertType != null:
-      final filters = <String, dynamic>{
-        'alerttype': endpoint.alertType,
-      };
+      final filters = <String, dynamic>{'alerttype': endpoint.alertType};
       if (endpoint.appId != null) {
         filters['appid'] = endpoint.appId;
       }
       map['eventTrigger'] = <String, dynamic>{
-        'eventType':
-            'google.firebase.firebasealerts.alerts.v1.published',
+        'eventType': 'google.firebase.firebasealerts.alerts.v1.published',
         'eventFilters': filters,
         'retry': false,
       };
 
     case 'blocking' when endpoint.blockingEventType != null:
       final triggerOptions = <String, dynamic>{};
-      final isAuthEvent = endpoint.blockingEventType == 'beforeCreate' ||
+      final isAuthEvent =
+          endpoint.blockingEventType == 'beforeCreate' ||
           endpoint.blockingEventType == 'beforeSignIn';
 
       if (isAuthEvent) {
@@ -278,9 +271,7 @@ void _addTrigger(
       };
 
     case 'scheduler' when endpoint.schedule != null:
-      final trigger = <String, dynamic>{
-        'schedule': endpoint.schedule,
-      };
+      final trigger = <String, dynamic>{'schedule': endpoint.schedule};
       if (endpoint.timeZone != null) {
         trigger['timeZone'] = endpoint.timeZone;
       }

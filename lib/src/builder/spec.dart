@@ -479,8 +479,7 @@ class EndpointSpec {
         // Get the param name from the variable
         final variableName = target.name;
         final paramName =
-            variableToParamName[variableName] ??
-            toUpperSnakeCase(variableName);
+            variableToParamName[variableName] ?? toUpperSnakeCase(variableName);
 
         // Extract the two arguments
         final args = expression.argumentList.arguments;
