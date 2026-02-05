@@ -14,6 +14,9 @@ import 'package:build/build.dart';
 import 'package:glob/glob.dart';
 import 'package:source_gen/source_gen.dart';
 
+import 'src/builder/manifest.dart';
+import 'src/builder/spec.dart';
+
 /// Builder factory function (called by build_runner).
 Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 
@@ -31,8 +34,8 @@ class _SpecBuilder implements Builder {
     // Find all Dart files in the package
     final assets = await buildStep.findAssets(Glob('**.dart')).toSet();
 
-    final allParams = <String, _ParamSpec>{};
-    final allEndpoints = <String, _EndpointSpec>{};
+    final allParams = <String, ParamSpec>{};
+    final allEndpoints = <String, EndpointSpec>{};
 
     // Process each Dart file
     for (final asset in assets) {
@@ -64,7 +67,7 @@ class _SpecBuilder implements Builder {
     }
 
     // Generate YAML from collected data
-    final yamlContent = _generateYaml(allParams, allEndpoints);
+    final yamlContent = generateManifestYaml(allParams, allEndpoints);
 
     // Write the YAML file
     await buildStep.writeAsString(
@@ -177,8 +180,8 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     ];
   }
   final Resolver resolver;
-  final Map<String, _ParamSpec> params = {};
-  final Map<String, _EndpointSpec> endpoints = {};
+  final Map<String, ParamSpec> params = {};
+  final Map<String, EndpointSpec> endpoints = {};
   late final List<_Namespace> namespaces;
 
   /// Maps variable names to their actual parameter names.
@@ -260,11 +263,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
             String? paramName;
             if (valuesArg is PrefixedIdentifier) {
               final enumTypeName = valuesArg.prefix.name;
-              paramName = '${_toUpperSnakeCase(enumTypeName)}_LIST';
+              paramName = '${toUpperSnakeCase(enumTypeName)}_LIST';
             } else if (valuesArg is PropertyAccess) {
               final target = valuesArg.target;
               if (target is SimpleIdentifier) {
-                paramName = '${_toUpperSnakeCase(target.name)}_LIST';
+                paramName = '${toUpperSnakeCase(target.name)}_LIST';
               }
             }
             if (paramName != null) {
@@ -306,7 +309,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     // Determine trigger type
     final triggerType = methodName == 'onRequest' ? 'https' : 'callable';
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: triggerType,
       options: node.findOptionsArg(),
@@ -324,7 +327,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final sanitizedTopic = topicName.replaceAll('-', '');
     final functionName = 'onMessagePublished_$sanitizedTopic';
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
@@ -358,7 +361,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         .replaceAll('-', '');
     final functionName = '${methodName}_$sanitizedPath';
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'firestore',
       firestoreEventType: methodName,
@@ -394,7 +397,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         .replaceAll('-', '');
     final functionName = '${methodName}_$sanitizedPath';
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'database',
       databaseEventType: methodName,
@@ -428,7 +431,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         .replaceAll('-', '');
     final functionName = 'onAlertPublished_$sanitizedAlertType';
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'alert',
       alertType: alertTypeValue,
@@ -519,7 +522,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         .replaceAll('-', '');
     final functionName = 'onAlertPublished_$sanitizedAlertType';
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'alert',
       alertType: alertType,
@@ -557,7 +560,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     // Function name is the event type
     final functionName = eventType;
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'blocking',
       blockingEventType: eventType,
@@ -597,7 +600,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       retryConfig = _extractRetryConfig(optionsArg);
     }
 
-    endpoints[functionName] = _EndpointSpec(
+    endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'scheduler',
       schedule: schedule,
@@ -720,7 +723,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (args.isEmpty) return;
 
     String? paramName;
-    _ParamOptions? paramOptions;
+    ParamOptions? paramOptions;
 
     // Handle defineEnumList which has a different signature:
     // defineEnumList(EnumType.values, [ParamOptions])
@@ -730,14 +733,14 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       if (valuesArg is PrefixedIdentifier) {
         // Extract the enum type name from "EnumType.values"
         final enumTypeName = valuesArg.prefix.name;
-        paramName = '${_toUpperSnakeCase(enumTypeName)}_LIST';
+        paramName = '${toUpperSnakeCase(enumTypeName)}_LIST';
       } else if (valuesArg is PropertyAccess) {
         // Handle qualified access like mypackage.Region.values
         final target = valuesArg.target;
         if (target is PrefixedIdentifier) {
-          paramName = '${_toUpperSnakeCase(target.identifier.name)}_LIST';
+          paramName = '${toUpperSnakeCase(target.identifier.name)}_LIST';
         } else if (target is SimpleIdentifier) {
-          paramName = '${_toUpperSnakeCase(target.name)}_LIST';
+          paramName = '${toUpperSnakeCase(target.name)}_LIST';
         }
       }
 
@@ -765,20 +768,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final paramType = _getParamType(functionName);
     final isJsonSecret = _isJsonSecret(functionName);
 
-    params[paramName] = _ParamSpec(
+    params[paramName] = ParamSpec(
       name: paramName,
       type: paramType,
       options: paramOptions,
       format: isJsonSecret ? 'json' : null,
     );
-  }
-
-  /// Converts a camelCase or PascalCase string to UPPER_SNAKE_CASE.
-  String _toUpperSnakeCase(String input) {
-    return input
-        .replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)}')
-        .toUpperCase()
-        .replaceFirst('_', '');
   }
 
   /// Gets the parameter type name for YAML.
@@ -796,8 +791,8 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   bool _isJsonSecret(String functionName) => functionName == 'defineJsonSecret';
 
   /// Extracts ParamOptions from an InstanceCreationExpression.
-  _ParamOptions? _extractParamOptions(InstanceCreationExpression node) =>
-      _ParamOptions(
+  ParamOptions? _extractParamOptions(InstanceCreationExpression node) =>
+      ParamOptions(
         defaultValue: _extractDefaultValue(node),
         label: _extractStringField(node, 'label'),
         description: _extractStringField(node, 'description'),
@@ -845,838 +840,6 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     };
   }
 }
-
-/// Specification for a parameter.
-class _ParamSpec {
-  _ParamSpec({
-    required this.name,
-    required this.type,
-    this.options,
-    this.format,
-  });
-  final String name;
-  final String type;
-  final _ParamOptions? options;
-  final String? format; // 'json' for JSON secrets
-}
-
-/// Options for a parameter.
-class _ParamOptions {
-  _ParamOptions({this.defaultValue, this.label, this.description});
-  final Object? defaultValue;
-  final String? label;
-  final String? description;
-}
-
-/// Specification for an endpoint (function).
-class _EndpointSpec {
-  _EndpointSpec({
-    required this.name,
-    required this.type,
-    this.topic,
-    this.firestoreEventType,
-    this.documentPath,
-    this.database,
-    this.namespace,
-    this.databaseEventType,
-    this.refPath,
-    this.instance,
-    this.alertType,
-    this.appId,
-    this.blockingEventType,
-    this.idToken,
-    this.accessToken,
-    this.refreshToken,
-    this.schedule,
-    this.timeZone,
-    this.retryConfig,
-    this.options,
-    this.variableToParamName = const {},
-  });
-  final String name;
-  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking', 'scheduler'
-  final String type;
-  final String? topic; // For Pub/Sub functions
-  final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
-  final String? documentPath; // For Firestore: users/{userId}
-  final String? database; // For Firestore: (default) or database name
-  final String? namespace; // For Firestore: (default) or namespace
-  final String? databaseEventType; // For Database: onValueCreated, etc.
-  final String? refPath; // For Database: /users/{userId}
-  final String? instance; // For Database: database instance or '*'
-  final String? alertType; // For Alerts: crashlytics.newFatalIssue, etc.
-  final String? appId; // For Alerts: optional app ID filter
-  final String? blockingEventType; // For Identity: beforeCreate, etc.
-  final bool? idToken; // For Identity: pass ID token
-  final bool? accessToken; // For Identity: pass access token
-  final bool? refreshToken; // For Identity: pass refresh token
-  final String? schedule; // For Scheduler: cron expression
-  final String? timeZone; // For Scheduler: timezone
-  final Map<String, dynamic>? retryConfig; // For Scheduler: retry configuration
-  final InstanceCreationExpression? options;
-  final Map<String, String> variableToParamName;
-
-  /// Extracts options configuration from the AST.
-  Map<String, dynamic> extractOptions() {
-    if (options == null) return {};
-
-    final result = <String, dynamic>{};
-
-    for (final arg in options!.argumentList.arguments) {
-      if (arg is! NamedExpression) continue;
-
-      final name = arg.name.label.name;
-      final expr = arg.expression;
-
-      // Helper to reduce boilerplate: only adds to map if value exists
-      void add(String key, dynamic Function(Expression expr) func) {
-        final value = func(expr);
-        if (value != null) result[key] = value;
-      }
-
-      switch (name) {
-        case 'memory':
-          add('availableMemoryMb', _extractMemory);
-        case 'cpu':
-          add('cpu', _extractCpu);
-        case 'timeoutSeconds':
-          add('timeoutSeconds', _extractTimeoutSeconds);
-        case 'minInstances':
-          add('minInstances', _extractInt);
-        case 'maxInstances':
-          add('maxInstances', _extractInt);
-        case 'concurrency':
-          add('concurrency', _extractInt);
-        case 'region':
-          add('region', _extractRegion);
-        case 'serviceAccount':
-          add('serviceAccount', _extractString);
-        case 'vpcConnector':
-          add('vpcConnector', _extractString);
-        case 'vpcConnectorEgressSettings':
-          add('vpcConnectorEgressSettings', _extractVpcEgressSettings);
-        case 'ingressSettings':
-          add('ingressSettings', _extractIngressSettings);
-        case 'invoker':
-          add('invoker', _extractInvoker);
-        case 'secrets':
-          add('secretEnvironmentVariables', _extractSecrets);
-        case 'labels':
-          add('labels', _extractLabels);
-        case 'omit':
-          add('omit', _extractBool);
-
-        // Runtime-only options (not exported to manifest):
-        // - cors: Handled by Functions Framework at runtime
-        // - enforceAppCheck: Runtime App Check validation
-        // - consumeAppCheckToken: Runtime App Check replay protection
-        // - heartBeatIntervalSeconds: Runtime streaming keepalive
-        // - preserveExternalChanges: Deployment behavior, not function config
-        case 'cors':
-        case 'enforceAppCheck':
-        case 'preserveExternalChanges':
-        case 'consumeAppCheckToken':
-        case 'heartBeatIntervalSeconds':
-          // Intentionally skip these - they're not in the manifest
-          break;
-      }
-    }
-
-    return result;
-  }
-
-  /// Extracts Memory option value.
-  Object? _extractMemory(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    // Check if it's Memory.param() - generate CEL
-    if (expression.constructorName.name?.name == 'param') {
-      return _extractParamReference(expression);
-    }
-
-    // Check if it's Memory.expression() - generate CEL from expression
-    if (expression.constructorName.name?.name == 'expression') {
-      return _extractCelExpression(
-        expression.argumentList.arguments.firstOrNull,
-      );
-    }
-
-    // Check if it's Memory.reset()
-    if (expression.constructorName.name?.name == 'reset') {
-      return null; // Reset means use default
-    }
-
-    // Extract literal value: Memory(MemoryOption.mb256)
-    final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle MemoryOption.mb256
-      final propertyName = firstArg.identifier.name;
-      return _memoryOptionToInt(propertyName);
-    }
-
-    return null;
-  }
-
-  /// Converts MemoryOption enum to integer value.
-  int? _memoryOptionToInt(String optionName) => switch (optionName) {
-    'mb128' => 128,
-    'mb256' => 256,
-    'mb512' => 512,
-    'gb1' => 1024,
-    'gb2' => 2048,
-    'gb4' => 4096,
-    'gb8' => 8192,
-    'gb16' => 16384,
-    'gb32' => 32768,
-    _ => null,
-  };
-
-  /// Extracts CPU option value.
-  Object? _extractCpu(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    // Check if it's Cpu.gcfGen1()
-    if (expression.constructorName.name?.name == 'gcfGen1') {
-      return 'gcf_gen1';
-    }
-
-    // Check if it's Cpu.param() - generate CEL
-    if (expression.constructorName.name?.name == 'param') {
-      return _extractParamReference(expression);
-    }
-
-    // Check if it's Cpu.reset()
-    if (expression.constructorName.name?.name == 'reset') {
-      return null;
-    }
-
-    // Extract literal double value: Cpu(1.0)
-    final args = expression.argumentList.arguments;
-    return switch (args.firstOrNull) {
-      final DoubleLiteral d => d.value,
-      final IntegerLiteral i => i.value,
-      _ => null,
-    };
-  }
-
-  /// Extracts Region option value.
-  Object? _extractRegion(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    // Check if it's Region.param() - generate CEL
-    if (expression.constructorName.name?.name == 'param') {
-      return _extractParamReference(expression);
-    }
-
-    // Extract literal value: Region(SupportedRegion.usCentral1)
-    final args = expression.argumentList.arguments;
-
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle SupportedRegion.usCentral1
-      final propertyName = firstArg.identifier.name;
-      final regionString = _regionEnumToString(propertyName);
-      return regionString != null ? [regionString] : null;
-    }
-
-    return null;
-  }
-
-  /// Converts SupportedRegion enum to string value.
-  String? _regionEnumToString(String enumName) {
-    // Convert camelCase to kebab-case
-    return switch (enumName) {
-      'asiaEast1' => 'asia-east1',
-      'asiaEast2' => 'asia-east2',
-      'asiaNortheast1' => 'asia-northeast1',
-      'asiaNortheast2' => 'asia-northeast2',
-      'asiaNortheast3' => 'asia-northeast3',
-      'asiaSouth1' => 'asia-south1',
-      'asiaSoutheast1' => 'asia-southeast1',
-      'asiaSoutheast2' => 'asia-southeast2',
-      'australiaSoutheast1' => 'australia-southeast1',
-      'europeCentral2' => 'europe-central2',
-      'europeNorth1' => 'europe-north1',
-      'europeWest1' => 'europe-west1',
-      'europeWest2' => 'europe-west2',
-      'europeWest3' => 'europe-west3',
-      'europeWest4' => 'europe-west4',
-      'europeWest6' => 'europe-west6',
-      'northAmericaNortheast1' => 'northamerica-northeast1',
-      'southAmericaEast1' => 'southamerica-east1',
-      'usCentral1' => 'us-central1',
-      'usEast1' => 'us-east1',
-      'usEast4' => 'us-east4',
-      'usWest1' => 'us-west1',
-      'usWest2' => 'us-west2',
-      'usWest3' => 'us-west3',
-      'usWest4' => 'us-west4',
-      _ => null,
-    };
-  }
-
-  /// Extracts timeout seconds.
-  Object? _extractTimeoutSeconds(Expression expression) =>
-      _extractInt(expression);
-
-  /// Extracts integer option value.
-  Object? _extractInt(Expression expression) {
-    if (expression is IntegerLiteral) {
-      return expression.value;
-    }
-
-    if (expression is InstanceCreationExpression) {
-      // Check if it's Option.param() - generate CEL
-      if (expression.constructorName.name?.name == 'param') {
-        return _extractParamReference(expression);
-      }
-
-      // Extract literal: Option(123)
-      final args = expression.argumentList.arguments;
-      if (args.firstOrNull case final IntegerLiteral firstArg) {
-        return firstArg.value;
-      }
-    }
-
-    return null;
-  }
-
-  /// Extracts string option value.
-  Object? _extractString(Expression expression) {
-    if (expression is StringLiteral) {
-      return expression.stringValue;
-    }
-
-    if (expression is InstanceCreationExpression) {
-      // Check if it's Option.param() - generate CEL
-      if (expression.constructorName.name?.name == 'param') {
-        return _extractParamReference(expression);
-      }
-
-      // Extract literal: Option('value')
-      final args = expression.argumentList.arguments;
-      if (args.firstOrNull case final StringLiteral firstArg) {
-        return firstArg.stringValue;
-      }
-    }
-
-    return null;
-  }
-
-  /// Extracts boolean option value.
-  Object? _extractBool(Expression expression) {
-    if (expression is BooleanLiteral) {
-      return expression.value;
-    }
-
-    if (expression is InstanceCreationExpression) {
-      // Check if it's Option.param() - generate CEL
-      if (expression.constructorName.name?.name == 'param') {
-        return _extractParamReference(expression);
-      }
-
-      // Extract literal: Option(true)
-      final args = expression.argumentList.arguments;
-      if (args.firstOrNull case final BooleanLiteral firstArg) {
-        return firstArg.value;
-      }
-    }
-
-    return null;
-  }
-
-  /// Extracts VPC egress settings.
-  Object? _extractVpcEgressSettings(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle VpcEgressSetting enum
-      final propertyName = firstArg.identifier.name;
-      return switch (propertyName) {
-        'privateRangesOnly' => 'PRIVATE_RANGES_ONLY',
-        'allTraffic' => 'ALL_TRAFFIC',
-        _ => null,
-      };
-    }
-
-    return null;
-  }
-
-  /// Extracts ingress settings.
-  Object? _extractIngressSettings(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle IngressSetting enum
-      final propertyName = firstArg.identifier.name;
-      return switch (propertyName) {
-        'allowAll' => 'ALLOW_ALL',
-        'allowInternalOnly' => 'ALLOW_INTERNAL_ONLY',
-        'allowInternalAndGclb' => 'ALLOW_INTERNAL_AND_GCLB',
-        _ => null,
-      };
-    }
-
-    return null;
-  }
-
-  /// Extracts invoker list.
-  Object? _extractInvoker(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    // Check for special factories
-    if (expression.constructorName.name?.name == 'public') {
-      return ['public'];
-    }
-    if (expression.constructorName.name?.name == 'private') {
-      return ['private'];
-    }
-
-    // Extract literal list
-    final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final ListLiteral firstArg) {
-      return firstArg.elements
-          .whereType<StringLiteral>()
-          .map((e) => e.stringValue)
-          .nonNulls
-          .toList();
-    }
-
-    return null;
-  }
-
-  /// Extracts secrets list.
-  List<String>? _extractSecrets(Expression expression) {
-    if (expression is! ListLiteral) return null;
-
-    final secrets = <String>[];
-    for (final element in expression.elements) {
-      if (element is Expression) {
-        final secretName = _extractSecretName(element);
-        if (secretName != null) secrets.add(secretName);
-      }
-    }
-
-    return secrets.isEmpty ? null : secrets;
-  }
-
-  /// Extracts secret name from SecretParam instance.
-  String? _extractSecretName(Expression expression) {
-    if (expression is! SimpleIdentifier) return null;
-
-    // The identifier references a SecretParam variable
-    // We need to find its definition, but for now just use the variable name
-    return expression.name;
-  }
-
-  /// Extracts labels map.
-  Object? _extractLabels(Expression expression) {
-    if (expression is! SetOrMapLiteral) return null;
-    if (!expression.isMap) return null;
-
-    final labels = <String, String>{};
-    for (final element in expression.elements) {
-      if (element is MapLiteralEntry) {
-        final key = element.key;
-        final value = element.value;
-
-        if (key is StringLiteral && value is StringLiteral) {
-          labels[key.stringValue!] = value.stringValue!;
-        }
-      }
-    }
-
-    return labels.isEmpty ? null : labels;
-  }
-
-  /// Extracts parameter reference and generates CEL expression.
-  String _extractParamReference(InstanceCreationExpression expression) {
-    final args = expression.argumentList.arguments;
-    if (args.isEmpty) return '{{ params.UNKNOWN }}';
-
-    final firstArg = args.first;
-    if (firstArg is SimpleIdentifier) {
-      // Look up the actual param name from the mapping
-      final variableName = firstArg.name;
-      final paramName =
-          variableToParamName[variableName] ?? _toUpperSnakeCase(variableName);
-      return '{{ params.$paramName }}';
-    }
-
-    return '{{ params.UNKNOWN }}';
-  }
-
-  /// Extracts a CEL expression from an expression argument.
-  /// Handles thenElse (ternary) expressions on boolean params.
-  String? _extractCelExpression(Expression? expression) {
-    // Handle method invocation like: isProduction.thenElse(2048, 512)
-    if (expression is MethodInvocation) {
-      final target = expression.target;
-      final methodName = expression.methodName.name;
-
-      if (methodName == 'thenElse' && target is SimpleIdentifier) {
-        // Get the param name from the variable
-        final variableName = target.name;
-        final paramName =
-            variableToParamName[variableName] ??
-            _toUpperSnakeCase(variableName);
-
-        // Extract the two arguments
-        final args = expression.argumentList.arguments;
-        if (args.length >= 2) {
-          final trueValue = _extractLiteralValue(args[0]);
-          final falseValue = _extractLiteralValue(args[1]);
-          if (trueValue != null && falseValue != null) {
-            return '{{ params.$paramName ? $trueValue : $falseValue }}';
-          }
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// Extracts a literal value from an expression.
-  Object? _extractLiteralValue(Expression expression) => switch (expression) {
-    StringLiteral() => '"${expression.stringValue}"',
-    IntegerLiteral() => expression.value,
-    DoubleLiteral() => expression.value,
-    BooleanLiteral() => expression.value,
-    _ => null,
-  };
-
-  /// Converts a variable name to UPPER_SNAKE_CASE format.
-  static String _toUpperSnakeCase(String variableName) => variableName
-      .replaceAllMapped(RegExp(r'[A-Z]'), (match) => '_${match.group(0)}')
-      .toUpperCase()
-      .replaceFirst('_', '');
-}
-
-/// Generates the YAML content.
-String _generateYaml(
-  Map<String, _ParamSpec> params,
-  Map<String, _EndpointSpec> endpoints,
-) {
-  final buffer = StringBuffer();
-  // Shorthand to improve readability
-  void w([String s = '']) => buffer.writeln(s);
-  w('specVersion: "v1alpha1"');
-  w();
-
-  // Generate params section
-  if (params.isNotEmpty) {
-    w('params:');
-    for (final param in params.values) {
-      w('  - name: "${param.name}"');
-      w('    type: "${param.type}"');
-      if (param.format case final String format) {
-        w('    format: "$format"');
-      }
-      if (param.options?.defaultValue case final Object defaultValue) {
-        w('    default: ${_yamlValue(defaultValue)}');
-      }
-      if (param.options?.label case final String label) {
-        w('    label: "$label"');
-      }
-      if (param.options?.description case final String description) {
-        w('    description: "$description"');
-      }
-    }
-    w();
-  }
-
-  // Generate requiredAPIs section
-  w('requiredAPIs:');
-  w('  - api: "cloudfunctions.googleapis.com"');
-  w('    reason: "Required for Cloud Functions"');
-  // Add identitytoolkit API if there are blocking functions
-  final hasBlockingFunctions = endpoints.values.any(
-    (e) => e.type == 'blocking',
-  );
-  if (hasBlockingFunctions) {
-    w('  - api: "identitytoolkit.googleapis.com"');
-    w('    reason: "Needed for auth blocking functions"');
-  }
-  // Add cloudscheduler API if there are scheduler functions
-  final hasSchedulerFunctions = endpoints.values.any(
-    (e) => e.type == 'scheduler',
-  );
-  if (hasSchedulerFunctions) {
-    w('  - api: "cloudscheduler.googleapis.com"');
-    w('    reason: "Needed for scheduled functions"');
-  }
-  w();
-
-  // Generate endpoints section
-  if (endpoints.isNotEmpty) {
-    w('endpoints:');
-    for (final endpoint in endpoints.values) {
-      w('  ${endpoint.name}:');
-      w('    entryPoint: "${endpoint.name}"');
-      w('    platform: "gcfv2"');
-
-      // Extract and add options
-      final options = endpoint.extractOptions();
-
-      // Add region (use extracted value or default)
-      if (options['region'] case final List<String> regions) {
-        w('    region:');
-        for (final region in regions) {
-          w('      - "$region"');
-        }
-      } else {
-        w('    region:');
-        w('      - "us-central1"');
-      }
-
-      // Add memory if specified
-      if (options['availableMemoryMb'] case final Object option) {
-        w('    availableMemoryMb: ${_formatOption(option)}');
-      }
-
-      // Add CPU if specified
-      if (options['cpu'] case final Object option) {
-        w('    cpu: ${_formatOption(option)}');
-      }
-
-      // Add timeout if specified
-      if (options['timeoutSeconds'] case final Object option) {
-        w('    timeoutSeconds: ${_formatOption(option)}');
-      }
-
-      // Add concurrency if specified
-      if (options['concurrency'] case final Object option) {
-        w('    concurrency: ${_formatOption(option)}');
-      }
-
-      // Add min/max instances
-      if (options['minInstances'] case final Object option) {
-        w('    minInstances: ${_formatOption(option)}');
-      }
-      if (options['maxInstances'] case final Object option) {
-        w('    maxInstances: ${_formatOption(option)}');
-      }
-
-      // Add service account if specified (Node.js uses serviceAccountEmail)
-      if (options['serviceAccount'] case final Object option) {
-        w('    serviceAccountEmail: "$option"');
-      }
-
-      // Add VPC configuration if specified (nested structure like Node.js)
-      if (options.containsKey('vpcConnector') ||
-          options.containsKey('vpcConnectorEgressSettings')) {
-        w('    vpc:');
-        if (options['vpcConnector'] case final Object option) {
-          w('      connector: "$option"');
-        }
-        if (options['vpcConnectorEgressSettings'] case final Object option) {
-          w('      egressSettings: "$option"');
-        }
-      }
-
-      // Add ingress settings if specified
-      if (options['ingressSettings'] case final Object option) {
-        w('    ingressSettings: "$option"');
-      }
-
-      // Add omit if specified
-      if (options['omit'] case final Object option) {
-        w('    omit: $option');
-      }
-
-      // Note: preserveExternalChanges is runtime-only, not in manifest
-
-      // Add labels if specified
-      if (options['labels'] case final Map<String, String> labels) {
-        w('    labels:');
-        for (final entry in labels.entries) {
-          w('      ${entry.key}: "${entry.value}"');
-        }
-      }
-
-      // Add secrets if specified
-      if (options['secretEnvironmentVariables']
-          case final List<String> secrets) {
-        w('    secretEnvironmentVariables:');
-        for (final secret in secrets) {
-          w('      - key: "$secret"');
-          w('        secret: "$secret"');
-        }
-      }
-
-      // Add trigger configuration
-      if (endpoint.type == 'https') {
-        w('    httpsTrigger:');
-
-        // Add invoker
-        if (options['invoker'] case final List<String>? invokers) {
-          if (invokers?.isEmpty ?? true) {
-            w('      invoker: []');
-          } else {
-            w('      invoker:');
-            for (final inv in invokers!) {
-              w('        - "$inv"');
-            }
-          }
-        }
-
-        // Note: CORS is runtime-only, not in manifest
-      } else if (endpoint.type == 'callable') {
-        w('    callableTrigger: {}');
-
-        // Note: enforceAppCheck, consumeAppCheckToken, heartbeatSeconds are runtime-only, not in manifest
-      } else if (endpoint.type == 'pubsub' && endpoint.topic != null) {
-        w('    eventTrigger:');
-        w('      eventType: "google.cloud.pubsub.topic.v1.messagePublished"');
-        w('      eventFilters:');
-        w('        topic: "${endpoint.topic}"');
-        w('      retry: false');
-      } else if (endpoint.type == 'firestore' &&
-          endpoint.firestoreEventType != null &&
-          endpoint.documentPath != null) {
-        // Map Dart method name to Firestore CloudEvent type
-        final eventType = _mapFirestoreEventType(endpoint.firestoreEventType!);
-
-        w('    eventTrigger:');
-        w('      eventType: "$eventType"');
-        w('      eventFilters:');
-        w('        database: "${endpoint.database ?? '(default)'}"');
-        w('        namespace: "${endpoint.namespace ?? '(default)'}"');
-
-        // Check if document path has wildcards
-        final hasWildcards = endpoint.documentPath!.contains('{');
-        if (hasWildcards) {
-          w('      eventFilterPathPatterns:');
-        }
-        w('        document: "${endpoint.documentPath}"');
-
-        w('      retry: false');
-      } else if (endpoint.type == 'database' &&
-          endpoint.databaseEventType != null &&
-          endpoint.refPath != null) {
-        // Map Dart method name to Database CloudEvent type
-        final eventType = _mapDatabaseEventType(endpoint.databaseEventType!);
-
-        w('    eventTrigger:');
-        w('      eventType: "$eventType"');
-        // Database triggers use empty eventFilters
-        w('      eventFilters: {}');
-
-        // Both ref and instance go in eventFilterPathPatterns
-        // The ref path should not have a leading slash to match Node.js format
-        final normalizedRef = endpoint.refPath!.startsWith('/')
-            ? endpoint.refPath!.substring(1)
-            : endpoint.refPath!;
-        w('      eventFilterPathPatterns:');
-        w('        ref: "$normalizedRef"');
-        w('        instance: "${endpoint.instance ?? '*'}"');
-
-        w('      retry: false');
-      } else if (endpoint.type == 'alert' && endpoint.alertType != null) {
-        w('    eventTrigger:');
-        w(
-          '      eventType: "google.firebase.firebasealerts.alerts.v1.published"',
-        );
-        w('      eventFilters:');
-        w('        alerttype: "${endpoint.alertType}"');
-        if (endpoint.appId != null) {
-          w('        appid: "${endpoint.appId}"');
-        }
-        w('      retry: false');
-      } else if (endpoint.type == 'blocking' &&
-          endpoint.blockingEventType != null) {
-        w('    blockingTrigger:');
-        w(
-          '      eventType: "providers/cloud.auth/eventTypes/user.${endpoint.blockingEventType}"',
-        );
-
-        // Only include token options for beforeCreate and beforeSignIn
-        final isAuthEvent =
-            endpoint.blockingEventType == 'beforeCreate' ||
-            endpoint.blockingEventType == 'beforeSignIn';
-        if (isAuthEvent) {
-          w('      options:');
-          if (endpoint.idToken ?? false) {
-            w('        idToken: true');
-          }
-          if (endpoint.accessToken ?? false) {
-            w('        accessToken: true');
-          }
-          if (endpoint.refreshToken ?? false) {
-            w('        refreshToken: true');
-          }
-        } else {
-          w('      options: {}');
-        }
-      } else if (endpoint.type == 'scheduler' && endpoint.schedule != null) {
-        w('    scheduleTrigger:');
-        w('      schedule: "${endpoint.schedule}"');
-        if (endpoint.timeZone != null) {
-          w('      timeZone: "${endpoint.timeZone}"');
-        }
-        if (endpoint.retryConfig != null && endpoint.retryConfig!.isNotEmpty) {
-          w('      retryConfig:');
-          final config = endpoint.retryConfig!;
-          if (config['retryCount'] case final Object conf) {
-            w('        retryCount: $conf');
-          }
-          if (config['maxRetrySeconds'] case final Object conf) {
-            w('        maxRetrySeconds: $conf');
-          }
-          if (config['minBackoffSeconds'] case final Object conf) {
-            w('        minBackoffSeconds: $conf');
-          }
-          if (config['maxBackoffSeconds'] case final Object conf) {
-            w('        maxBackoffSeconds: $conf');
-          }
-          if (config['maxDoublings'] case final Object conf) {
-            w('        maxDoublings: $conf');
-          }
-        }
-      }
-    }
-  }
-
-  return buffer.toString();
-}
-
-/// Maps Firestore method name to CloudEvent event type.
-String _mapFirestoreEventType(String methodName) => switch (methodName) {
-  'onDocumentCreated' => 'google.cloud.firestore.document.v1.created',
-  'onDocumentUpdated' => 'google.cloud.firestore.document.v1.updated',
-  'onDocumentDeleted' => 'google.cloud.firestore.document.v1.deleted',
-  'onDocumentWritten' => 'google.cloud.firestore.document.v1.written',
-  _ => throw ArgumentError('Unknown Firestore event type: $methodName'),
-};
-
-/// Maps Database method name to CloudEvent event type.
-String _mapDatabaseEventType(String methodName) => switch (methodName) {
-  'onValueCreated' => 'google.firebase.database.ref.v1.created',
-  'onValueUpdated' => 'google.firebase.database.ref.v1.updated',
-  'onValueDeleted' => 'google.firebase.database.ref.v1.deleted',
-  'onValueWritten' => 'google.firebase.database.ref.v1.written',
-  _ => throw ArgumentError('Unknown Database event type: $methodName'),
-};
-
-/// Converts a value to YAML format.
-String _yamlValue(dynamic value) {
-  if (value is String) {
-    return '"$value"';
-  } else if (value is num || value is bool) {
-    return value.toString();
-  } else if (value is List) {
-    return '[${value.map(_yamlValue).join(", ")}]';
-  }
-  return value.toString();
-}
-
-/// Formats an option value for YAML output.
-/// Strings (including CEL expressions) are quoted, numbers/bools/... are not.
-String _formatOption(dynamic value) => switch (value) {
-  String() => '"$value"',
-  _ => value.toString(),
-};
 
 extension on MethodInvocation {
   /// Finds a named argument in a method invocation.
