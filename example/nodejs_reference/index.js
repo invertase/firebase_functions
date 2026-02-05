@@ -8,6 +8,11 @@ const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https")
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
 const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onValueCreated, onValueUpdated, onValueDeleted, onValueWritten } = require("firebase-functions/v2/database");
+const { onNewFatalIssuePublished } = require("firebase-functions/v2/alerts/crashlytics");
+const { onPlanUpdatePublished } = require("firebase-functions/v2/alerts/billing");
+const { onThresholdAlertPublished } = require("firebase-functions/v2/alerts/performance");
+const { beforeUserCreated, beforeUserSignedIn, beforeOperation } = require("firebase-functions/v2/identity");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineString, defineInt, defineBoolean } = require("firebase-functions/params");
 
 // =============================================================================
@@ -260,5 +265,104 @@ exports.onValueWritten_users_userId_status = onValueWritten(
     const after = event.data?.after?.val();
     console.log("User status changed:", event.params.userId);
     console.log("  New status:", after);
+  }
+);
+
+// =============================================================================
+// Firebase Alerts trigger examples
+// =============================================================================
+
+// Crashlytics new fatal issue alert
+exports.onAlertPublished_crashlytics_newFatalIssue = onNewFatalIssuePublished(
+  (event) => {
+    console.log("New fatal issue in Crashlytics:");
+    console.log("  Issue ID:", event.data?.payload?.issue?.id);
+    console.log("  App ID:", event.appId);
+  }
+);
+
+// Billing plan update alert
+exports.onAlertPublished_billing_planUpdate = onPlanUpdatePublished(
+  (event) => {
+    console.log("Billing plan updated:");
+    console.log("  New Plan:", event.data?.payload?.billingPlan);
+  }
+);
+
+// Performance threshold alert with app ID filter
+exports.onAlertPublished_performance_threshold = onThresholdAlertPublished(
+  { appId: "1:123456789:ios:abcdef" },
+  (event) => {
+    console.log("Performance threshold exceeded:");
+    console.log("  Event:", event.data?.payload?.eventName);
+  }
+);
+
+// =============================================================================
+// Identity Platform (Auth Blocking) trigger examples
+// =============================================================================
+
+// Before user created - with idToken and accessToken options
+exports.beforeCreate = beforeUserCreated(
+  { idToken: true, accessToken: true },
+  (event) => {
+    console.log("Before user created:", event.data?.uid);
+    return {};
+  }
+);
+
+// Before user signed in - with idToken only
+exports.beforeSignIn = beforeUserSignedIn(
+  { idToken: true },
+  (event) => {
+    console.log("Before user signed in:", event.data?.uid);
+    return {};
+  }
+);
+
+// Before email sent - no token options
+exports.beforeSendEmail = beforeOperation(
+  "beforeSendEmail",
+  (event) => {
+    console.log("Before email sent");
+    return {};
+  }
+);
+
+// Before SMS sent - no token options
+exports.beforeSendSms = beforeOperation(
+  "beforeSendSms",
+  (event) => {
+    console.log("Before SMS sent");
+    return {};
+  }
+);
+
+// =============================================================================
+// Scheduler trigger examples
+// =============================================================================
+
+// Basic scheduled function - runs every day at midnight
+exports.onSchedule_0_0___ = onSchedule(
+  "0 0 * * *",
+  (event) => {
+    console.log("Daily midnight function triggered");
+  }
+);
+
+// Scheduled function with timezone, retry config, and memory
+// Note: Node.js SDK uses flat retryConfig fields (not nested)
+exports.onSchedule_0_9___15 = onSchedule(
+  {
+    schedule: "0 9 * * 1-5",
+    timeZone: "America/New_York",
+    retryCount: 3,
+    maxRetrySeconds: 60,
+    minBackoffSeconds: 5,
+    maxBackoffSeconds: 30,
+    memory: "256MiB",
+  },
+  (event) => {
+    console.log("Weekday morning report triggered");
   }
 );

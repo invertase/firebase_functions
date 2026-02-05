@@ -115,37 +115,13 @@ jobs:
         working-directory: example/nodejs_reference
         run: |
           npm ci
-          GCLOUD_PROJECT="test-project" PORT="8080" FUNCTIONS_CONTROL_API="true" \
-            npx firebase-functions > /tmp/ff.log 2>&1 &
-          FF_PID=$!
-
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/__/functions.yaml > /dev/null 2>&1; then
-              break
-            fi
-            sleep 1
-          done
-
-          curl -s http://localhost:8080/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
-          kill $FF_PID 2>/dev/null || true
+          node extract-manifest.js
 
       - name: Generate Node.js manifest (with_options_nodejs)
         working-directory: example/with_options_nodejs
         run: |
           npm ci
-          GCLOUD_PROJECT="test-project" PORT="8081" FUNCTIONS_CONTROL_API="true" \
-            npx firebase-functions > /tmp/ff_options.log 2>&1 &
-          FF_PID=$!
-
-          for i in {1..30}; do
-            if curl -s http://localhost:8081/__/functions.yaml > /dev/null 2>&1; then
-              break
-            fi
-            sleep 1
-          done
-
-          curl -s http://localhost:8081/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
-          kill $FF_PID 2>/dev/null || true
+          node extract-manifest.js
 
       - name: Run snapshot tests
         run: dart test test/snapshots/manifest_snapshot_test.dart --reporter=github
