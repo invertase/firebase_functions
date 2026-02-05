@@ -27,7 +27,9 @@ dependencies:
       path: packages/googleapis_firestore
   protobuf: ^6.0.0
   http: ^1.6.0
-  jose: ^0.3.5
+  # Pin as this is an external dependency. 
+  # TODO: Vendor in this package.
+  jose: 0.3.5
   # Required for builder
   build: ^4.0.4
   source_gen: ^4.2.0
