@@ -20,11 +20,6 @@ const params = require("firebase-functions/params");
 // Param extraction
 // =============================================================================
 
-/**
- * Extract declared params from the firebase-functions internal registry.
- * After index.js is loaded, all defineString/defineInt/defineBoolean calls
- * have registered their params globally.
- */
 function extractParams() {
   const declaredParams = params.declaredParams;
   if (!Array.isArray(declaredParams) || declaredParams.length === 0) {
@@ -45,7 +40,6 @@ function extractParams() {
     const paramType = typeMap[p.constructor.name];
     if (paramType) result.type = paramType;
 
-    // Copy options (default, label, description)
     if (p.options) {
       if (p.options.default !== undefined) result.default = p.options.default;
       if (p.options.label) result.label = p.options.label;
@@ -60,9 +54,6 @@ function extractParams() {
 // Endpoint extraction
 // =============================================================================
 
-/**
- * Extract __endpoint metadata from all exported functions.
- */
 function extractEndpoints(mod) {
   const endpoints = {};
 
@@ -75,20 +66,11 @@ function extractEndpoints(mod) {
   return endpoints;
 }
 
-/**
- * Normalize an endpoint to match the format expected by snapshot tests.
- * - Strips null/undefined values
- * - Adds default region if missing
- * - Strips false values from blocking trigger options
- * - Handles CEL expressions from params
- */
 function normalizeEndpoint(name, endpoint) {
   const result = { entryPoint: name };
 
-  // Platform
   result.platform = endpoint.platform || "gcfv2";
 
-  // Region (default to us-central1 if not specified)
   const region = wireValue(endpoint.region);
   if (region && Array.isArray(region) && region.length > 0) {
     result.region = region;
@@ -96,7 +78,6 @@ function normalizeEndpoint(name, endpoint) {
     result.region = ["us-central1"];
   }
 
-  // Global options - only include non-null values
   copyIfNonNull(result, endpoint, "availableMemoryMb");
   copyIfNonNull(result, endpoint, "timeoutSeconds");
   copyIfNonNull(result, endpoint, "minInstances");
@@ -106,17 +87,14 @@ function normalizeEndpoint(name, endpoint) {
   copyIfNonNull(result, endpoint, "ingressSettings");
   copyIfNonNull(result, endpoint, "cpu");
 
-  // Omit flag
   if (endpoint.omit === true || endpoint.omit === false) {
     result.omit = endpoint.omit;
   }
 
-  // Labels (include even if empty)
   if (endpoint.labels && Object.keys(endpoint.labels).length > 0) {
     result.labels = endpoint.labels;
   }
 
-  // VPC
   if (endpoint.vpc && typeof endpoint.vpc === "object") {
     const vpc = {};
     if (endpoint.vpc.connector) vpc.connector = endpoint.vpc.connector;
@@ -126,7 +104,6 @@ function normalizeEndpoint(name, endpoint) {
     }
   }
 
-  // Trigger types
   if (endpoint.callableTrigger !== undefined) {
     result.callableTrigger = endpoint.callableTrigger || {};
   } else if (endpoint.httpsTrigger !== undefined) {
@@ -154,14 +131,8 @@ function normalizeHttpsTrigger(trigger) {
 function normalizeEventTrigger(trigger) {
   const result = {};
   if (trigger.eventType) result.eventType = trigger.eventType;
-
-  if (trigger.eventFilters) {
-    result.eventFilters = trigger.eventFilters;
-  }
-  if (trigger.eventFilterPathPatterns) {
-    result.eventFilterPathPatterns = trigger.eventFilterPathPatterns;
-  }
-
+  if (trigger.eventFilters) result.eventFilters = trigger.eventFilters;
+  if (trigger.eventFilterPathPatterns) result.eventFilterPathPatterns = trigger.eventFilterPathPatterns;
   result.retry = trigger.retry === true ? true : false;
   return result;
 }
@@ -169,50 +140,32 @@ function normalizeEventTrigger(trigger) {
 function normalizeBlockingTrigger(trigger) {
   const result = {};
   if (trigger.eventType) result.eventType = trigger.eventType;
-
-  // Strip false values from options (Dart builder only includes true values)
   const options = {};
   if (trigger.options) {
     for (const [key, value] of Object.entries(trigger.options)) {
-      if (value === true) {
-        options[key] = true;
-      }
+      if (value === true) options[key] = true;
     }
   }
   result.options = options;
-
   return result;
 }
 
 function normalizeScheduleTrigger(trigger) {
   const result = {};
   if (trigger.schedule) result.schedule = trigger.schedule;
-
-  // timeZone may be a ResetValue (for basic schedules)
   const tz = wireValue(trigger.timeZone);
   if (tz) result.timeZone = tz;
-
-  // Include retryConfig only if it has non-null/non-ResetValue values
   if (trigger.retryConfig && typeof trigger.retryConfig === "object") {
     const rc = {};
     for (const [key, value] of Object.entries(trigger.retryConfig)) {
       const wired = wireValue(value);
-      if (wired !== undefined && wired !== null) {
-        rc[key] = wired;
-      }
+      if (wired !== undefined && wired !== null) rc[key] = wired;
     }
-    if (Object.keys(rc).length > 0) {
-      result.retryConfig = rc;
-    }
+    if (Object.keys(rc).length > 0) result.retryConfig = rc;
   }
-
   return result;
 }
 
-/**
- * Copy a value from source to target only if non-null/undefined.
- * Handles CEL Expression objects.
- */
 function copyIfNonNull(target, source, key) {
   const value = wireValue(source[key]);
   if (value !== null && value !== undefined) {
@@ -220,39 +173,19 @@ function copyIfNonNull(target, source, key) {
   }
 }
 
-/**
- * Convert a value to wire format.
- * Handles Param objects, TernaryExpression (CEL), and ResetValues.
- *
- * The firebase-functions SDK uses:
- * - IntParam/StringParam/BooleanParam: toString() => "params.NAME"
- * - TernaryExpression: toString() => "params.NAME ? trueVal : falseVal"
- * - ResetValue: indicates a default/unset value (treat as null)
- */
 function wireValue(value) {
-  if (value === null || value === undefined) {
-    return value;
-  }
+  if (value === null || value === undefined) return value;
 
-  // Handle non-array objects (possible SDK types)
   if (value && typeof value === "object" && !Array.isArray(value)) {
-    // Handle ResetValue (indicates default/unset)
-    if (value.constructor?.name === "ResetValue") {
-      return null;
-    }
+    if (value.constructor?.name === "ResetValue") return null;
 
-    // Handle Param references and expressions via toString()
-    // SDK types like IntParam, TernaryExpression have toString() returning "params.XXX"
     const str = value.toString();
     if (str && str.startsWith("params.")) {
       return `{{ ${str} }}`;
     }
   }
 
-  // Handle arrays
-  if (Array.isArray(value)) {
-    return value.map(wireValue);
-  }
+  if (Array.isArray(value)) return value.map(wireValue);
 
   return value;
 }
@@ -261,22 +194,14 @@ function wireValue(value) {
 // RequiredAPIs extraction
 // =============================================================================
 
-/**
- * Collect requiredAPIs from all function __requiredAPIs metadata.
- * Always includes cloudfunctions.googleapis.com.
- */
 function extractRequiredAPIs(mod) {
   const apiMap = new Map();
-
-  // Always include Cloud Functions API
   apiMap.set("cloudfunctions.googleapis.com", "Required for Cloud Functions");
 
-  // Collect from each function's __requiredAPIs
   for (const [, value] of Object.entries(mod)) {
     if (typeof value === "function" && Array.isArray(value.__requiredAPIs)) {
       for (const api of value.__requiredAPIs) {
         if (api.api && !apiMap.has(api.api)) {
-          // Normalize the reason text (remove trailing periods for consistency)
           const reason = (api.reason || "").replace(/\.$/, "");
           apiMap.set(api.api, reason);
         }
@@ -302,7 +227,6 @@ const manifest = {
   endpoints,
 };
 
-// Write JSON to nodejs_manifest.json
 const outputPath = path.join(__dirname, "nodejs_manifest.json");
 const json = JSON.stringify(manifest, null, 4) + "\n";
 fs.writeFileSync(outputPath, json, "utf8");
