@@ -32,6 +32,20 @@ void main() {
         );
       }
 
+      // Generate Node.js manifest via extract script
+      print('Generating Node.js manifest via extract-manifest.js...');
+      await _ensureNodeModules('example/nodejs_reference');
+      final nodeResult = await Process.run(
+        'node',
+        ['extract-manifest.js'],
+        workingDirectory: 'example/nodejs_reference',
+      );
+      if (nodeResult.exitCode != 0) {
+        throw Exception(
+          'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
+        );
+      }
+
       // Read Dart-generated YAML
       final dartYaml = File(
         'example/basic/.dart_tool/firebase/functions.yaml',
@@ -1095,6 +1109,20 @@ void main() {
         );
       }
 
+      // Generate Node.js manifest via extract script
+      print('Generating Node.js manifest via extract-manifest.js...');
+      await _ensureNodeModules('example/with_options_nodejs');
+      final nodeResult = await Process.run(
+        'node',
+        ['extract-manifest.js'],
+        workingDirectory: 'example/with_options_nodejs',
+      );
+      if (nodeResult.exitCode != 0) {
+        throw Exception(
+          'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
+        );
+      }
+
       // Read Dart-generated YAML
       final dartYaml = File(
         'example/with_options/.dart_tool/firebase/functions.yaml',
@@ -1298,6 +1326,19 @@ Map<String, dynamic>? _getParam(Map<String, dynamic> manifest, String name) {
     }
   }
   return null;
+}
+
+/// Ensures node_modules are installed for the given directory.
+Future<void> _ensureNodeModules(String dir) async {
+  if (!Directory('$dir/node_modules').existsSync()) {
+    print('Installing Node.js dependencies in $dir...');
+    final result = await Process.run('npm', ['ci'], workingDirectory: dir);
+    if (result.exitCode != 0) {
+      throw Exception(
+        'npm ci failed in $dir: ${result.stderr}\n${result.stdout}',
+      );
+    }
+  }
 }
 
 /// Converts YAML objects (YamlMap, YamlList) to JSON-compatible Dart types.
