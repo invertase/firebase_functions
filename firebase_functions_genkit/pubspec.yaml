@@ -1,0 +1,25 @@
+name: firebase_functions_genkit
+description: A starting point for Dart libraries or applications.
+version: 0.1.0
+repository: https://github.com/invertase/firebase-functions-dart
+
+publish_to: none
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  firebase_functions:
+    path: ../
+  genkit:
+    git:
+      url: https://github.com/genkit-ai/genkit-dart/
+      path: packages/genkit
+  meta: ^1.18.1
+
+dependency_overrides: 
+  analyzer: ^10.0.1
+  protobuf: ^6.0.0
+
+dev_dependencies:
+  dart_flutter_team_lints: ^3.5.2
