@@ -254,14 +254,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(27),
+        equals(28),
         reason:
-            'Should discover 27 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 2 Scheduler)',
+            'Should discover 28 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 2 Scheduler)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(27),
-        reason: 'Node.js reference should also have 27 endpoints',
+        equals(28),
+        reason: 'Node.js reference should also have 28 endpoints',
       );
 
       // Verify both manifests have the same endpoint names
@@ -1017,6 +1017,57 @@ void main() {
 
       expect(dartOptions, isEmpty);
       expect(nodejsOptions, isEmpty);
+    });
+
+    // =========================================================================
+    // Remote Config Tests
+    // =========================================================================
+
+    test('should have Remote Config onConfigUpdated trigger', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onConfigUpdated');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onConfigUpdated');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['entryPoint'], equals('onConfigUpdated'));
+      expect(nodejsFunc!['entryPoint'], equals('onConfigUpdated'));
+      expect(dartFunc['platform'], equals('gcfv2'));
+      expect(nodejsFunc['platform'], equals('gcfv2'));
+      expect(dartFunc['eventTrigger'], isNotNull);
+      expect(nodejsFunc['eventTrigger'], isNotNull);
+    });
+
+    test('should have correct Remote Config event type and empty filters', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onConfigUpdated')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onConfigUpdated')!;
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.remoteconfig.remoteConfig.v1.updated'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.remoteconfig.remoteConfig.v1.updated'),
+      );
+
+      // Remote Config triggers have empty event filters
+      expect(dartTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect(
+        (dartTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
+      expect(nodejsTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect(
+        (nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
     });
 
     // =========================================================================

@@ -172,6 +172,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         ],
       ),
       _Namespace(
+        _extractRemoteConfigFunction,
+        '$_pkg/src/remote_config/remote_config_namespace.dart#RemoteConfigNamespace',
+        ['onConfigUpdated'],
+      ),
+      _Namespace(
         // Adapter: _extractSchedulerFunction only takes node, not the second String arg
         (node, _) => _extractSchedulerFunction(node),
         '$_pkg/src/scheduler/scheduler_namespace.dart#SchedulerNamespace',
@@ -504,6 +509,20 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (alertType == null) return;
 
     _extractAlertEndpoint(node, alertType);
+  }
+
+  /// Extracts a Remote Config function declaration.
+  void _extractRemoteConfigFunction(MethodInvocation node, String methodName) {
+    // Remote Config has a single event type and no filters,
+    // so the function name is always 'onConfigUpdated'.
+    const functionName = 'onConfigUpdated';
+
+    endpoints[functionName] = EndpointSpec(
+      name: functionName,
+      type: 'remoteConfig',
+      options: node.findOptionsArg(),
+      variableToParamName: _variableToParamName,
+    );
   }
 
   /// Helper to extract alert endpoint from a method invocation.
