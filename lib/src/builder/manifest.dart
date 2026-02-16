@@ -276,8 +276,7 @@ void _addTrigger(
 
     case 'remoteConfig':
       map['eventTrigger'] = <String, dynamic>{
-        'eventType':
-            'google.firebase.remoteconfig.remoteConfig.v1.updated',
+        'eventType': 'google.firebase.remoteconfig.remoteConfig.v1.updated',
         'eventFilters': <String, dynamic>{},
         'retry': false,
       };

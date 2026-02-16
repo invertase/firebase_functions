@@ -62,10 +62,7 @@ class RemoteConfigNamespace extends FunctionsNamespace {
       } on FormatException catch (e) {
         return Response(400, body: 'Invalid CloudEvent: ${e.message}');
       } catch (e) {
-        return Response(
-          500,
-          body: 'Error processing Remote Config update: $e',
-        );
+        return Response(500, body: 'Error processing Remote Config update: $e');
       }
     });
   }

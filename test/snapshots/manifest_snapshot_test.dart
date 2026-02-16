@@ -1047,15 +1047,11 @@ void main() {
 
       expect(
         dartTrigger['eventType'],
-        equals(
-          'google.firebase.remoteconfig.remoteConfig.v1.updated',
-        ),
+        equals('google.firebase.remoteconfig.remoteConfig.v1.updated'),
       );
       expect(
         nodejsTrigger['eventType'],
-        equals(
-          'google.firebase.remoteconfig.remoteConfig.v1.updated',
-        ),
+        equals('google.firebase.remoteconfig.remoteConfig.v1.updated'),
       );
 
       // Remote Config triggers have empty event filters

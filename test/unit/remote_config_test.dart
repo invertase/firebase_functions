@@ -35,6 +35,7 @@ Request _createRemoteConfigRequest({
     'description': description,
     'updateOrigin': updateOrigin,
     'updateType': updateType,
+    // ignore: use_null_aware_elements
     if (rollbackSource != null) 'rollbackSource': rollbackSource,
   };
 
@@ -143,10 +144,7 @@ void main() {
         );
 
         expect(response.statusCode, 200);
-        expect(
-          receivedEvent!.data!.updateOrigin,
-          ConfigUpdateOrigin.restApi,
-        );
+        expect(receivedEvent!.data!.updateOrigin, ConfigUpdateOrigin.restApi);
       });
 
       test('handler receives update type', () async {
@@ -162,10 +160,7 @@ void main() {
         );
 
         expect(response.statusCode, 200);
-        expect(
-          receivedEvent!.data!.updateType,
-          ConfigUpdateType.forcedUpdate,
-        );
+        expect(receivedEvent!.data!.updateType, ConfigUpdateType.forcedUpdate);
       });
 
       test('handler receives rollback source when present', () async {
@@ -177,17 +172,11 @@ void main() {
 
         final func = _findFunction(firebase, 'onConfigUpdated')!;
         final response = await func.handler(
-          _createRemoteConfigRequest(
-            updateType: 'ROLLBACK',
-            rollbackSource: 5,
-          ),
+          _createRemoteConfigRequest(updateType: 'ROLLBACK', rollbackSource: 5),
         );
 
         expect(response.statusCode, 200);
-        expect(
-          receivedEvent!.data!.updateType,
-          ConfigUpdateType.rollback,
-        );
+        expect(receivedEvent!.data!.updateType, ConfigUpdateType.rollback);
         expect(receivedEvent!.data!.rollbackSource, 5);
       });
 
@@ -255,7 +244,7 @@ void main() {
             'source': 'test',
             'type': 'google.cloud.pubsub.topic.v1.messagePublished',
             'time': '2024-01-01T00:00:00Z',
-            'data': {},
+            'data': <String, dynamic>{},
           }),
           headers: {'content-type': 'application/json'},
         );
@@ -376,9 +365,7 @@ void main() {
   group('ConfigUpdateOrigin', () {
     test('parses all values', () {
       expect(
-        ConfigUpdateOrigin.fromValue(
-          'REMOTE_CONFIG_UPDATE_ORIGIN_UNSPECIFIED',
-        ),
+        ConfigUpdateOrigin.fromValue('REMOTE_CONFIG_UPDATE_ORIGIN_UNSPECIFIED'),
         ConfigUpdateOrigin.remoteConfigUpdateOriginUnspecified,
       );
       expect(
@@ -417,10 +404,7 @@ void main() {
         ConfigUpdateType.fromValue('FORCED_UPDATE'),
         ConfigUpdateType.forcedUpdate,
       );
-      expect(
-        ConfigUpdateType.fromValue('ROLLBACK'),
-        ConfigUpdateType.rollback,
-      );
+      expect(ConfigUpdateType.fromValue('ROLLBACK'), ConfigUpdateType.rollback);
     });
 
     test('defaults to unspecified for unknown values', () {
