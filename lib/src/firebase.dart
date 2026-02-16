@@ -11,6 +11,7 @@ import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'identity/identity_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
+import 'remote_config/remote_config_namespace.dart';
 import 'scheduler/scheduler_namespace.dart';
 
 /// Main Firebase Functions instance.
@@ -92,6 +93,9 @@ class Firebase {
 
   /// Identity Platform namespace.
   IdentityNamespace get identity => IdentityNamespace(this);
+
+  /// Remote Config namespace.
+  RemoteConfigNamespace get remoteConfig => RemoteConfigNamespace(this);
 
   /// Scheduler namespace.
   SchedulerNamespace get scheduler => SchedulerNamespace(this);

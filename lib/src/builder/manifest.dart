@@ -274,6 +274,14 @@ void _addTrigger(
         'options': triggerOptions,
       };
 
+    case 'remoteConfig':
+      map['eventTrigger'] = <String, dynamic>{
+        'eventType':
+            'google.firebase.remoteconfig.remoteConfig.v1.updated',
+        'eventFilters': <String, dynamic>{},
+        'retry': false,
+      };
+
     case 'scheduler' when endpoint.schedule != null:
       final trigger = <String, dynamic>{'schedule': endpoint.schedule};
       if (endpoint.timeZone != null) {

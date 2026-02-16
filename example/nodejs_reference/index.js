@@ -13,6 +13,7 @@ const { onPlanUpdatePublished } = require("firebase-functions/v2/alerts/billing"
 const { onThresholdAlertPublished } = require("firebase-functions/v2/alerts/performance");
 const { beforeUserCreated, beforeUserSignedIn, beforeOperation } = require("firebase-functions/v2/identity");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onConfigUpdated } = require("firebase-functions/v2/remoteConfig");
 const { defineString, defineInt, defineBoolean } = require("firebase-functions/params");
 
 // =============================================================================
@@ -335,6 +336,22 @@ exports.beforeSendSms = beforeOperation(
   (event) => {
     console.log("Before SMS sent");
     return {};
+  }
+);
+
+// =============================================================================
+// Remote Config trigger examples
+// =============================================================================
+
+// Remote Config update trigger
+exports.onConfigUpdated = onConfigUpdated(
+  (event) => {
+    console.log("Remote Config updated:");
+    console.log("  Version:", event.data?.versionNumber);
+    console.log("  Description:", event.data?.description);
+    console.log("  Update Origin:", event.data?.updateOrigin);
+    console.log("  Update Type:", event.data?.updateType);
+    console.log("  Updated By:", event.data?.updateUser?.email);
   }
 );
 

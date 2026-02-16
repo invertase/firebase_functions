@@ -81,6 +81,8 @@ export 'src/https/https.dart';
 export 'src/identity/identity.dart';
 // Pub/Sub triggers
 export 'src/pubsub/pubsub.dart';
+// Remote Config triggers
+export 'src/remote_config/remote_config.dart';
 // Scheduler triggers
 export 'src/scheduler/scheduler.dart';
 // Core runtime
