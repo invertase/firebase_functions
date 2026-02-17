@@ -9,6 +9,7 @@ analyzer:
     missing_required_param: error
     missing_return: error
     todo: ignore
+    use_null_aware_elements: ignore
 
 linter:
   rules:

@@ -14,6 +14,7 @@ const { onThresholdAlertPublished } = require("firebase-functions/v2/alerts/perf
 const { beforeUserCreated, beforeUserSignedIn, beforeOperation } = require("firebase-functions/v2/identity");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onConfigUpdated } = require("firebase-functions/v2/remoteConfig");
+const { onObjectFinalized, onObjectArchived, onObjectDeleted, onObjectMetadataUpdated } = require("firebase-functions/v2/storage");
 const { defineString, defineInt, defineBoolean } = require("firebase-functions/params");
 
 // =============================================================================
@@ -352,6 +353,50 @@ exports.onConfigUpdated = onConfigUpdated(
     console.log("  Update Origin:", event.data?.updateOrigin);
     console.log("  Update Type:", event.data?.updateType);
     console.log("  Updated By:", event.data?.updateUser?.email);
+  }
+);
+
+// =============================================================================
+// Cloud Storage trigger examples
+// =============================================================================
+
+// Storage onObjectFinalized - triggers when an object is created/overwritten
+exports.onObjectFinalized_demotestfirebasestorageapp = onObjectFinalized(
+  { bucket: "demo-test.firebasestorage.app" },
+  (event) => {
+    console.log("Object finalized in bucket:", event.data.bucket);
+    console.log("  Name:", event.data.name);
+    console.log("  Content Type:", event.data.contentType);
+    console.log("  Size:", event.data.size);
+  }
+);
+
+// Storage onObjectArchived - triggers when an object is archived
+exports.onObjectArchived_demotestfirebasestorageapp = onObjectArchived(
+  { bucket: "demo-test.firebasestorage.app" },
+  (event) => {
+    console.log("Object archived in bucket:", event.data.bucket);
+    console.log("  Name:", event.data.name);
+    console.log("  Storage Class:", event.data.storageClass);
+  }
+);
+
+// Storage onObjectDeleted - triggers when an object is deleted
+exports.onObjectDeleted_demotestfirebasestorageapp = onObjectDeleted(
+  { bucket: "demo-test.firebasestorage.app" },
+  (event) => {
+    console.log("Object deleted in bucket:", event.data.bucket);
+    console.log("  Name:", event.data.name);
+  }
+);
+
+// Storage onObjectMetadataUpdated - triggers when object metadata changes
+exports.onObjectMetadataUpdated_demotestfirebasestorageapp = onObjectMetadataUpdated(
+  { bucket: "demo-test.firebasestorage.app" },
+  (event) => {
+    console.log("Object metadata updated in bucket:", event.data.bucket);
+    console.log("  Name:", event.data.name);
+    console.log("  Metadata:", event.data.metadata);
   }
 );
 

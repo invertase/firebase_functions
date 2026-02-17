@@ -87,3 +87,5 @@ export 'src/remote_config/remote_config.dart';
 export 'src/scheduler/scheduler.dart';
 // Core runtime
 export 'src/server.dart' show fireUp;
+// Storage triggers
+export 'src/storage/storage.dart';

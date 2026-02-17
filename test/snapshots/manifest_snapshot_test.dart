@@ -254,14 +254,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(28),
+        equals(32),
         reason:
-            'Should discover 28 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 2 Scheduler)',
+            'Should discover 32 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Scheduler)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(28),
-        reason: 'Node.js reference should also have 28 endpoints',
+        equals(32),
+        reason: 'Node.js reference should also have 32 endpoints',
       );
 
       // Verify both manifests have the same endpoint names
@@ -1065,6 +1065,185 @@ void main() {
         (nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
         isTrue,
       );
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
+    });
+
+    // =========================================================================
+    // Cloud Storage Tests
+    // =========================================================================
+
+    test('should have Storage onObjectFinalized trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectFinalized_demotestfirebasestorageapp',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onObjectFinalized_demotestfirebasestorageapp',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(
+        dartFunc!['entryPoint'],
+        equals('onObjectFinalized_demotestfirebasestorageapp'),
+      );
+      expect(
+        nodejsFunc!['entryPoint'],
+        equals('onObjectFinalized_demotestfirebasestorageapp'),
+      );
+      expect(dartFunc['platform'], equals('gcfv2'));
+      expect(nodejsFunc['platform'], equals('gcfv2'));
+      expect(dartFunc['eventTrigger'], isNotNull);
+      expect(nodejsFunc['eventTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.finalized'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.finalized'),
+      );
+
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['bucket'], equals('demo-test.firebasestorage.app'));
+      expect(nodejsFilters['bucket'], equals('demo-test.firebasestorage.app'));
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
+    });
+
+    test('should have Storage onObjectArchived trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectArchived_demotestfirebasestorageapp',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onObjectArchived_demotestfirebasestorageapp',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.archived'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.archived'),
+      );
+
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['bucket'], equals('demo-test.firebasestorage.app'));
+      expect(nodejsFilters['bucket'], equals('demo-test.firebasestorage.app'));
+    });
+
+    test('should have Storage onObjectDeleted trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectDeleted_demotestfirebasestorageapp',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onObjectDeleted_demotestfirebasestorageapp',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.deleted'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.deleted'),
+      );
+
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['bucket'], equals('demo-test.firebasestorage.app'));
+      expect(nodejsFilters['bucket'], equals('demo-test.firebasestorage.app'));
+    });
+
+    test('should have Storage onObjectMetadataUpdated trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectMetadataUpdated_demotestfirebasestorageapp',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onObjectMetadataUpdated_demotestfirebasestorageapp',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.metadataUpdated'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.cloud.storage.object.v1.metadataUpdated'),
+      );
+
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['bucket'], equals('demo-test.firebasestorage.app'));
+      expect(nodejsFilters['bucket'], equals('demo-test.firebasestorage.app'));
+    });
+
+    test('should use eventFilters format for Storage', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectFinalized_demotestfirebasestorageapp',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onObjectFinalized_demotestfirebasestorageapp',
+      )!;
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
+
+      // Storage triggers should have bucket in eventFilters
+      expect(dartTrigger['eventFilters'], isNotNull);
+      expect(nodejsTrigger['eventFilters'], isNotNull);
+
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['bucket'], equals('demo-test.firebasestorage.app'));
+      expect(nodejsFilters['bucket'], equals('demo-test.firebasestorage.app'));
+
+      // Should not have eventFilterPathPatterns
+      expect(dartTrigger['eventFilterPathPatterns'], isNull);
+      expect(nodejsTrigger['eventFilterPathPatterns'], isNull);
 
       expect(dartTrigger['retry'], equals(false));
       expect(nodejsTrigger['retry'], equals(false));

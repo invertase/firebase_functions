@@ -50,11 +50,13 @@ class EndpointSpec {
     this.schedule,
     this.timeZone,
     this.retryConfig,
+    this.storageBucket,
+    this.storageEventType,
     this.options,
     this.variableToParamName = const {},
   });
   final String name;
-  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking', 'scheduler'
+  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking', 'scheduler', 'storage'
   final String type;
   final String? topic; // For Pub/Sub functions
   final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
@@ -73,6 +75,8 @@ class EndpointSpec {
   final String? schedule; // For Scheduler: cron expression
   final String? timeZone; // For Scheduler: timezone
   final Map<String, dynamic>? retryConfig; // For Scheduler: retry configuration
+  final String? storageBucket; // For Storage: bucket name
+  final String? storageEventType; // For Storage: onObjectFinalized, etc.
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 

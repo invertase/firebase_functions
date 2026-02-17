@@ -524,7 +524,53 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
       }
     }
 
-    // TODO: Add support for other CloudEvent types (Storage, Auth, etc.)
+    // Handle Storage CloudEvents
+    // Source format: //storage.googleapis.com/projects/_/buckets/{bucket}
+    // Event types:
+    // - google.cloud.storage.object.v1.archived
+    // - google.cloud.storage.object.v1.finalized
+    // - google.cloud.storage.object.v1.deleted
+    // - google.cloud.storage.object.v1.metadataUpdated
+    if (type.startsWith('google.cloud.storage.object.v1.')) {
+      // Extract bucket name from source URL
+      // Source format: //storage.googleapis.com/projects/_/buckets/{bucket}/objects/{path}
+      // or just: //storage.googleapis.com/projects/_/buckets/{bucket}
+      String? bucketName;
+      if (source.contains('/buckets/')) {
+        final afterBuckets = source.split('/buckets/').last;
+        // Bucket name is the first path segment (before any /objects/... suffix)
+        bucketName = afterBuckets.split('/').first;
+      }
+
+      if (bucketName != null) {
+        // Map CloudEvent type to method name
+        final methodName = _mapCloudEventTypeToStorageMethod(type);
+        if (methodName != null) {
+          // Sanitize bucket name to match function naming convention
+          final sanitizedBucket = bucketName.replaceAll(
+            RegExp('[^a-zA-Z0-9]'),
+            '',
+          );
+          final expectedFunctionName = '${methodName}_$sanitizedBucket';
+
+          // Try to find a matching function
+          for (final function in functions) {
+            if (function.name == expectedFunctionName && !function.external) {
+              print(
+                'CloudEvent matched storage bucket "$bucketName" to function "$expectedFunctionName"',
+              );
+
+              final newRequest = bodyString != null
+                  ? request.change(body: bodyString)
+                  : request;
+              return (newRequest, function);
+            }
+          }
+        }
+      }
+    }
+
+    // TODO: Add support for other CloudEvent types (Auth, etc.)
 
     // No CloudEvent function matched - return reconstructed request if we read the body
     final finalRequest = bodyString != null
@@ -693,6 +739,17 @@ String? _mapCloudEventTypeToDatabaseMethod(String eventType) =>
       'google.firebase.database.ref.v1.updated' => 'onValueUpdated',
       'google.firebase.database.ref.v1.deleted' => 'onValueDeleted',
       'google.firebase.database.ref.v1.written' => 'onValueWritten',
+      _ => null,
+    };
+
+/// Maps Storage CloudEvent type to method name.
+String? _mapCloudEventTypeToStorageMethod(String eventType) =>
+    switch (eventType) {
+      'google.cloud.storage.object.v1.archived' => 'onObjectArchived',
+      'google.cloud.storage.object.v1.finalized' => 'onObjectFinalized',
+      'google.cloud.storage.object.v1.deleted' => 'onObjectDeleted',
+      'google.cloud.storage.object.v1.metadataUpdated' =>
+        'onObjectMetadataUpdated',
       _ => null,
     };
 

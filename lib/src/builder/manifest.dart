@@ -281,6 +281,15 @@ void _addTrigger(
         'retry': false,
       };
 
+    case 'storage'
+        when endpoint.storageEventType != null &&
+            endpoint.storageBucket != null:
+      map['eventTrigger'] = <String, dynamic>{
+        'eventType': _mapStorageEventType(endpoint.storageEventType!),
+        'eventFilters': {'bucket': endpoint.storageBucket},
+        'retry': false,
+      };
+
     case 'scheduler' when endpoint.schedule != null:
       final trigger = <String, dynamic>{'schedule': endpoint.schedule};
       if (endpoint.timeZone != null) {
@@ -324,4 +333,13 @@ String _mapDatabaseEventType(String methodName) => switch (methodName) {
   'onValueDeleted' => 'google.firebase.database.ref.v1.deleted',
   'onValueWritten' => 'google.firebase.database.ref.v1.written',
   _ => throw ArgumentError('Unknown Database event type: $methodName'),
+};
+
+/// Maps Storage method name to CloudEvent event type.
+String _mapStorageEventType(String methodName) => switch (methodName) {
+  'onObjectArchived' => 'google.cloud.storage.object.v1.archived',
+  'onObjectFinalized' => 'google.cloud.storage.object.v1.finalized',
+  'onObjectDeleted' => 'google.cloud.storage.object.v1.deleted',
+  'onObjectMetadataUpdated' => 'google.cloud.storage.object.v1.metadataUpdated',
+  _ => throw ArgumentError('Unknown Storage event type: $methodName'),
 };

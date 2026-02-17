@@ -13,6 +13,7 @@ import 'identity/identity_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
 import 'remote_config/remote_config_namespace.dart';
 import 'scheduler/scheduler_namespace.dart';
+import 'storage/storage_namespace.dart';
 
 /// Main Firebase Functions instance.
 ///
@@ -99,6 +100,9 @@ class Firebase {
 
   /// Scheduler namespace.
   SchedulerNamespace get scheduler => SchedulerNamespace(this);
+
+  /// Cloud Storage triggers namespace.
+  StorageNamespace get storage => StorageNamespace(this);
 }
 
 /// Extension for internal function registration.

@@ -11,6 +11,7 @@ class EmulatorHelper {
     this.firestorePort = 8080,
     this.databasePort = 9000,
     this.authPort = 9099,
+    this.storagePort = 9199,
     this.startupTimeout = const Duration(seconds: 90),
   });
   Process? _process;
@@ -20,6 +21,7 @@ class EmulatorHelper {
   final int firestorePort;
   final int databasePort;
   final int authPort;
+  final int storagePort;
   final Duration startupTimeout;
 
   // Completer to signal when emulator is ready
@@ -56,7 +58,7 @@ class EmulatorHelper {
         'emulators:start',
         '--debug',
         '--only',
-        'functions,pubsub,firestore,database,auth',
+        'functions,pubsub,firestore,database,auth,storage',
         '--project',
         'demo-test',
         '--non-interactive',
@@ -277,6 +279,9 @@ class EmulatorHelper {
 
   /// Gets the base URL for the Auth emulator REST API.
   String get authUrl => 'http://localhost:$authPort';
+
+  /// Gets the base URL for the Storage emulator REST API.
+  String get storageUrl => 'http://localhost:$storagePort';
 
   /// Verifies that a function was executed in the emulator logs.
   /// Returns true if we find both "Beginning execution" and "Finished" messages.
