@@ -361,8 +361,8 @@ exports.onConfigUpdated = onConfigUpdated(
 // =============================================================================
 
 // Storage onObjectFinalized - triggers when an object is created/overwritten
-exports.onObjectFinalized_mybucket = onObjectFinalized(
-  { bucket: "my-bucket" },
+exports.onObjectFinalized_demotestfirebasestorageapp = onObjectFinalized(
+  { bucket: "demo-test.firebasestorage.app" },
   (event) => {
     console.log("Object finalized in bucket:", event.data.bucket);
     console.log("  Name:", event.data.name);
@@ -372,8 +372,8 @@ exports.onObjectFinalized_mybucket = onObjectFinalized(
 );
 
 // Storage onObjectArchived - triggers when an object is archived
-exports.onObjectArchived_mybucket = onObjectArchived(
-  { bucket: "my-bucket" },
+exports.onObjectArchived_demotestfirebasestorageapp = onObjectArchived(
+  { bucket: "demo-test.firebasestorage.app" },
   (event) => {
     console.log("Object archived in bucket:", event.data.bucket);
     console.log("  Name:", event.data.name);
@@ -382,8 +382,8 @@ exports.onObjectArchived_mybucket = onObjectArchived(
 );
 
 // Storage onObjectDeleted - triggers when an object is deleted
-exports.onObjectDeleted_mybucket = onObjectDeleted(
-  { bucket: "my-bucket" },
+exports.onObjectDeleted_demotestfirebasestorageapp = onObjectDeleted(
+  { bucket: "demo-test.firebasestorage.app" },
   (event) => {
     console.log("Object deleted in bucket:", event.data.bucket);
     console.log("  Name:", event.data.name);
@@ -391,8 +391,8 @@ exports.onObjectDeleted_mybucket = onObjectDeleted(
 );
 
 // Storage onObjectMetadataUpdated - triggers when object metadata changes
-exports.onObjectMetadataUpdated_mybucket = onObjectMetadataUpdated(
-  { bucket: "my-bucket" },
+exports.onObjectMetadataUpdated_demotestfirebasestorageapp = onObjectMetadataUpdated(
+  { bucket: "demo-test.firebasestorage.app" },
   (event) => {
     console.log("Object metadata updated in bucket:", event.data.bucket);
     console.log("  Name:", event.data.name);
