@@ -69,10 +69,7 @@ void main() {
 
     group('onObjectFinalized', () {
       test('registers function with firebase', () {
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {});
 
         expect(
           _findFunction(firebase, 'onObjectFinalized_mybucket'),
@@ -81,10 +78,7 @@ void main() {
       });
 
       test('registered function is not external', () {
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {});
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         expect(func.external, isFalse);
@@ -93,12 +87,9 @@ void main() {
       test('handler receives StorageEvent with StorageObjectData', () async {
         StorageEvent? receivedEvent;
 
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         final request = _createStorageRequest(
@@ -120,12 +111,9 @@ void main() {
       test('handler receives correct CloudEvent metadata', () async {
         StorageEvent? receivedEvent;
 
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         final response = await func.handler(_createStorageRequest());
@@ -137,10 +125,7 @@ void main() {
           receivedEvent!.source,
           '//storage.googleapis.com/projects/_/buckets/my-bucket',
         );
-        expect(
-          receivedEvent!.type,
-          'google.cloud.storage.object.v1.finalized',
-        );
+        expect(receivedEvent!.type, 'google.cloud.storage.object.v1.finalized');
         expect(receivedEvent!.specversion, '1.0');
         expect(receivedEvent!.subject, 'objects/path/to/file.txt');
       });
@@ -148,12 +133,9 @@ void main() {
       test('bucket getter returns correct bucket', () async {
         StorageEvent? receivedEvent;
 
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         await func.handler(_createStorageRequest());
@@ -164,26 +146,17 @@ void main() {
 
     group('onObjectArchived', () {
       test('registers function with firebase', () {
-        storage.onObjectArchived(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectArchived(bucket: 'my-bucket', (event) async {});
 
-        expect(
-          _findFunction(firebase, 'onObjectArchived_mybucket'),
-          isNotNull,
-        );
+        expect(_findFunction(firebase, 'onObjectArchived_mybucket'), isNotNull);
       });
 
       test('handler receives StorageEvent', () async {
         StorageEvent? receivedEvent;
 
-        storage.onObjectArchived(
-          bucket: 'my-bucket',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        storage.onObjectArchived(bucket: 'my-bucket', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onObjectArchived_mybucket')!;
         final request = _createStorageRequest(
@@ -199,26 +172,17 @@ void main() {
 
     group('onObjectDeleted', () {
       test('registers function with firebase', () {
-        storage.onObjectDeleted(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectDeleted(bucket: 'my-bucket', (event) async {});
 
-        expect(
-          _findFunction(firebase, 'onObjectDeleted_mybucket'),
-          isNotNull,
-        );
+        expect(_findFunction(firebase, 'onObjectDeleted_mybucket'), isNotNull);
       });
 
       test('handler receives StorageEvent', () async {
         StorageEvent? receivedEvent;
 
-        storage.onObjectDeleted(
-          bucket: 'my-bucket',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        storage.onObjectDeleted(bucket: 'my-bucket', (event) async {
+          receivedEvent = event;
+        });
 
         final func = _findFunction(firebase, 'onObjectDeleted_mybucket')!;
         final request = _createStorageRequest(
@@ -234,10 +198,7 @@ void main() {
 
     group('onObjectMetadataUpdated', () {
       test('registers function with firebase', () {
-        storage.onObjectMetadataUpdated(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectMetadataUpdated(bucket: 'my-bucket', (event) async {});
 
         expect(
           _findFunction(firebase, 'onObjectMetadataUpdated_mybucket'),
@@ -248,15 +209,14 @@ void main() {
       test('handler receives StorageEvent with metadata', () async {
         StorageEvent? receivedEvent;
 
-        storage.onObjectMetadataUpdated(
-          bucket: 'my-bucket',
-          (event) async {
-            receivedEvent = event;
-          },
-        );
+        storage.onObjectMetadataUpdated(bucket: 'my-bucket', (event) async {
+          receivedEvent = event;
+        });
 
-        final func =
-            _findFunction(firebase, 'onObjectMetadataUpdated_mybucket')!;
+        final func = _findFunction(
+          firebase,
+          'onObjectMetadataUpdated_mybucket',
+        )!;
         final request = _createStorageRequest(
           eventType: 'google.cloud.storage.object.v1.metadataUpdated',
           metadata: {'key1': 'value1', 'key2': 'value2'},
@@ -265,16 +225,16 @@ void main() {
 
         expect(response.statusCode, 200);
         expect(receivedEvent, isNotNull);
-        expect(receivedEvent!.data!.metadata, {'key1': 'value1', 'key2': 'value2'});
+        expect(receivedEvent!.data!.metadata, {
+          'key1': 'value1',
+          'key2': 'value2',
+        });
       });
     });
 
     group('function naming', () {
       test('sanitizes bucket name by removing hyphens', () {
-        storage.onObjectFinalized(
-          bucket: 'my-test-bucket',
-          (event) async {},
-        );
+        storage.onObjectFinalized(bucket: 'my-test-bucket', (event) async {});
 
         expect(
           _findFunction(firebase, 'onObjectFinalized_mytestbucket'),
@@ -285,10 +245,7 @@ void main() {
 
     group('error handling', () {
       test('returns 200 on success', () async {
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {});
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         final response = await func.handler(_createStorageRequest());
@@ -297,12 +254,9 @@ void main() {
       });
 
       test('returns 500 on handler error', () async {
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {
-            throw Exception('Handler error');
-          },
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {
+          throw Exception('Handler error');
+        });
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         final response = await func.handler(_createStorageRequest());
@@ -313,10 +267,7 @@ void main() {
       });
 
       test('returns 400 for invalid CloudEvent', () async {
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {});
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         final request = Request(
@@ -331,10 +282,7 @@ void main() {
       });
 
       test('returns 400 for wrong event type', () async {
-        storage.onObjectFinalized(
-          bucket: 'my-bucket',
-          (event) async {},
-        );
+        storage.onObjectFinalized(bucket: 'my-bucket', (event) async {});
 
         final func = _findFunction(firebase, 'onObjectFinalized_mybucket')!;
         final request = Request(
@@ -388,7 +336,8 @@ void main() {
         'md5Hash': 'rL0Y20zC+Fzt72VPzMSk2A==',
         'mediaLink': 'https://storage.googleapis.com/download',
         'metadata': {'key1': 'value1'},
-        'selfLink': 'https://storage.googleapis.com/storage/v1/b/test-bucket/o/file',
+        'selfLink':
+            'https://storage.googleapis.com/storage/v1/b/test-bucket/o/file',
         'size': '1024',
         'storageClass': 'STANDARD',
         'timeCreated': '2024-01-01T12:00:00Z',

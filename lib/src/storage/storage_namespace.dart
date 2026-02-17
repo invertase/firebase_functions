@@ -168,8 +168,7 @@ class StorageNamespace extends FunctionsNamespace {
       type.startsWith('google.cloud.storage.object.v1.');
 
   static const _eventTypeArchived = 'google.cloud.storage.object.v1.archived';
-  static const _eventTypeFinalized =
-      'google.cloud.storage.object.v1.finalized';
+  static const _eventTypeFinalized = 'google.cloud.storage.object.v1.finalized';
   static const _eventTypeDeleted = 'google.cloud.storage.object.v1.deleted';
   static const _eventTypeMetadataUpdated =
       'google.cloud.storage.object.v1.metadataUpdated';

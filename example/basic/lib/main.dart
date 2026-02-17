@@ -449,15 +449,14 @@ void main(List<String> args) async {
     });
 
     // Storage onObjectMetadataUpdated - triggers when object metadata changes
-    firebase.storage.onObjectMetadataUpdated(
-      bucket: 'my-bucket',
-      (event) async {
-        final data = event.data;
-        print('Object metadata updated in bucket: ${event.bucket}');
-        print('  Name: ${data?.name}');
-        print('  Metadata: ${data?.metadata}');
-      },
-    );
+    firebase.storage.onObjectMetadataUpdated(bucket: 'my-bucket', (
+      event,
+    ) async {
+      final data = event.data;
+      print('Object metadata updated in bucket: ${event.bucket}');
+      print('  Name: ${data?.name}');
+      print('  Metadata: ${data?.metadata}');
+    });
 
     // ==========================================================================
     // Scheduler trigger examples

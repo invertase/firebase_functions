@@ -1075,10 +1075,7 @@ void main() {
     // =========================================================================
 
     test('should have Storage onObjectFinalized trigger', () {
-      final dartFunc = _getEndpoint(
-        dartManifest,
-        'onObjectFinalized_mybucket',
-      );
+      final dartFunc = _getEndpoint(dartManifest, 'onObjectFinalized_mybucket');
       final nodejsFunc = _getEndpoint(
         nodejsManifest,
         'onObjectFinalized_mybucket',
@@ -1117,10 +1114,7 @@ void main() {
     });
 
     test('should have Storage onObjectArchived trigger', () {
-      final dartFunc = _getEndpoint(
-        dartManifest,
-        'onObjectArchived_mybucket',
-      );
+      final dartFunc = _getEndpoint(dartManifest, 'onObjectArchived_mybucket');
       final nodejsFunc = _getEndpoint(
         nodejsManifest,
         'onObjectArchived_mybucket',
@@ -1149,10 +1143,7 @@ void main() {
     });
 
     test('should have Storage onObjectDeleted trigger', () {
-      final dartFunc = _getEndpoint(
-        dartManifest,
-        'onObjectDeleted_mybucket',
-      );
+      final dartFunc = _getEndpoint(dartManifest, 'onObjectDeleted_mybucket');
       final nodejsFunc = _getEndpoint(
         nodejsManifest,
         'onObjectDeleted_mybucket',
