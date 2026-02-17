@@ -547,7 +547,10 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         final methodName = _mapCloudEventTypeToStorageMethod(type);
         if (methodName != null) {
           // Sanitize bucket name to match function naming convention
-          final sanitizedBucket = bucketName.replaceAll(RegExp('[^a-zA-Z0-9]'), '');
+          final sanitizedBucket = bucketName.replaceAll(
+            RegExp('[^a-zA-Z0-9]'),
+            '',
+          );
           final expectedFunctionName = '${methodName}_$sanitizedBucket';
 
           // Try to find a matching function
