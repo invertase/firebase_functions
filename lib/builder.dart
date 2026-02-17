@@ -177,6 +177,16 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         ['onConfigUpdated'],
       ),
       _Namespace(
+        _extractStorageFunction,
+        '$_pkg/src/storage/storage_namespace.dart#StorageNamespace',
+        [
+          'onObjectArchived',
+          'onObjectFinalized',
+          'onObjectDeleted',
+          'onObjectMetadataUpdated',
+        ],
+      ),
+      _Namespace(
         // Adapter: _extractSchedulerFunction only takes node, not the second String arg
         (node, _) => _extractSchedulerFunction(node),
         '$_pkg/src/scheduler/scheduler_namespace.dart#SchedulerNamespace',
@@ -520,6 +530,26 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'remoteConfig',
+      options: node.findOptionsArg(),
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts a Storage function declaration.
+  void _extractStorageFunction(MethodInvocation node, String methodName) {
+    // Extract bucket name from named argument
+    final bucketName = node.extractLiteralForArg('bucket');
+    if (bucketName == null) return;
+
+    // Generate function name from bucket (remove hyphens to match Node.js behavior)
+    final sanitizedBucket = bucketName.replaceAll('-', '');
+    final functionName = '${methodName}_$sanitizedBucket';
+
+    endpoints[functionName] = EndpointSpec(
+      name: functionName,
+      type: 'storage',
+      storageBucket: bucketName,
+      storageEventType: methodName,
       options: node.findOptionsArg(),
       variableToParamName: _variableToParamName,
     );
