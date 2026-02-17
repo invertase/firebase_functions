@@ -100,9 +100,7 @@ void runStorageTests(
       );
       // The Storage emulator may report a different content type than what
       // was uploaded, so just check that a Content Type line is logged.
-      final hasContentType = logs.any(
-        (line) => line.contains('Content Type:'),
-      );
+      final hasContentType = logs.any((line) => line.contains('Content Type:'));
 
       expect(hasName, isTrue, reason: 'Function should log the object name');
       expect(

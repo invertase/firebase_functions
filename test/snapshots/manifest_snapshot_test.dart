@@ -1075,7 +1075,10 @@ void main() {
     // =========================================================================
 
     test('should have Storage onObjectFinalized trigger', () {
-      final dartFunc = _getEndpoint(dartManifest, 'onObjectFinalized_demotestfirebasestorageapp');
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectFinalized_demotestfirebasestorageapp',
+      );
       final nodejsFunc = _getEndpoint(
         nodejsManifest,
         'onObjectFinalized_demotestfirebasestorageapp',
@@ -1084,8 +1087,14 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('onObjectFinalized_demotestfirebasestorageapp'));
-      expect(nodejsFunc!['entryPoint'], equals('onObjectFinalized_demotestfirebasestorageapp'));
+      expect(
+        dartFunc!['entryPoint'],
+        equals('onObjectFinalized_demotestfirebasestorageapp'),
+      );
+      expect(
+        nodejsFunc!['entryPoint'],
+        equals('onObjectFinalized_demotestfirebasestorageapp'),
+      );
       expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['eventTrigger'], isNotNull);
@@ -1114,7 +1123,10 @@ void main() {
     });
 
     test('should have Storage onObjectArchived trigger', () {
-      final dartFunc = _getEndpoint(dartManifest, 'onObjectArchived_demotestfirebasestorageapp');
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectArchived_demotestfirebasestorageapp',
+      );
       final nodejsFunc = _getEndpoint(
         nodejsManifest,
         'onObjectArchived_demotestfirebasestorageapp',
@@ -1143,7 +1155,10 @@ void main() {
     });
 
     test('should have Storage onObjectDeleted trigger', () {
-      final dartFunc = _getEndpoint(dartManifest, 'onObjectDeleted_demotestfirebasestorageapp');
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onObjectDeleted_demotestfirebasestorageapp',
+      );
       final nodejsFunc = _getEndpoint(
         nodejsManifest,
         'onObjectDeleted_demotestfirebasestorageapp',
