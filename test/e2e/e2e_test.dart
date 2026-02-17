@@ -13,6 +13,7 @@ import 'helpers/emulator.dart';
 import 'helpers/firestore_client.dart';
 import 'helpers/http_client.dart';
 import 'helpers/pubsub_client.dart';
+import 'helpers/storage_client.dart';
 import 'tests/database_tests.dart';
 import 'tests/firestore_tests.dart';
 import 'tests/https_onrequest_tests.dart';
@@ -20,6 +21,7 @@ import 'tests/identity_tests.dart';
 import 'tests/integration_tests.dart';
 import 'tests/pubsub_tests.dart';
 import 'tests/scheduler_tests.dart';
+import 'tests/storage_tests.dart';
 
 void main() {
   late EmulatorHelper emulator;
@@ -28,6 +30,7 @@ void main() {
   late FirestoreClient firestoreClient;
   late DatabaseClient databaseClient;
   late AuthClient authClient;
+  late StorageClient storageClient;
 
   // Debug: Show Directory.current.path at module load time
   print('DEBUG e2e_test: Directory.current.path = ${Directory.current.path}');
@@ -90,6 +93,12 @@ void main() {
     // Create Auth client
     authClient = AuthClient(emulator.authUrl, 'demo-test');
 
+    // Create Storage client
+    storageClient = StorageClient(
+      emulator.storageUrl,
+      'demo-test.firebasestorage.app',
+    );
+
     // Give emulator a moment to fully initialize
     await Future<void>.delayed(const Duration(seconds: 2));
   });
@@ -106,6 +115,7 @@ void main() {
     firestoreClient.close();
     databaseClient.close();
     authClient.close();
+    storageClient.close();
     await emulator.stop();
   });
 
@@ -116,6 +126,7 @@ void main() {
   runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
   runDatabaseTests(() => examplePath, () => databaseClient, () => emulator);
   runIdentityTests(() => examplePath, () => authClient, () => emulator);
+  runStorageTests(() => examplePath, () => storageClient, () => emulator);
   runSchedulerTests(
     () => examplePath,
     () => emulator,

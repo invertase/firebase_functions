@@ -541,8 +541,8 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final bucketName = node.extractLiteralForArg('bucket');
     if (bucketName == null) return;
 
-    // Generate function name from bucket (remove hyphens to match Node.js behavior)
-    final sanitizedBucket = bucketName.replaceAll('-', '');
+    // Generate function name from bucket (strip non-alphanumeric chars for valid function ID)
+    final sanitizedBucket = bucketName.replaceAll(RegExp('[^a-zA-Z0-9]'), '');
     final functionName = '${methodName}_$sanitizedBucket';
 
     endpoints[functionName] = EndpointSpec(

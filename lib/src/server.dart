@@ -533,9 +533,13 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
     // - google.cloud.storage.object.v1.metadataUpdated
     if (type.startsWith('google.cloud.storage.object.v1.')) {
       // Extract bucket name from source URL
+      // Source format: //storage.googleapis.com/projects/_/buckets/{bucket}/objects/{path}
+      // or just: //storage.googleapis.com/projects/_/buckets/{bucket}
       String? bucketName;
       if (source.contains('/buckets/')) {
-        bucketName = source.split('/buckets/').last;
+        final afterBuckets = source.split('/buckets/').last;
+        // Bucket name is the first path segment (before any /objects/... suffix)
+        bucketName = afterBuckets.split('/').first;
       }
 
       if (bucketName != null) {
@@ -543,7 +547,7 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         final methodName = _mapCloudEventTypeToStorageMethod(type);
         if (methodName != null) {
           // Sanitize bucket name to match function naming convention
-          final sanitizedBucket = bucketName.replaceAll('-', '');
+          final sanitizedBucket = bucketName.replaceAll(RegExp('[^a-zA-Z0-9]'), '');
           final expectedFunctionName = '${methodName}_$sanitizedBucket';
 
           // Try to find a matching function

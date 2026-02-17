@@ -241,6 +241,21 @@ void main() {
           isNotNull,
         );
       });
+
+      test('sanitizes bucket name with dots', () {
+        storage.onObjectFinalized(
+          bucket: 'demo-test.firebasestorage.app',
+          (event) async {},
+        );
+
+        expect(
+          _findFunction(
+            firebase,
+            'onObjectFinalized_demotestfirebasestorageapp',
+          ),
+          isNotNull,
+        );
+      });
     });
 
     group('error handling', () {

@@ -194,26 +194,47 @@
     <div id="rawResult" class="result" style="display: none;"></div>
   </div>
 
+  <!-- Storage Upload Demo -->
+  <div class="card">
+    <h2>7. Storage - File Upload (triggers onObjectFinalized)</h2>
+    <p>Uploads a file to Cloud Storage via the Firebase SDK. The emulator automatically triggers <code>onObjectFinalized</code> on the Dart function. Check the emulator logs to see the trigger fire.</p>
+
+    <div>
+      <input type="file" id="storageFile">
+    </div>
+    <div>
+      <input type="text" id="storagePath" placeholder="Upload path" value="uploads/" style="width: 300px;">
+      <button onclick="uploadFile()">Upload to Storage</button>
+      <button onclick="deleteFile()">Delete Last Upload</button>
+    </div>
+
+    <div id="storageResult" class="result" style="display: none;"></div>
+  </div>
+
   <!-- Firebase SDK -->
   <script type="module">
     // Import Firebase SDK
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
     import { getFunctions, httpsCallable, connectFunctionsEmulator } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-functions.js';
     import { getAuth, connectAuthEmulator, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js';
+    import { getStorage, connectStorageEmulator, ref, uploadBytes, deleteObject, getMetadata } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js';
 
     // Initialize Firebase (minimal config for Functions)
     const firebaseConfig = {
       projectId: 'demo-test',
       apiKey: 'fake-api-key', // Not needed for emulator
+      storageBucket: 'demo-test.firebasestorage.app',
     };
 
     const app = initializeApp(firebaseConfig);
     const functions = getFunctions(app, 'us-central1');
     const auth = getAuth(app);
+    const storage = getStorage(app);
 
     // Connect to emulators
     connectFunctionsEmulator(functions, '127.0.0.1', 5001);
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    connectStorageEmulator(storage, '127.0.0.1', 9199);
 
     // Track auth state
     onAuthStateChanged(auth, (user) => {
@@ -234,8 +255,13 @@
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
     window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
     window.firebaseSignOut = firebaseSignOut;
+    window.storage = storage;
+    window.storageRef = ref;
+    window.uploadBytes = uploadBytes;
+    window.deleteObject = deleteObject;
+    window.getMetadata = getMetadata;
 
-    console.log('Firebase initialized and connected to emulators (Functions + Auth)');
+    console.log('Firebase initialized and connected to emulators (Functions + Auth + Storage)');
   </script>
 
   <script>
@@ -465,6 +491,64 @@
       }
     }
     window.callRawCallable = callRawCallable;
+
+    // 7. Storage - File upload (triggers onObjectFinalized)
+    let lastUploadedRef = null;
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('storageFile');
+      const pathPrefix = document.getElementById('storagePath').value || 'uploads/';
+
+      if (!fileInput.files.length) {
+        showResult('storageResult', 'Please select a file first.', true);
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const fullPath = pathPrefix + file.name;
+
+      try {
+        const fileRef = window.storageRef(window.storage, fullPath);
+        const snapshot = await window.uploadBytes(fileRef, file, {
+          contentType: file.type,
+        });
+
+        lastUploadedRef = fileRef;
+        const metadata = await window.getMetadata(fileRef);
+
+        showResult('storageResult', {
+          status: 'Upload complete - check emulator logs for onObjectFinalized trigger',
+          path: fullPath,
+          contentType: metadata.contentType,
+          size: metadata.size,
+          bucket: metadata.bucket,
+          timeCreated: metadata.timeCreated,
+        });
+      } catch (error) {
+        showResult('storageResult', `Upload error: ${error.message}`, true);
+      }
+    }
+    window.uploadFile = uploadFile;
+
+    async function deleteFile() {
+      if (!lastUploadedRef) {
+        showResult('storageResult', 'No file uploaded yet. Upload a file first.', true);
+        return;
+      }
+
+      try {
+        await window.deleteObject(lastUploadedRef);
+
+        showResult('storageResult', {
+          status: 'File deleted - check emulator logs for onObjectDeleted trigger',
+          path: lastUploadedRef.fullPath,
+        });
+        lastUploadedRef = null;
+      } catch (error) {
+        showResult('storageResult', `Delete error: ${error.message}`, true);
+      }
+    }
+    window.deleteFile = deleteFile;
   </script>
 </body>
 </html>

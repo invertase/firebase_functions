@@ -159,7 +159,7 @@ class StorageNamespace extends FunctionsNamespace {
   /// Examples:
   /// - ('onObjectFinalized', 'my-bucket') -> 'onObjectFinalized_mybucket'
   String _bucketToFunctionName(String methodName, String bucket) {
-    final sanitizedBucket = bucket.replaceAll('-', '');
+    final sanitizedBucket = bucket.replaceAll(RegExp('[^a-zA-Z0-9]'), '');
     return '${methodName}_$sanitizedBucket';
   }
 

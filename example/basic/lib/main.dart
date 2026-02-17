@@ -425,7 +425,7 @@ void main(List<String> args) async {
     // ==========================================================================
 
     // Storage onObjectFinalized - triggers when an object is created/overwritten
-    firebase.storage.onObjectFinalized(bucket: 'my-bucket', (event) async {
+    firebase.storage.onObjectFinalized(bucket: 'demo-test.firebasestorage.app', (event) async {
       final data = event.data;
       print('Object finalized in bucket: ${event.bucket}');
       print('  Name: ${data?.name}');
@@ -434,7 +434,7 @@ void main(List<String> args) async {
     });
 
     // Storage onObjectArchived - triggers when an object is archived
-    firebase.storage.onObjectArchived(bucket: 'my-bucket', (event) async {
+    firebase.storage.onObjectArchived(bucket: 'demo-test.firebasestorage.app', (event) async {
       final data = event.data;
       print('Object archived in bucket: ${event.bucket}');
       print('  Name: ${data?.name}');
@@ -442,14 +442,14 @@ void main(List<String> args) async {
     });
 
     // Storage onObjectDeleted - triggers when an object is deleted
-    firebase.storage.onObjectDeleted(bucket: 'my-bucket', (event) async {
+    firebase.storage.onObjectDeleted(bucket: 'demo-test.firebasestorage.app', (event) async {
       final data = event.data;
       print('Object deleted in bucket: ${event.bucket}');
       print('  Name: ${data?.name}');
     });
 
     // Storage onObjectMetadataUpdated - triggers when object metadata changes
-    firebase.storage.onObjectMetadataUpdated(bucket: 'my-bucket', (
+    firebase.storage.onObjectMetadataUpdated(bucket: 'demo-test.firebasestorage.app', (
       event,
     ) async {
       final data = event.data;
