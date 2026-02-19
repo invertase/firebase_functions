@@ -1,0 +1,33 @@
+specVersion: v1alpha1
+requiredAPIs:
+  - api: cloudfunctions.googleapis.com
+    reason: Required for Cloud Functions
+endpoints:
+  helloWorld:
+    platform: run
+    region:
+      - us-central1
+    httpsTrigger:
+      invoker: []
+    baseImageUri: us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/go123
+    command:
+      - ./bin/server
+    entryPoint: server
+  greet:
+    platform: run
+    region:
+      - us-central1
+    callableTrigger: {}
+    baseImageUri: us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/go123
+    command:
+      - ./bin/server
+    entryPoint: server
+  whoAmI:
+    platform: run
+    region:
+      - us-central1
+    callableTrigger: {}
+    baseImageUri: us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/go123
+    command:
+      - ./bin/server
+    entryPoint: server

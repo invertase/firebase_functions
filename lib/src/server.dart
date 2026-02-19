@@ -594,10 +594,13 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
 /// For event triggers, the triggerId may include region prefix like "us-central1-functionName"
 /// We need to extract just the function name part.
 String _extractFunctionName(String requestPath) {
-  // Remove leading slash
+  // Remove leading and trailing slashes
   var path = requestPath;
   if (path.startsWith('/')) {
     path = path.substring(1);
+  }
+  if (path.endsWith('/')) {
+    path = path.substring(0, path.length - 1);
   }
 
   // Event trigger path: functions/projects/{project}/triggers/{triggerId}
