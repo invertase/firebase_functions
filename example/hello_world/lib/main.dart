@@ -19,13 +19,12 @@ void main(List<String> args) async {
     firebase.https.onCall(name: 'whoAmI', (request, response) async {
       final auth = request.auth;
       if (auth == null) {
-        throw UnauthenticatedError('You must be signed in to call this function');
+        throw UnauthenticatedError(
+          'You must be signed in to call this function',
+        );
       }
 
-      return CallableResult({
-        'uid': auth.uid,
-        'token': auth.token,
-      });
+      return CallableResult({'uid': auth.uid, 'token': auth.token});
     });
   });
 }
