@@ -96,21 +96,27 @@ List<Map<String, String>> _buildRequiredAPIs(
   return apis;
 }
 
+/// The base image URI template for Cloud Run deployment.
+/// The region prefix is substituted at generation time.
+const _baseImageUriSuffix =
+    '-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/go123';
+
 /// Builds a single endpoint entry as a map.
 Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
   final map = <String, dynamic>{
-    'entryPoint': endpoint.name,
-    'platform': 'gcfv2',
+    'platform': 'run',
   };
 
   final options = endpoint.extractOptions();
 
   // Region
-  if (options['region'] case final List<String> regions) {
-    map['region'] = regions;
+  List<String> regions;
+  if (options['region'] case final List<String> r) {
+    regions = r;
   } else {
-    map['region'] = ['us-central1'];
+    regions = ['us-central1'];
   }
+  map['region'] = regions;
 
   // Scalar options
   if (options['availableMemoryMb'] case final Object v) {
@@ -169,6 +175,14 @@ Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
 
   // Trigger configuration
   _addTrigger(map, endpoint, options);
+
+  // Cloud Run deployment fields
+  final primaryRegion = regions.first;
+  if (!primaryRegion.startsWith('{{')) {
+    map['baseImageUri'] = '$primaryRegion$_baseImageUriSuffix';
+  }
+  map['command'] = ['./bin/server'];
+  map['entryPoint'] = 'server';
 
   return map;
 }
