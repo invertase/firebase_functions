@@ -103,9 +103,7 @@ const _baseImageUriSuffix =
 
 /// Builds a single endpoint entry as a map.
 Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
-  final map = <String, dynamic>{
-    'platform': 'run',
-  };
+  final map = <String, dynamic>{'platform': 'run'};
 
   final options = endpoint.extractOptions();
 
