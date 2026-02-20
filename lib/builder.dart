@@ -24,7 +24,7 @@ Builder specBuilder(BuilderOptions options) => _SpecBuilder();
 class _SpecBuilder implements Builder {
   @override
   Map<String, List<String>> get buildExtensions => {
-    r'$package$': ['.dart_tool/firebase/functions.yaml'],
+    r'$package$': ['functions.yaml'],
   };
 
   @override
@@ -71,7 +71,7 @@ class _SpecBuilder implements Builder {
 
     // Write the YAML file
     await buildStep.writeAsString(
-      AssetId(buildStep.inputId.package, '.dart_tool/firebase/functions.yaml'),
+      AssetId(buildStep.inputId.package, 'functions.yaml'),
       yamlContent,
     );
   }

@@ -11,32 +11,8 @@ void runIntegrationTests(String Function() getExamplePath) {
       examplePath = getExamplePath();
     });
     test('functions.yaml was generated correctly', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
-
-      // Debug output
-      print('DEBUG: examplePath = $examplePath');
-      print('DEBUG: manifestPath = $manifestPath');
-      print('DEBUG: Directory.current.path = ${Directory.current.path}');
-      print('DEBUG: manifestFile.existsSync() = ${manifestFile.existsSync()}');
-
-      // Check if .dart_tool directory exists
-      final dartToolDir = Directory('$examplePath/.dart_tool');
-      print('DEBUG: .dart_tool exists = ${dartToolDir.existsSync()}');
-
-      if (dartToolDir.existsSync()) {
-        final firebaseDir = Directory('$examplePath/.dart_tool/firebase');
-        print(
-          'DEBUG: .dart_tool/firebase exists = ${firebaseDir.existsSync()}',
-        );
-
-        if (firebaseDir.existsSync()) {
-          print('DEBUG: Contents of .dart_tool/firebase:');
-          for (final entity in firebaseDir.listSync()) {
-            print('DEBUG:   ${entity.path}');
-          }
-        }
-      }
 
       expect(
         manifestFile.existsSync(),

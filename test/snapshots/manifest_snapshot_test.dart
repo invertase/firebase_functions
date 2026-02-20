@@ -46,7 +46,7 @@ void main() {
 
       // Read Dart-generated YAML
       final dartYaml = File(
-        'example/basic/.dart_tool/firebase/functions.yaml',
+        'example/basic/functions.yaml',
       ).readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
@@ -1350,7 +1350,7 @@ void main() {
 
       // Read Dart-generated YAML
       final dartYaml = File(
-        'example/with_options/.dart_tool/firebase/functions.yaml',
+        'example/with_options/functions.yaml',
       ).readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;

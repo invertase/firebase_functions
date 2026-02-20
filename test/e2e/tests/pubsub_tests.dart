@@ -24,7 +24,7 @@ void runPubSubTests(
 
     test('function is registered with emulator', () {
       // Verify the function was loaded in manifest
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
 
       // Debug output

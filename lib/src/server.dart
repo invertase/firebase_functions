@@ -672,7 +672,7 @@ FutureOr<Response> _handleFunctionsManifest(
   }
 
   // Read the generated manifest file
-  final manifestPath = '.dart_tool/firebase/functions.yaml';
+  final manifestPath = 'functions.yaml';
   final manifestFile = File(manifestPath);
 
   if (!manifestFile.existsSync()) {

@@ -23,8 +23,6 @@ coverage/
 # Firebase Functions specific
 # Generated manifest files (build artifacts, not committed)
 example/nodejs_reference/functions.yaml
-example/basic/.dart_tool/firebase/functions.yaml
-example/with_options/.dart_tool/firebase/functions.yaml
 **/functions.yaml
 
 # Node.js (for nodejs_reference example)
