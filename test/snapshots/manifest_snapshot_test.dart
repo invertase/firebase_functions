@@ -45,9 +45,7 @@ void main() {
       }
 
       // Read Dart-generated YAML
-      final dartYaml = File(
-        'example/basic/functions.yaml',
-      ).readAsStringSync();
+      final dartYaml = File('example/basic/functions.yaml').readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
