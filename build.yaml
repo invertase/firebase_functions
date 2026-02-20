@@ -4,6 +4,6 @@ builders:
     builder_factories: ["specBuilder"]
     build_extensions:
       "$package$":
-        - ".dart_tool/firebase/functions.yaml"
+        - "functions.yaml"
     auto_apply: root_package
     build_to: source

@@ -21,7 +21,7 @@ dart pub get
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-This produces `.dart_tool/firebase/functions.yaml`, which the Firebase CLI
+This produces `functions.yaml`, which the Firebase CLI
 reads to discover your functions.
 
 ## Compile the server

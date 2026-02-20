@@ -101,7 +101,7 @@ else
 fi
 
 echo "Checking generated manifest..."
-if [ ! -f ".dart_tool/firebase/functions.yaml" ]; then
+if [ ! -f "functions.yaml" ]; then
     echo -e "${RED}✗${NC} functions.yaml not generated"
     exit 1
 fi
@@ -109,7 +109,7 @@ fi
 echo -e "${GREEN}✓${NC} Manifest generated successfully"
 echo ""
 echo "Generated manifest:"
-cat .dart_tool/firebase/functions.yaml
+cat functions.yaml
 
 cd "$ROOT_DIR"
 echo ""
@@ -169,7 +169,7 @@ else
     echo -e "${RED}✗${NC} Snapshot tests failed"
     echo ""
     echo "Dart manifest:"
-    cat example/basic/.dart_tool/firebase/functions.yaml
+    cat example/basic/functions.yaml
     echo ""
     echo "Node.js manifest:"
     cat example/nodejs_reference/nodejs_manifest.json

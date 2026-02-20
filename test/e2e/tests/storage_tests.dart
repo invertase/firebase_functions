@@ -25,7 +25,7 @@ void runStorageTests(
     });
 
     test('function is registered with emulator', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
 
       expect(

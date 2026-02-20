@@ -10,7 +10,7 @@ build/
 
 # Firebase Functions generated manifest
 # We keep this in git for snapshot testing, but you might want to ignore it in production
-# .dart_tool/firebase/functions.yaml
+# functions.yaml
 
 # IDE
 .vscode/

@@ -65,7 +65,7 @@ void main() {
     print('✓ Functions built successfully');
 
     // Debug: Check if functions.yaml exists after build
-    final functionsYamlPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+    final functionsYamlPath = '$examplePath/functions.yaml';
     final functionsYamlFile = File(functionsYamlPath);
     print(
       'DEBUG: After build, functions.yaml exists = ${functionsYamlFile.existsSync()}',

@@ -29,7 +29,7 @@ void runSchedulerTests(
 
     test('function is registered in manifest', () {
       // Verify the function was loaded in manifest
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
 
       expect(
@@ -57,7 +57,7 @@ void runSchedulerTests(
     });
 
     test('function with options is registered in manifest', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
       final manifestContent = manifestFile.readAsStringSync();
 
@@ -84,7 +84,7 @@ void runSchedulerTests(
     });
 
     test('cloudscheduler API is in requiredAPIs', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
       final manifestContent = manifestFile.readAsStringSync();
 

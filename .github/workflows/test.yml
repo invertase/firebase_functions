@@ -71,7 +71,7 @@ jobs:
 
       - name: Verify functions.yaml was generated
         run: |
-          if [ ! -f "example/basic/.dart_tool/firebase/functions.yaml" ]; then
+          if [ ! -f "example/basic/functions.yaml" ]; then
             echo "Error: functions.yaml was not generated"
             exit 1
           fi
@@ -80,13 +80,13 @@ jobs:
       - name: Display generated manifest
         run: |
           echo "Generated Dart manifest:"
-          cat example/basic/.dart_tool/firebase/functions.yaml
+          cat example/basic/functions.yaml
 
       - name: Upload generated manifest
         uses: actions/upload-artifact@v4
         with:
           name: dart-manifest
-          path: example/basic/.dart_tool/firebase/functions.yaml
+          path: example/basic/functions.yaml
           retention-days: 7
 
   # Snapshot tests - compare Dart manifest with Node.js reference
@@ -217,13 +217,13 @@ jobs:
       - name: Display all manifests
         run: |
           echo "========== DART BASIC MANIFEST =========="
-          cat example/basic/.dart_tool/firebase/functions.yaml
+          cat example/basic/functions.yaml
           echo ""
           echo "========== NODE.JS BASIC MANIFEST =========="
           cat example/nodejs_reference/nodejs_manifest.json
           echo ""
           echo "========== DART OPTIONS MANIFEST =========="
-          cat example/with_options/.dart_tool/firebase/functions.yaml
+          cat example/with_options/functions.yaml
           echo ""
           echo "========== NODE.JS OPTIONS MANIFEST =========="
           cat example/with_options_nodejs/nodejs_manifest.json
@@ -237,9 +237,9 @@ jobs:
         with:
           name: manifests-comparison
           path: |
-            example/basic/.dart_tool/firebase/functions.yaml
+            example/basic/functions.yaml
             example/nodejs_reference/nodejs_manifest.json
-            example/with_options/.dart_tool/firebase/functions.yaml
+            example/with_options/functions.yaml
             example/with_options_nodejs/nodejs_manifest.json
           retention-days: 30
 
@@ -290,7 +290,7 @@ jobs:
 
       - name: Verify functions.yaml exists
         run: |
-          if [ ! -f "example/basic/.dart_tool/firebase/functions.yaml" ]; then
+          if [ ! -f "example/basic/functions.yaml" ]; then
             echo "Error: functions.yaml was not generated"
             exit 1
           fi
@@ -315,7 +315,7 @@ jobs:
         with:
           name: e2e-test-logs
           path: |
-            example/basic/.dart_tool/firebase/functions.yaml
+            example/basic/functions.yaml
             example/basic/firebase-debug.log
           retention-days: 7
 
