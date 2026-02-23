@@ -22,7 +22,7 @@ coverage/
 
 # Firebase Functions specific
 # Generated manifest files (build artifacts, not committed)
-example/nodejs_reference/functions.yaml
+test/fixtures/nodejs_reference/functions.yaml
 **/functions.yaml
 
 # Node.js (for nodejs_reference example)
@@ -162,8 +162,8 @@ doc/api/
 *.log
 
 # Snapshot test artifacts (regenerate locally)
-example/nodejs_reference/nodejs_manifest.json
-example/with_options_nodejs/nodejs_manifest.json
+test/fixtures/nodejs_reference/nodejs_manifest.json
+test/fixtures/with_options_nodejs/nodejs_manifest.json
 
 # Package manager locks
 # Keep nodejs_reference/package-lock.json for CI NPM caching
