@@ -179,9 +179,9 @@ dart analyze --fatal-infos
 dart test --exclude-tags=snapshot,integration
 
 # Generate Dart manifest
-cd example/basic
+cd test/fixtures/dart_reference
 dart run build_runner build --delete-conflicting-outputs
-cd ../..
+cd ../../..
 
 # Generate Node.js manifest
 cd test/fixtures/nodejs_reference

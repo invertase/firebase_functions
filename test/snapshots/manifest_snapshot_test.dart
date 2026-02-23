@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 void main() {
-  group('Basic Example Snapshot Tests', () {
+  group('Manifest Snapshot Tests', () {
     late Map<String, dynamic> dartManifest;
     late Map<String, dynamic> nodejsManifest;
 
@@ -24,7 +24,7 @@ void main() {
         'build_runner',
         'build',
         '--delete-conflicting-outputs',
-      ], workingDirectory: 'example/basic');
+      ], workingDirectory: 'test/fixtures/dart_reference');
 
       if (buildResult.exitCode != 0) {
         throw Exception(
@@ -45,7 +45,7 @@ void main() {
       }
 
       // Read Dart-generated YAML
-      final dartYaml = File('example/basic/functions.yaml').readAsStringSync();
+      final dartYaml = File('test/fixtures/dart_reference/functions.yaml').readAsStringSync();
       final dartParsed = loadYaml(dartYaml);
       dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
 
@@ -302,14 +302,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(37),
+        equals(42),
         reason:
-            'Should discover 37 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab)',
+            'Should discover 42 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(37),
-        reason: 'Node.js reference should also have 36 endpoints',
+        equals(42),
+        reason: 'Node.js reference should also have 42 endpoints',
       );
 
       // Verify both manifests have the same endpoint names
@@ -1605,92 +1605,10 @@ void main() {
       expect(dartTrigger['retry'], equals(false));
       expect(nodejsTrigger['retry'], equals(false));
     });
-  });
 
-  group('Options Example Snapshot Tests', () {
-    late Map<String, dynamic> dartManifest;
-    late Map<String, dynamic> nodejsManifest;
-
-    setUpAll(() async {
-      // Generate the options example manifest
-      print('Generating options Dart manifest via build_runner...');
-      final buildResult = await Process.run('dart', [
-        'run',
-        'build_runner',
-        'build',
-        '--delete-conflicting-outputs',
-      ], workingDirectory: 'example/with_options');
-
-      if (buildResult.exitCode != 0) {
-        throw Exception(
-          'build_runner failed: ${buildResult.stderr}\n${buildResult.stdout}',
-        );
-      }
-
-      // Generate Node.js manifest via extract script
-      print('Generating Node.js manifest via extract-manifest.js...');
-      await _ensureNodeModules('test/fixtures/with_options_nodejs');
-      final nodeResult = await Process.run('node', [
-        'extract-manifest.js',
-      ], workingDirectory: 'test/fixtures/with_options_nodejs');
-      if (nodeResult.exitCode != 0) {
-        throw Exception(
-          'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
-        );
-      }
-
-      // Read Dart-generated YAML
-      final dartYaml = File(
-        'example/with_options/functions.yaml',
-      ).readAsStringSync();
-      final dartParsed = loadYaml(dartYaml);
-      dartManifest = _yamlToJson(dartParsed) as Map<String, dynamic>;
-
-      // Read Node.js reference JSON
-      final nodejsJson = File(
-        'test/fixtures/with_options_nodejs/nodejs_manifest.json',
-      ).readAsStringSync();
-      nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
-    });
-
-    test('should have same specVersion', () {
-      expect(dartManifest['specVersion'], equals('v1alpha1'));
-      expect(nodejsManifest['specVersion'], equals('v1alpha1'));
-    });
-
-    test('should have matching requiredAPIs', () {
-      final dartAPIs = dartManifest['requiredAPIs'] as List;
-      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
-
-      expect(dartAPIs.length, equals(1));
-      expect(nodejsAPIs.length, equals(1));
-
-      expect(
-        (dartAPIs[0] as Map)['api'],
-        equals('cloudfunctions.googleapis.com'),
-      );
-      expect(
-        (nodejsAPIs[0] as Map)['api'],
-        equals('cloudfunctions.googleapis.com'),
-      );
-    });
-
-    test('should discover 5 functions', () {
-      final dartEndpoints = dartManifest['endpoints'] as Map;
-      final nodejsEndpoints = nodejsManifest['endpoints'] as Map;
-
-      expect(dartEndpoints.keys.length, equals(5));
-      expect(nodejsEndpoints.keys.length, equals(5));
-
-      // Verify both have the same endpoint names
-      for (final name in dartEndpoints.keys) {
-        expect(
-          nodejsEndpoints.containsKey(name),
-          isTrue,
-          reason: 'Node.js manifest should contain endpoint "$name"',
-        );
-      }
-    });
+    // =========================================================================
+    // Options Tests (formerly separate with_options fixture)
+    // =========================================================================
 
     test('httpsFull should have all GlobalOptions in manifest', () {
       final dartFunc = _getEndpoint(dartManifest, 'httpsFull')!;

@@ -61,17 +61,17 @@ jobs:
       - name: Install dependencies (root)
         run: dart pub get
 
-      - name: Install dependencies (example)
-        working-directory: example/basic
+      - name: Install dependencies (fixture)
+        working-directory: test/fixtures/dart_reference
         run: dart pub get
 
       - name: Run build_runner
-        working-directory: example/basic
+        working-directory: test/fixtures/dart_reference
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Verify functions.yaml was generated
         run: |
-          if [ ! -f "example/basic/functions.yaml" ]; then
+          if [ ! -f "test/fixtures/dart_reference/functions.yaml" ]; then
             echo "Error: functions.yaml was not generated"
             exit 1
           fi
@@ -80,13 +80,13 @@ jobs:
       - name: Display generated manifest
         run: |
           echo "Generated Dart manifest:"
-          cat example/basic/functions.yaml
+          cat test/fixtures/dart_reference/functions.yaml
 
       - name: Upload generated manifest
         uses: actions/upload-artifact@v4
         with:
           name: dart-manifest
-          path: example/basic/functions.yaml
+          path: test/fixtures/dart_reference/functions.yaml
           retention-days: 7
 
   # Snapshot tests - compare Dart manifest with Node.js reference
@@ -109,35 +109,21 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: |
-            test/fixtures/nodejs_reference/package-lock.json
-            test/fixtures/with_options_nodejs/package-lock.json
+          cache-dependency-path: test/fixtures/nodejs_reference/package-lock.json
 
       - name: Install Dart dependencies
         run: dart pub get
 
-      - name: Install example dependencies (basic)
-        working-directory: example/basic
+      - name: Install fixture dependencies (basic)
+        working-directory: test/fixtures/dart_reference
         run: dart pub get
 
       - name: Generate Dart manifest (basic)
-        working-directory: example/basic
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Install example dependencies (with_options)
-        working-directory: example/with_options
-        run: dart pub get
-
-      - name: Generate Dart manifest (with_options)
-        working-directory: example/with_options
+        working-directory: test/fixtures/dart_reference
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Install Node.js dependencies (nodejs_reference)
         working-directory: test/fixtures/nodejs_reference
-        run: npm ci
-
-      - name: Install Node.js dependencies (with_options_nodejs)
-        working-directory: test/fixtures/with_options_nodejs
         run: npm ci
 
       - name: Generate Node.js manifest
@@ -177,56 +163,13 @@ jobs:
           echo "Node.js manifest generated:"
           cat nodejs_manifest.json
 
-      - name: Generate Node.js manifest (with_options)
-        working-directory: test/fixtures/with_options_nodejs
-        run: |
-          echo "Starting firebase-functions server for options example..."
-          GCLOUD_PROJECT="test-project" \
-          PORT="8081" \
-          FUNCTIONS_CONTROL_API="true" \
-          npx firebase-functions > /tmp/ff_options.log 2>&1 &
-
-          FF_PID=$!
-          echo "Server PID: $FF_PID"
-
-          # Wait for server to be ready
-          echo "Waiting for server to start..."
-          for i in {1..30}; do
-            if curl -s http://localhost:8081/__/functions.yaml > /dev/null 2>&1; then
-              echo "✓ Server is ready"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "Error: Server failed to start"
-              cat /tmp/ff_options.log
-              exit 1
-            fi
-            sleep 1
-          done
-
-          # Fetch manifest
-          echo "Fetching manifest..."
-          curl -s http://localhost:8081/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
-
-          # Stop server
-          kill $FF_PID 2>/dev/null || true
-
-          echo "Node.js options manifest generated:"
-          cat nodejs_manifest.json
-
       - name: Display all manifests
         run: |
-          echo "========== DART BASIC MANIFEST =========="
-          cat example/basic/functions.yaml
+          echo "========== DART MANIFEST =========="
+          cat test/fixtures/dart_reference/functions.yaml
           echo ""
-          echo "========== NODE.JS BASIC MANIFEST =========="
+          echo "========== NODE.JS MANIFEST =========="
           cat test/fixtures/nodejs_reference/nodejs_manifest.json
-          echo ""
-          echo "========== DART OPTIONS MANIFEST =========="
-          cat example/with_options/functions.yaml
-          echo ""
-          echo "========== NODE.JS OPTIONS MANIFEST =========="
-          cat test/fixtures/with_options_nodejs/nodejs_manifest.json
 
       - name: Run snapshot comparison tests
         run: dart test test/snapshots/manifest_snapshot_test.dart --reporter=expanded
@@ -237,10 +180,8 @@ jobs:
         with:
           name: manifests-comparison
           path: |
-            example/basic/functions.yaml
+            test/fixtures/dart_reference/functions.yaml
             test/fixtures/nodejs_reference/nodejs_manifest.json
-            example/with_options/functions.yaml
-            test/fixtures/with_options_nodejs/nodejs_manifest.json
           retention-days: 30
 
   # E2E tests with Firebase Emulator
@@ -280,17 +221,17 @@ jobs:
       - name: Install dependencies (root)
         run: dart pub get
 
-      - name: Install dependencies (example)
-        working-directory: example/basic
+      - name: Install dependencies (fixture)
+        working-directory: test/fixtures/dart_reference
         run: dart pub get
 
       - name: Build functions
-        working-directory: example/basic
+        working-directory: test/fixtures/dart_reference
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Verify functions.yaml exists
         run: |
-          if [ ! -f "example/basic/functions.yaml" ]; then
+          if [ ! -f "test/fixtures/dart_reference/functions.yaml" ]; then
             echo "Error: functions.yaml was not generated"
             exit 1
           fi
@@ -298,7 +239,7 @@ jobs:
 
       - name: Create .env.local for params
         run: |
-          cat > example/basic/.env.local << 'EOF'
+          cat > test/fixtures/dart_reference/.env.local << 'EOF'
           WELCOME_MESSAGE=Hello from Dart Functions!
           MIN_INSTANCES=0
           IS_PRODUCTION=false
@@ -315,8 +256,8 @@ jobs:
         with:
           name: e2e-test-logs
           path: |
-            example/basic/functions.yaml
-            example/basic/firebase-debug.log
+            test/fixtures/dart_reference/functions.yaml
+            test/fixtures/dart_reference/firebase-debug.log
           retention-days: 7
 
   # Test result summary
