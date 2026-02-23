@@ -93,6 +93,13 @@ List<Map<String, String>> _buildRequiredAPIs(
     });
   }
 
+  if (endpoints.values.any((e) => e.type == 'taskQueue')) {
+    apis.add({
+      'api': 'cloudtasks.googleapis.com',
+      'reason': 'Needed for task queue functions',
+    });
+  }
+
   return apis;
 }
 
@@ -301,6 +308,46 @@ void _addTrigger(
         'eventFilters': {'bucket': endpoint.storageBucket},
         'retry': false,
       };
+
+    case 'taskQueue':
+      final taskQueueTrigger = <String, dynamic>{};
+
+      // Retry config
+      final retryConfig = <String, dynamic>{};
+      if (endpoint.taskQueueRetryConfig != null) {
+        final rc = endpoint.taskQueueRetryConfig!;
+        if (rc['maxAttempts'] case final Object v) {
+          retryConfig['maxAttempts'] = v;
+        }
+        if (rc['maxRetrySeconds'] case final Object v) {
+          retryConfig['maxRetrySeconds'] = v;
+        }
+        if (rc['maxBackoffSeconds'] case final Object v) {
+          retryConfig['maxBackoffSeconds'] = v;
+        }
+        if (rc['maxDoublings'] case final Object v) {
+          retryConfig['maxDoublings'] = v;
+        }
+        if (rc['minBackoffSeconds'] case final Object v) {
+          retryConfig['minBackoffSeconds'] = v;
+        }
+      }
+      taskQueueTrigger['retryConfig'] = retryConfig;
+
+      // Rate limits
+      final rateLimits = <String, dynamic>{};
+      if (endpoint.taskQueueRateLimits != null) {
+        final rl = endpoint.taskQueueRateLimits!;
+        if (rl['maxConcurrentDispatches'] case final Object v) {
+          rateLimits['maxConcurrentDispatches'] = v;
+        }
+        if (rl['maxDispatchesPerSecond'] case final Object v) {
+          rateLimits['maxDispatchesPerSecond'] = v;
+        }
+      }
+      taskQueueTrigger['rateLimits'] = rateLimits;
+
+      map['taskQueueTrigger'] = taskQueueTrigger;
 
     case 'scheduler' when endpoint.schedule != null:
       final trigger = <String, dynamic>{'schedule': endpoint.schedule};

@@ -5,6 +5,7 @@
  */
 
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onTaskDispatched } = require("firebase-functions/v2/tasks");
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
 const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onValueCreated, onValueUpdated, onValueDeleted, onValueWritten } = require("firebase-functions/v2/database");
@@ -426,5 +427,41 @@ exports.onSchedule_0_9___15 = onSchedule(
   },
   (event) => {
     console.log("Weekday morning report triggered");
+  }
+);
+
+// =============================================================================
+// Task Queue trigger examples
+// =============================================================================
+
+// Basic task queue function
+exports.processOrder = onTaskDispatched(
+  (request) => {
+    console.log("Processing order:", request.data?.orderId);
+    console.log("Task ID:", request.id);
+    console.log("Queue:", request.queueName);
+    console.log("Retry count:", request.retryCount);
+  }
+);
+
+// Task queue function with options
+exports.sendEmail = onTaskDispatched(
+  {
+    retryConfig: {
+      maxAttempts: 5,
+      maxRetrySeconds: 300,
+      minBackoffSeconds: 10,
+      maxBackoffSeconds: 60,
+      maxDoublings: 3,
+    },
+    rateLimits: {
+      maxConcurrentDispatches: 100,
+      maxDispatchesPerSecond: 50,
+    },
+    memory: "512MiB",
+  },
+  (request) => {
+    console.log("Sending email to:", request.data?.to);
+    console.log("Subject:", request.data?.subject);
   }
 );

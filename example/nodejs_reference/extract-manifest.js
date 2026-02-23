@@ -137,6 +137,8 @@ function normalizeEndpoint(name, endpoint) {
     result.blockingTrigger = normalizeBlockingTrigger(endpoint.blockingTrigger);
   } else if (endpoint.scheduleTrigger) {
     result.scheduleTrigger = normalizeScheduleTrigger(endpoint.scheduleTrigger);
+  } else if (endpoint.taskQueueTrigger !== undefined) {
+    result.taskQueueTrigger = normalizeTaskQueueTrigger(endpoint.taskQueueTrigger);
   }
 
   return result;
@@ -204,6 +206,40 @@ function normalizeScheduleTrigger(trigger) {
     if (Object.keys(rc).length > 0) {
       result.retryConfig = rc;
     }
+  }
+
+  return result;
+}
+
+function normalizeTaskQueueTrigger(trigger) {
+  const result = {};
+
+  // Include retryConfig only with non-null/non-ResetValue values
+  if (trigger.retryConfig && typeof trigger.retryConfig === "object") {
+    const rc = {};
+    for (const [key, value] of Object.entries(trigger.retryConfig)) {
+      const wired = wireValue(value);
+      if (wired !== undefined && wired !== null) {
+        rc[key] = wired;
+      }
+    }
+    result.retryConfig = rc;
+  } else {
+    result.retryConfig = {};
+  }
+
+  // Include rateLimits only with non-null/non-ResetValue values
+  if (trigger.rateLimits && typeof trigger.rateLimits === "object") {
+    const rl = {};
+    for (const [key, value] of Object.entries(trigger.rateLimits)) {
+      const wired = wireValue(value);
+      if (wired !== undefined && wired !== null) {
+        rl[key] = wired;
+      }
+    }
+    result.rateLimits = rl;
+  } else {
+    result.rateLimits = {};
   }
 
   return result;
