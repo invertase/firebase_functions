@@ -3,7 +3,13 @@ name: Tests
 on:
   push:
     branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Dart package analysis and formatting
@@ -35,8 +41,16 @@ jobs:
         run: dart format --output=none --set-exit-if-changed .
         if: matrix.sdk == 'stable'
 
-      - name: Analyze project
-        run: dart analyze --fatal-infos
+      - name: Analyze all packages
+        run: |
+          dart analyze --fatal-infos
+          for dir in example/*/; do
+            if [ -f "$dir/pubspec.yaml" ]; then
+              echo "Analyzing $dir..."
+              dart analyze --fatal-infos "$dir"
+            fi
+          done
+          dart analyze --fatal-infos test/fixtures/dart_reference
 
       # TODO: Re-enable when unit tests are added
       # - name: Run unit tests
