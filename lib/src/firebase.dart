@@ -14,6 +14,7 @@ import 'pubsub/pubsub_namespace.dart';
 import 'remote_config/remote_config_namespace.dart';
 import 'scheduler/scheduler_namespace.dart';
 import 'storage/storage_namespace.dart';
+import 'tasks/tasks_namespace.dart';
 
 /// Main Firebase Functions instance.
 ///
@@ -103,6 +104,9 @@ class Firebase {
 
   /// Cloud Storage triggers namespace.
   StorageNamespace get storage => StorageNamespace(this);
+
+  /// Task queue triggers namespace.
+  TasksNamespace get tasks => TasksNamespace(this);
 }
 
 /// Extension for internal function registration.

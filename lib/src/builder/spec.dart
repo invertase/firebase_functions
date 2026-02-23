@@ -52,11 +52,13 @@ class EndpointSpec {
     this.retryConfig,
     this.storageBucket,
     this.storageEventType,
+    this.taskQueueRetryConfig,
+    this.taskQueueRateLimits,
     this.options,
     this.variableToParamName = const {},
   });
   final String name;
-  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking', 'scheduler', 'storage'
+  // 'https', 'callable', 'pubsub', 'firestore', 'database', 'alert', 'blocking', 'scheduler', 'storage', 'taskQueue'
   final String type;
   final String? topic; // For Pub/Sub functions
   final String? firestoreEventType; // For Firestore: onDocumentCreated, etc.
@@ -77,6 +79,9 @@ class EndpointSpec {
   final Map<String, dynamic>? retryConfig; // For Scheduler: retry configuration
   final String? storageBucket; // For Storage: bucket name
   final String? storageEventType; // For Storage: onObjectFinalized, etc.
+  final Map<String, dynamic>?
+  taskQueueRetryConfig; // For Tasks: retry configuration
+  final Map<String, dynamic>? taskQueueRateLimits; // For Tasks: rate limits
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 

@@ -91,3 +91,5 @@ export 'src/scheduler/scheduler.dart';
 export 'src/server.dart' show fireUp;
 // Storage triggers
 export 'src/storage/storage.dart';
+// Task queue triggers
+export 'src/tasks/tasks.dart';

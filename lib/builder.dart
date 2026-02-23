@@ -192,6 +192,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         '$_pkg/src/scheduler/scheduler_namespace.dart#SchedulerNamespace',
         ['onSchedule'],
       ),
+      _Namespace(
+        _extractTaskQueueFunction,
+        '$_pkg/src/tasks/tasks_namespace.dart#TasksNamespace',
+        ['onTaskDispatched'],
+      ),
     ];
   }
   final Resolver resolver;
@@ -658,6 +663,86 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
+  }
+
+  /// Extracts a Task Queue function declaration.
+  void _extractTaskQueueFunction(MethodInvocation node, String methodName) {
+    // Extract function name from named argument
+    final functionName = node.extractLiteralForArg('name');
+    if (functionName == null) return;
+
+    // Extract options if present
+    final optionsArg = node.findOptionsArg();
+    Map<String, dynamic>? retryConfig;
+    Map<String, dynamic>? rateLimits;
+
+    if (optionsArg != null) {
+      retryConfig = _extractTaskQueueRetryConfig(optionsArg);
+      rateLimits = _extractTaskQueueRateLimits(optionsArg);
+    }
+
+    endpoints[functionName] = EndpointSpec(
+      name: functionName,
+      type: 'taskQueue',
+      taskQueueRetryConfig: retryConfig,
+      taskQueueRateLimits: rateLimits,
+      options: optionsArg,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts TaskQueueRetryConfig from TaskQueueOptions.
+  Map<String, dynamic>? _extractTaskQueueRetryConfig(
+    InstanceCreationExpression node,
+  ) {
+    final retryConfigArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'retryConfig')
+        .map((e) => e.expression)
+        .firstOrNull;
+
+    if (retryConfigArg is! InstanceCreationExpression) return null;
+
+    final config = <String, dynamic>{};
+
+    for (final arg in retryConfigArg.argumentList.arguments) {
+      if (arg is! NamedExpression) continue;
+
+      final fieldName = arg.name.label.name;
+      final value = _extractRetryConfigValue(arg.expression);
+      if (value != null) {
+        config[fieldName] = value;
+      }
+    }
+
+    return config.isEmpty ? null : config;
+  }
+
+  /// Extracts TaskQueueRateLimits from TaskQueueOptions.
+  Map<String, dynamic>? _extractTaskQueueRateLimits(
+    InstanceCreationExpression node,
+  ) {
+    final rateLimitsArg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == 'rateLimits')
+        .map((e) => e.expression)
+        .firstOrNull;
+
+    if (rateLimitsArg is! InstanceCreationExpression) return null;
+
+    final config = <String, dynamic>{};
+
+    for (final arg in rateLimitsArg.argumentList.arguments) {
+      if (arg is! NamedExpression) continue;
+
+      final fieldName = arg.name.label.name;
+      final value = _extractRetryConfigValue(arg.expression);
+      if (value != null) {
+        config[fieldName] = value;
+      }
+    }
+
+    return config.isEmpty ? null : config;
   }
 
   /// Extracts timeZone from ScheduleOptions.

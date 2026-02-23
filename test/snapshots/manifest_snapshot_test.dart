@@ -145,7 +145,7 @@ void main() {
         equals(nodejsAPIs.length),
         reason: 'Should have same number of requiredAPIs',
       );
-      expect(dartAPIs.length, equals(3));
+      expect(dartAPIs.length, equals(4));
 
       // Check each API matches
       for (final nodejsApi in nodejsAPIs) {
@@ -242,6 +242,31 @@ void main() {
       );
     });
 
+    test('should include cloudtasks API in requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      final dartApi = dartAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudtasks.googleapis.com',
+        orElse: () => null,
+      );
+      final nodejsApi = nodejsAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'cloudtasks.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(dartApi, isNotNull);
+      expect(nodejsApi, isNotNull);
+      expect(
+        (dartApi as Map)['reason'],
+        equals('Needed for task queue functions'),
+      );
+      expect(
+        (nodejsApi as Map)['reason'],
+        equals('Needed for task queue functions'),
+      );
+    });
+
     // =========================================================================
     // Endpoint Count Tests
     // =========================================================================
@@ -252,14 +277,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(32),
+        equals(34),
         reason:
-            'Should discover 32 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Scheduler)',
+            'Should discover 34 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Scheduler + 2 Tasks)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(32),
-        reason: 'Node.js reference should also have 32 endpoints',
+        equals(34),
+        reason: 'Node.js reference should also have 34 endpoints',
       );
 
       // Verify both manifests have the same endpoint names
@@ -1311,6 +1336,94 @@ void main() {
 
       expect(dartFunc!['availableMemoryMb'], equals(256));
       expect(nodejsFunc!['availableMemoryMb'], equals(256));
+    });
+
+    // =========================================================================
+    // Task Queue Tests
+    // =========================================================================
+
+    test('should have basic task queue function', () {
+      final dartFunc = _getEndpoint(dartManifest, 'processOrder');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'processOrder');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['taskQueueTrigger'], isNotNull);
+      expect(nodejsFunc!['taskQueueTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['taskQueueTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['taskQueueTrigger'] as Map;
+
+      // Both should have empty retryConfig and rateLimits for defaults
+      expect(dartTrigger['retryConfig'], isA<Map<dynamic, dynamic>>());
+      expect(nodejsTrigger['retryConfig'], isA<Map<dynamic, dynamic>>());
+      expect(dartTrigger['rateLimits'], isA<Map<dynamic, dynamic>>());
+      expect(nodejsTrigger['rateLimits'], isA<Map<dynamic, dynamic>>());
+
+      // Empty configs (defaults)
+      expect((dartTrigger['retryConfig'] as Map).isEmpty, isTrue);
+      expect((nodejsTrigger['retryConfig'] as Map).isEmpty, isTrue);
+      expect((dartTrigger['rateLimits'] as Map).isEmpty, isTrue);
+      expect((nodejsTrigger['rateLimits'] as Map).isEmpty, isTrue);
+    });
+
+    test('should have task queue function with retry config', () {
+      final dartFunc = _getEndpoint(dartManifest, 'sendEmail');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'sendEmail');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['taskQueueTrigger'], isNotNull);
+      expect(nodejsFunc!['taskQueueTrigger'], isNotNull);
+
+      final dartTrigger = dartFunc['taskQueueTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['taskQueueTrigger'] as Map;
+
+      final dartRetry = dartTrigger['retryConfig'] as Map;
+      final nodejsRetry = nodejsTrigger['retryConfig'] as Map;
+
+      expect(dartRetry['maxAttempts'], equals(5));
+      expect(nodejsRetry['maxAttempts'], equals(5));
+      expect(dartRetry['maxRetrySeconds'], equals(300));
+      expect(nodejsRetry['maxRetrySeconds'], equals(300));
+      expect(dartRetry['minBackoffSeconds'], equals(10));
+      expect(nodejsRetry['minBackoffSeconds'], equals(10));
+      expect(dartRetry['maxBackoffSeconds'], equals(60));
+      expect(nodejsRetry['maxBackoffSeconds'], equals(60));
+      expect(dartRetry['maxDoublings'], equals(3));
+      expect(nodejsRetry['maxDoublings'], equals(3));
+    });
+
+    test('should have task queue function with rate limits', () {
+      final dartFunc = _getEndpoint(dartManifest, 'sendEmail');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'sendEmail');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['taskQueueTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['taskQueueTrigger'] as Map;
+
+      final dartRateLimits = dartTrigger['rateLimits'] as Map;
+      final nodejsRateLimits = nodejsTrigger['rateLimits'] as Map;
+
+      expect(dartRateLimits['maxConcurrentDispatches'], equals(100));
+      expect(nodejsRateLimits['maxConcurrentDispatches'], equals(100));
+      expect(dartRateLimits['maxDispatchesPerSecond'], equals(50));
+      expect(nodejsRateLimits['maxDispatchesPerSecond'], equals(50));
+    });
+
+    test('task queue function should have memory option', () {
+      final dartFunc = _getEndpoint(dartManifest, 'sendEmail');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'sendEmail');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['availableMemoryMb'], equals(512));
+      expect(nodejsFunc!['availableMemoryMb'], equals(512));
     });
   });
 
