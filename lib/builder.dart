@@ -202,6 +202,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         '$_pkg/src/eventarc/eventarc_namespace.dart#EventarcNamespace',
         ['onCustomEventPublished'],
       ),
+      _Namespace(
+        _extractTestLabFunction,
+        '$_pkg/src/test_lab/test_lab_namespace.dart#TestLabNamespace',
+        ['onTestMatrixCompleted'],
+      ),
     ];
   }
   final Resolver resolver;
@@ -723,6 +728,20 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       eventarcChannel: channel ?? 'locations/us-central1/channels/firebase',
       eventarcFilters: filters,
       options: optionsArg,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts a Test Lab function declaration.
+  void _extractTestLabFunction(MethodInvocation node, String methodName) {
+    // Test Lab has a single event type and no filters,
+    // so the function name is always 'onTestMatrixCompleted'.
+    const functionName = 'onTestMatrixCompleted';
+
+    endpoints[functionName] = EndpointSpec(
+      name: functionName,
+      type: 'testLab',
+      options: node.findOptionsArg(),
       variableToParamName: _variableToParamName,
     );
   }

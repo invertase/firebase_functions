@@ -367,6 +367,13 @@ void _addTrigger(
       };
       map['eventTrigger'] = trigger;
 
+    case 'testLab':
+      map['eventTrigger'] = <String, dynamic>{
+        'eventType': 'google.firebase.testlab.testMatrix.v1.completed',
+        'eventFilters': <String, dynamic>{},
+        'retry': false,
+      };
+
     case 'scheduler' when endpoint.schedule != null:
       final trigger = <String, dynamic>{'schedule': endpoint.schedule};
       if (endpoint.timeZone != null) {
