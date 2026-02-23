@@ -34,10 +34,10 @@ void main() {
 
       // Generate Node.js manifest via extract script
       print('Generating Node.js manifest via extract-manifest.js...');
-      await _ensureNodeModules('example/nodejs_reference');
+      await _ensureNodeModules('test/fixtures/nodejs_reference');
       final nodeResult = await Process.run('node', [
         'extract-manifest.js',
-      ], workingDirectory: 'example/nodejs_reference');
+      ], workingDirectory: 'test/fixtures/nodejs_reference');
       if (nodeResult.exitCode != 0) {
         throw Exception(
           'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
@@ -51,7 +51,7 @@ void main() {
 
       // Read Node.js reference JSON
       final nodejsJson = File(
-        'example/nodejs_reference/nodejs_manifest.json',
+        'test/fixtures/nodejs_reference/nodejs_manifest.json',
       ).readAsStringSync();
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });
@@ -1629,10 +1629,10 @@ void main() {
 
       // Generate Node.js manifest via extract script
       print('Generating Node.js manifest via extract-manifest.js...');
-      await _ensureNodeModules('example/with_options_nodejs');
+      await _ensureNodeModules('test/fixtures/with_options_nodejs');
       final nodeResult = await Process.run('node', [
         'extract-manifest.js',
-      ], workingDirectory: 'example/with_options_nodejs');
+      ], workingDirectory: 'test/fixtures/with_options_nodejs');
       if (nodeResult.exitCode != 0) {
         throw Exception(
           'extract-manifest.js failed: ${nodeResult.stderr}\n${nodeResult.stdout}',
@@ -1648,7 +1648,7 @@ void main() {
 
       // Read Node.js reference JSON
       final nodejsJson = File(
-        'example/with_options_nodejs/nodejs_manifest.json',
+        'test/fixtures/with_options_nodejs/nodejs_manifest.json',
       ).readAsStringSync();
       nodejsManifest = jsonDecode(nodejsJson) as Map<String, dynamic>;
     });

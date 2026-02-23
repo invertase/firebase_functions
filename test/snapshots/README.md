@@ -10,7 +10,7 @@ The snapshot tests verify that the Dart Firebase Functions builder generates dep
 
 ### Reference Implementation
 
-**Node.js Example**: `example/nodejs_reference/`
+**Node.js Example**: `test/fixtures/nodejs_reference/`
 - Contains equivalent functions written in Node.js
 - Manifest extracted via firebase-functions HTTP endpoint
 - Saved as `nodejs_manifest.json` for comparison
@@ -34,7 +34,7 @@ dart test test/snapshots/manifest_snapshot_test.dart --reporter=expanded
 When the Node.js SDK is updated or the example functions change, regenerate the reference manifest:
 
 ```bash
-cd example/nodejs_reference
+cd test/fixtures/nodejs_reference
 
 # Start firebase-functions with control API enabled
 GCLOUD_PROJECT="test-project" \
