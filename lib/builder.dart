@@ -727,7 +727,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     );
   }
 
-  /// Extracts a Map<String, String> field from an InstanceCreationExpression.
+  /// Extracts a `Map<String, String>` field from an [InstanceCreationExpression].
   Map<String, String>? _extractStringMapField(
     InstanceCreationExpression node,
     String fieldName,
