@@ -106,9 +106,7 @@ void main(List<String> args) async {
     firebase.https.onRequest(
       name: 'helloWorld',
       // ignore: non_const_argument_for_const_parameter
-      options: HttpsOptions(
-        minInstances: DeployOption.param(minInstances),
-      ),
+      options: HttpsOptions(minInstances: DeployOption.param(minInstances)),
       (request) async {
         return Response.ok(welcomeMessage.value());
       },
