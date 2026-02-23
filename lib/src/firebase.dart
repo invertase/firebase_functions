@@ -7,6 +7,7 @@ import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
 import 'database/database_namespace.dart';
+import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'identity/identity_namespace.dart';
@@ -86,6 +87,9 @@ class Firebase {
 
   /// Firestore triggers namespace.
   FirestoreNamespace get firestore => FirestoreNamespace(this);
+
+  /// Eventarc triggers namespace.
+  EventarcNamespace get eventarc => EventarcNamespace(this);
 
   /// Realtime Database triggers namespace.
   DatabaseNamespace get database => DatabaseNamespace(this);

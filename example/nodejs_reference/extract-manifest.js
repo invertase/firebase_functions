@@ -165,6 +165,12 @@ function normalizeEventTrigger(trigger) {
   }
 
   result.retry = trigger.retry === true ? true : false;
+
+  // Include channel for Eventarc triggers
+  if (trigger.channel) {
+    result.channel = trigger.channel;
+  }
+
   return result;
 }
 

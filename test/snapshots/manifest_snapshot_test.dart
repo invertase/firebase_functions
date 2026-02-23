@@ -145,7 +145,7 @@ void main() {
         equals(nodejsAPIs.length),
         reason: 'Should have same number of requiredAPIs',
       );
-      expect(dartAPIs.length, equals(4));
+      expect(dartAPIs.length, equals(5));
 
       // Check each API matches
       for (final nodejsApi in nodejsAPIs) {
@@ -242,6 +242,31 @@ void main() {
       );
     });
 
+    test('should include eventarcpublishing API in requiredAPIs', () {
+      final dartAPIs = dartManifest['requiredAPIs'] as List;
+      final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
+
+      final dartApi = dartAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'eventarcpublishing.googleapis.com',
+        orElse: () => null,
+      );
+      final nodejsApi = nodejsAPIs.firstWhere(
+        (api) => (api as Map)['api'] == 'eventarcpublishing.googleapis.com',
+        orElse: () => null,
+      );
+
+      expect(dartApi, isNotNull);
+      expect(nodejsApi, isNotNull);
+      expect(
+        (dartApi as Map)['reason'],
+        equals('Needed for custom event functions'),
+      );
+      expect(
+        (nodejsApi as Map)['reason'],
+        equals('Needed for custom event functions'),
+      );
+    });
+
     test('should include cloudtasks API in requiredAPIs', () {
       final dartAPIs = dartManifest['requiredAPIs'] as List;
       final nodejsAPIs = nodejsManifest['requiredAPIs'] as List;
@@ -277,14 +302,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(34),
+        equals(36),
         reason:
-            'Should discover 34 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Scheduler + 2 Tasks)',
+            'Should discover 36 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(34),
-        reason: 'Node.js reference should also have 34 endpoints',
+        equals(36),
+        reason: 'Node.js reference should also have 36 endpoints',
       );
 
       // Verify both manifests have the same endpoint names
@@ -1266,6 +1291,110 @@ void main() {
       // Should not have eventFilterPathPatterns
       expect(dartTrigger['eventFilterPathPatterns'], isNull);
       expect(nodejsTrigger['eventFilterPathPatterns'], isNull);
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
+    });
+
+    // =========================================================================
+    // Eventarc Tests
+    // =========================================================================
+
+    test('should have basic Eventarc custom event trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onCustomEventPublished_comexamplemyevent',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onCustomEventPublished_comexamplemyevent',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(
+        nodejsFunc!['entryPoint'],
+        equals('onCustomEventPublished_comexamplemyevent'),
+      );
+      expect(dartFunc['platform'], equals('run'));
+      expect(nodejsFunc['platform'], equals('gcfv2'));
+      expect(dartFunc['eventTrigger'], isNotNull);
+      expect(nodejsFunc['eventTrigger'], isNotNull);
+    });
+
+    test('should have correct Eventarc event type and default channel', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onCustomEventPublished_comexamplemyevent',
+      )!;
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onCustomEventPublished_comexamplemyevent',
+      )!;
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
+
+      expect(dartTrigger['eventType'], equals('com.example.myevent'));
+      expect(nodejsTrigger['eventType'], equals('com.example.myevent'));
+
+      // Should have empty event filters
+      expect(dartTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect(
+        (dartTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
+      expect(nodejsTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect(
+        (nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
+
+      // Default Firebase channel
+      expect(
+        dartTrigger['channel'],
+        equals('locations/us-central1/channels/firebase'),
+      );
+      expect(
+        nodejsTrigger['channel'],
+        equals('locations/us-central1/channels/firebase'),
+      );
+    });
+
+    test('should have Eventarc trigger with custom channel and filters', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onCustomEventPublished_comexamplefiltered',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onCustomEventPublished_comexamplefiltered',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(dartTrigger['eventType'], equals('com.example.filtered'));
+      expect(nodejsTrigger['eventType'], equals('com.example.filtered'));
+
+      // Custom channel
+      expect(dartTrigger['channel'], equals('my-channel'));
+      expect(nodejsTrigger['channel'], equals('my-channel'));
+
+      // Custom filters
+      final dartFilters = dartTrigger['eventFilters'] as Map;
+      final nodejsFilters = nodejsTrigger['eventFilters'] as Map;
+
+      expect(dartFilters['category'], equals('important'));
+      expect(nodejsFilters['category'], equals('important'));
 
       expect(dartTrigger['retry'], equals(false));
       expect(nodejsTrigger['retry'], equals(false));

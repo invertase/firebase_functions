@@ -100,6 +100,13 @@ List<Map<String, String>> _buildRequiredAPIs(
     });
   }
 
+  if (endpoints.values.any((e) => e.type == 'eventarc')) {
+    apis.add({
+      'api': 'eventarcpublishing.googleapis.com',
+      'reason': 'Needed for custom event functions',
+    });
+  }
+
   return apis;
 }
 
@@ -348,6 +355,17 @@ void _addTrigger(
       taskQueueTrigger['rateLimits'] = rateLimits;
 
       map['taskQueueTrigger'] = taskQueueTrigger;
+
+    case 'eventarc' when endpoint.eventarcEventType != null:
+      final trigger = <String, dynamic>{
+        'eventType': endpoint.eventarcEventType,
+        'eventFilters': endpoint.eventarcFilters ?? <String, dynamic>{},
+        'retry': false,
+        'channel':
+            endpoint.eventarcChannel ??
+            'locations/us-central1/channels/firebase',
+      };
+      map['eventTrigger'] = trigger;
 
     case 'scheduler' when endpoint.schedule != null:
       final trigger = <String, dynamic>{'schedule': endpoint.schedule};

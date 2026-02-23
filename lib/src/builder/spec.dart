@@ -54,6 +54,9 @@ class EndpointSpec {
     this.storageEventType,
     this.taskQueueRetryConfig,
     this.taskQueueRateLimits,
+    this.eventarcEventType,
+    this.eventarcChannel,
+    this.eventarcFilters,
     this.options,
     this.variableToParamName = const {},
   });
@@ -82,6 +85,9 @@ class EndpointSpec {
   final Map<String, dynamic>?
   taskQueueRetryConfig; // For Tasks: retry configuration
   final Map<String, dynamic>? taskQueueRateLimits; // For Tasks: rate limits
+  final String? eventarcEventType; // For Eventarc: custom event type
+  final String? eventarcChannel; // For Eventarc: channel ID
+  final Map<String, String>? eventarcFilters; // For Eventarc: event filters
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 
