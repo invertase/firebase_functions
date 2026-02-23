@@ -95,3 +95,5 @@ export 'src/server.dart' show fireUp;
 export 'src/storage/storage.dart';
 // Task queue triggers
 export 'src/tasks/tasks.dart';
+// Test Lab triggers
+export 'src/test_lab/test_lab.dart';

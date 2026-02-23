@@ -302,13 +302,13 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(36),
+        equals(37),
         reason:
-            'Should discover 36 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks)',
+            'Should discover 37 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(36),
+        equals(37),
         reason: 'Node.js reference should also have 36 endpoints',
       );
 
@@ -1553,6 +1553,57 @@ void main() {
 
       expect(dartFunc!['availableMemoryMb'], equals(512));
       expect(nodejsFunc!['availableMemoryMb'], equals(512));
+    });
+
+    // =========================================================================
+    // Test Lab Tests
+    // =========================================================================
+
+    test('should have Test Lab onTestMatrixCompleted trigger', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onTestMatrixCompleted');
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onTestMatrixCompleted');
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(nodejsFunc!['entryPoint'], equals('onTestMatrixCompleted'));
+      expect(dartFunc['platform'], equals('run'));
+      expect(nodejsFunc['platform'], equals('gcfv2'));
+      expect(dartFunc['eventTrigger'], isNotNull);
+      expect(nodejsFunc['eventTrigger'], isNotNull);
+    });
+
+    test('should have correct Test Lab event type and empty filters', () {
+      final dartFunc = _getEndpoint(dartManifest, 'onTestMatrixCompleted')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'onTestMatrixCompleted')!;
+
+      final dartTrigger = dartFunc['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals('google.firebase.testlab.testMatrix.v1.completed'),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals('google.firebase.testlab.testMatrix.v1.completed'),
+      );
+
+      // Test Lab triggers have empty event filters
+      expect(dartTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect(
+        (dartTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
+      expect(nodejsTrigger['eventFilters'], isA<Map<dynamic, dynamic>>());
+      expect(
+        (nodejsTrigger['eventFilters'] as Map<dynamic, dynamic>).isEmpty,
+        isTrue,
+      );
+
+      expect(dartTrigger['retry'], equals(false));
+      expect(nodejsTrigger['retry'], equals(false));
     });
   });
 

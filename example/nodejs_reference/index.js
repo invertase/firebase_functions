@@ -17,6 +17,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onConfigUpdated } = require("firebase-functions/v2/remoteConfig");
 const { onObjectFinalized, onObjectArchived, onObjectDeleted, onObjectMetadataUpdated } = require("firebase-functions/v2/storage");
 const { onCustomEventPublished } = require("firebase-functions/v2/eventarc");
+const { onTestMatrixCompleted } = require("firebase-functions/v2/testLab");
 const { defineString, defineInt, defineBoolean } = require("firebase-functions/params");
 
 // =============================================================================
@@ -457,6 +458,22 @@ exports.onSchedule_0_9___15 = onSchedule(
   },
   (event) => {
     console.log("Weekday morning report triggered");
+  }
+);
+
+// =============================================================================
+// Test Lab trigger examples
+// =============================================================================
+
+// Test Lab onTestMatrixCompleted - triggers when a test matrix completes
+exports.onTestMatrixCompleted = onTestMatrixCompleted(
+  (event) => {
+    console.log("Test matrix completed:");
+    console.log("  Matrix ID:", event.data?.testMatrixId);
+    console.log("  State:", event.data?.state);
+    console.log("  Outcome:", event.data?.outcomeSummary);
+    console.log("  Client:", event.data?.clientInfo?.client);
+    console.log("  Results URI:", event.data?.resultStorage?.resultsUri);
   }
 );
 
