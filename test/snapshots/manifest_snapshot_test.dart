@@ -1356,10 +1356,10 @@ void main() {
       final nodejsTrigger = nodejsFunc['taskQueueTrigger'] as Map;
 
       // Both should have empty retryConfig and rateLimits for defaults
-      expect(dartTrigger['retryConfig'], isA<Map>());
-      expect(nodejsTrigger['retryConfig'], isA<Map>());
-      expect(dartTrigger['rateLimits'], isA<Map>());
-      expect(nodejsTrigger['rateLimits'], isA<Map>());
+      expect(dartTrigger['retryConfig'], isA<Map<dynamic, dynamic>>());
+      expect(nodejsTrigger['retryConfig'], isA<Map<dynamic, dynamic>>());
+      expect(dartTrigger['rateLimits'], isA<Map<dynamic, dynamic>>());
+      expect(nodejsTrigger['rateLimits'], isA<Map<dynamic, dynamic>>());
 
       // Empty configs (defaults)
       expect((dartTrigger['retryConfig'] as Map).isEmpty, isTrue);
