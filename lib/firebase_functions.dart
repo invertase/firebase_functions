@@ -79,6 +79,8 @@ export 'src/firestore/firestore.dart';
 export 'src/https/https.dart';
 // Identity triggers
 export 'src/identity/identity.dart';
+// Logger
+export 'src/logger/logger.dart' show Logger, LogEntry, LogSeverity, logger;
 // Pub/Sub triggers
 export 'src/pubsub/pubsub.dart';
 // Remote Config triggers
