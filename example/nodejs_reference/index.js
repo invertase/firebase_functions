@@ -16,6 +16,7 @@ const { beforeUserCreated, beforeUserSignedIn, beforeOperation } = require("fire
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onConfigUpdated } = require("firebase-functions/v2/remoteConfig");
 const { onObjectFinalized, onObjectArchived, onObjectDeleted, onObjectMetadataUpdated } = require("firebase-functions/v2/storage");
+const { onCustomEventPublished } = require("firebase-functions/v2/eventarc");
 const { defineString, defineInt, defineBoolean } = require("firebase-functions/params");
 
 // =============================================================================
@@ -398,6 +399,35 @@ exports.onObjectMetadataUpdated_demotestfirebasestorageapp = onObjectMetadataUpd
     console.log("Object metadata updated in bucket:", event.data.bucket);
     console.log("  Name:", event.data.name);
     console.log("  Metadata:", event.data.metadata);
+  }
+);
+
+// =============================================================================
+// Eventarc trigger examples
+// =============================================================================
+
+// Basic Eventarc custom event - uses default Firebase channel
+exports.onCustomEventPublished_comexamplemyevent = onCustomEventPublished(
+  "com.example.myevent",
+  (event) => {
+    console.log("Received custom Eventarc event:");
+    console.log("  Type:", event.type);
+    console.log("  Source:", event.source);
+    console.log("  Data:", event.data);
+  }
+);
+
+// Eventarc custom event with channel and filters
+exports.onCustomEventPublished_comexamplefiltered = onCustomEventPublished(
+  {
+    eventType: "com.example.filtered",
+    channel: "my-channel",
+    filters: { category: "important" },
+  },
+  (event) => {
+    console.log("Received filtered Eventarc event:");
+    console.log("  Type:", event.type);
+    console.log("  Data:", event.data);
   }
 );
 

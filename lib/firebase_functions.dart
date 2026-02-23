@@ -71,6 +71,8 @@ export 'src/common/options.dart';
 export 'src/common/params.dart';
 // Database triggers
 export 'src/database/database.dart';
+// Eventarc triggers
+export 'src/eventarc/eventarc.dart';
 // Core firebase instance
 export 'src/firebase.dart' show Firebase;
 // Firestore triggers

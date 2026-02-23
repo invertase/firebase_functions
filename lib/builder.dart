@@ -197,6 +197,11 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
         '$_pkg/src/tasks/tasks_namespace.dart#TasksNamespace',
         ['onTaskDispatched'],
       ),
+      _Namespace(
+        _extractEventarcFunction,
+        '$_pkg/src/eventarc/eventarc_namespace.dart#EventarcNamespace',
+        ['onCustomEventPublished'],
+      ),
     ];
   }
   final Resolver resolver;
@@ -689,6 +694,64 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
+  }
+
+  /// Extracts an Eventarc function declaration.
+  void _extractEventarcFunction(MethodInvocation node, String methodName) {
+    // Extract eventType from named argument
+    final eventType = node.extractLiteralForArg('eventType');
+    if (eventType == null) return;
+
+    // Generate function name from event type (remove non-alphanumeric chars)
+    final sanitizedType = eventType.replaceAll(RegExp('[^a-zA-Z0-9]'), '');
+    final functionName = 'onCustomEventPublished_$sanitizedType';
+
+    // Extract options if present (for channel and filters)
+    final optionsArg = node.findOptionsArg();
+    String? channel;
+    Map<String, String>? filters;
+
+    if (optionsArg != null) {
+      channel = _extractStringField(optionsArg, 'channel');
+      filters = _extractStringMapField(optionsArg, 'filters');
+    }
+
+    endpoints[functionName] = EndpointSpec(
+      name: functionName,
+      type: 'eventarc',
+      eventarcEventType: eventType,
+      eventarcChannel: channel ?? 'locations/us-central1/channels/firebase',
+      eventarcFilters: filters,
+      options: optionsArg,
+      variableToParamName: _variableToParamName,
+    );
+  }
+
+  /// Extracts a Map<String, String> field from an InstanceCreationExpression.
+  Map<String, String>? _extractStringMapField(
+    InstanceCreationExpression node,
+    String fieldName,
+  ) {
+    final arg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == fieldName)
+        .map((e) => e.expression)
+        .firstOrNull;
+
+    if (arg is! SetOrMapLiteral || !arg.isMap) return null;
+
+    final map = <String, String>{};
+    for (final element in arg.elements) {
+      if (element is MapLiteralEntry) {
+        final key = element.key;
+        final value = element.value;
+        if (key is StringLiteral && value is StringLiteral) {
+          map[key.stringValue!] = value.stringValue!;
+        }
+      }
+    }
+
+    return map.isEmpty ? null : map;
   }
 
   /// Extracts TaskQueueRetryConfig from TaskQueueOptions.
