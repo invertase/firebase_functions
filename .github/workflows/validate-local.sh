@@ -121,7 +121,7 @@ echo "========================================="
 echo ""
 
 echo "Installing Node.js dependencies..."
-cd example/nodejs_reference
+cd test/fixtures/nodejs_reference
 npm ci
 
 echo "Starting firebase-functions server..."
@@ -172,7 +172,7 @@ else
     cat example/basic/functions.yaml
     echo ""
     echo "Node.js manifest:"
-    cat example/nodejs_reference/nodejs_manifest.json
+    cat test/fixtures/nodejs_reference/nodejs_manifest.json
     exit 1
 fi
 

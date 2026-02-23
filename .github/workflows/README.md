@@ -184,7 +184,7 @@ dart run build_runner build --delete-conflicting-outputs
 cd ../..
 
 # Generate Node.js manifest
-cd example/nodejs_reference
+cd test/fixtures/nodejs_reference
 GCLOUD_PROJECT="test-project" \
 PORT="8080" \
 FUNCTIONS_CONTROL_API="true" \

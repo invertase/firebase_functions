@@ -110,8 +110,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: |
-            example/nodejs_reference/package-lock.json
-            example/with_options_nodejs/package-lock.json
+            test/fixtures/nodejs_reference/package-lock.json
+            test/fixtures/with_options_nodejs/package-lock.json
 
       - name: Install Dart dependencies
         run: dart pub get
@@ -133,15 +133,15 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Install Node.js dependencies (nodejs_reference)
-        working-directory: example/nodejs_reference
+        working-directory: test/fixtures/nodejs_reference
         run: npm ci
 
       - name: Install Node.js dependencies (with_options_nodejs)
-        working-directory: example/with_options_nodejs
+        working-directory: test/fixtures/with_options_nodejs
         run: npm ci
 
       - name: Generate Node.js manifest
-        working-directory: example/nodejs_reference
+        working-directory: test/fixtures/nodejs_reference
         run: |
           echo "Starting firebase-functions server..."
           GCLOUD_PROJECT="test-project" \
@@ -178,7 +178,7 @@ jobs:
           cat nodejs_manifest.json
 
       - name: Generate Node.js manifest (with_options)
-        working-directory: example/with_options_nodejs
+        working-directory: test/fixtures/with_options_nodejs
         run: |
           echo "Starting firebase-functions server for options example..."
           GCLOUD_PROJECT="test-project" \
@@ -220,13 +220,13 @@ jobs:
           cat example/basic/functions.yaml
           echo ""
           echo "========== NODE.JS BASIC MANIFEST =========="
-          cat example/nodejs_reference/nodejs_manifest.json
+          cat test/fixtures/nodejs_reference/nodejs_manifest.json
           echo ""
           echo "========== DART OPTIONS MANIFEST =========="
           cat example/with_options/functions.yaml
           echo ""
           echo "========== NODE.JS OPTIONS MANIFEST =========="
-          cat example/with_options_nodejs/nodejs_manifest.json
+          cat test/fixtures/with_options_nodejs/nodejs_manifest.json
 
       - name: Run snapshot comparison tests
         run: dart test test/snapshots/manifest_snapshot_test.dart --reporter=expanded
@@ -238,9 +238,9 @@ jobs:
           name: manifests-comparison
           path: |
             example/basic/functions.yaml
-            example/nodejs_reference/nodejs_manifest.json
+            test/fixtures/nodejs_reference/nodejs_manifest.json
             example/with_options/functions.yaml
-            example/with_options_nodejs/nodejs_manifest.json
+            test/fixtures/with_options_nodejs/nodejs_manifest.json
           retention-days: 30
 
   # E2E tests with Firebase Emulator
