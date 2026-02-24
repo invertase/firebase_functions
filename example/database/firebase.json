@@ -1,0 +1,21 @@
+{
+  "functions": [
+    {
+      "source": ".",
+      "codebase": "default",
+      "runtime": "dart3"
+    }
+  ],
+  "emulators": {
+    "database": {
+      "port": 9000
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true
+  }
+}
