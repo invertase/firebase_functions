@@ -163,12 +163,11 @@ doc/api/
 
 # Snapshot test artifacts (regenerate locally)
 test/fixtures/nodejs_reference/nodejs_manifest.json
-test/fixtures/with_options_nodejs/nodejs_manifest.json
 
 # Package manager locks
 # Keep nodejs_reference/package-lock.json for CI NPM caching
 # Ignore other example package-lock.json files
-example/basic/package-lock.json
+test/fixtures/dart_reference/package-lock.json
 
 # Build artifacts from CI
 artifacts/

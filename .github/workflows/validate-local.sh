@@ -88,8 +88,8 @@ echo "3. Running Builder Tests"
 echo "========================================="
 echo ""
 
-echo "Installing example dependencies..."
-cd example/basic
+echo "Installing fixture dependencies..."
+cd test/fixtures/dart_reference
 dart pub get
 
 echo "Running build_runner..."
@@ -169,7 +169,7 @@ else
     echo -e "${RED}✗${NC} Snapshot tests failed"
     echo ""
     echo "Dart manifest:"
-    cat example/basic/functions.yaml
+    cat test/fixtures/dart_reference/functions.yaml
     echo ""
     echo "Node.js manifest:"
     cat test/fixtures/nodejs_reference/nodejs_manifest.json

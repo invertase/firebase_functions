@@ -1,0 +1,16 @@
+name: https_example
+description: HTTPS trigger examples for Firebase Functions for Dart
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  firebase_functions: any
+  shelf: any
+
+dev_dependencies:
+  build_runner: ^2.10.5
+  lints: ^6.0.0

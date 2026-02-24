@@ -77,10 +77,10 @@ dart test --exclude-tags=snapshot,integration
 # Snapshot tests (compares generated manifests against Node.js reference)
 dart test test/snapshots/ -t snapshot
 
-# Build the manifest for an example project
-cd example/basic
+# Build the manifest for a test fixture
+cd test/fixtures/dart_reference
 dart run build_runner build --delete-conflicting-outputs
-cd ../..
+cd ../../..
 
 # End-to-end tests (requires Firebase Emulator)
 dart test test/e2e/e2e_test.dart

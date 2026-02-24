@@ -8,10 +8,20 @@ environment:
   sdk: ^3.9.0
 
 workspace:
-  - example/basic
-  - example/with_options
+  - example/https
+  - example/firestore
+  - example/pubsub
+  - example/database
+  - example/storage
+  - example/auth
+  - example/scheduler
+  - example/alerts
+  - example/eventarc
+  - example/tasks
+  - example/testlab
+  - example/remoteconfig
   - example/firestore_test
-  - example/hello_world
+  - test/fixtures/dart_reference
 
 dependencies:
   shelf: ^1.4.2

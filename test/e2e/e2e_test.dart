@@ -35,10 +35,8 @@ void main() {
   // Debug: Show Directory.current.path at module load time
   print('DEBUG e2e_test: Directory.current.path = ${Directory.current.path}');
 
-  final examplePath = '${Directory.current.path}/example/basic'.replaceAll(
-    '/test/e2e',
-    '',
-  );
+  final examplePath = '${Directory.current.path}/test/fixtures/dart_reference'
+      .replaceAll('/test/e2e', '');
 
   print('DEBUG e2e_test: examplePath = $examplePath');
 

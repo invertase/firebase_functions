@@ -1,5 +1,0 @@
-targets:
-  $default:
-    builders:
-      firebase_functions|spec_builder:
-        enabled: true
