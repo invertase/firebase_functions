@@ -9,7 +9,6 @@ environment:
 
 dependencies:
   firebase_functions: any
-  shelf: any
 
 dev_dependencies:
   build_runner: ^2.10.5
