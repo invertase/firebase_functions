@@ -23,8 +23,8 @@ void runIntegrationTests(String Function() getExamplePath) {
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('helloWorld'),
-        reason: 'Manifest should contain helloWorld function',
+        contains('helloworld'),
+        reason: 'Manifest should contain helloworld function',
       );
     });
   });

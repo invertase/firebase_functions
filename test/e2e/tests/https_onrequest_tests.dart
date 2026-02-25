@@ -16,32 +16,32 @@ void runHttpsOnRequestTests(
       client = getClient();
       emulator = getEmulator();
     });
-    test('helloWorld returns expected response', () async {
-      print('GET ${client.baseUrl}/helloWorld');
-      final response = await client.get('helloWorld');
+    test('helloworld returns expected response', () async {
+      print('GET ${client.baseUrl}/helloworld');
+      final response = await client.get('helloworld');
 
       expect(response.statusCode, equals(200));
       expect(response.body, contains('Hello from Dart Functions!'));
     });
 
-    test('helloWorld has correct content type', () async {
-      print('GET ${client.baseUrl}/helloWorld');
-      final response = await client.get('helloWorld');
+    test('helloworld has correct content type', () async {
+      print('GET ${client.baseUrl}/helloworld');
+      final response = await client.get('helloworld');
 
       expect(response.statusCode, equals(200));
       expect(response.headers['content-type'], contains('text/plain'));
     });
 
-    test('helloWorld accepts GET requests', () async {
-      print('GET ${client.baseUrl}/helloWorld');
-      final response = await client.get('helloWorld');
+    test('helloworld accepts GET requests', () async {
+      print('GET ${client.baseUrl}/helloworld');
+      final response = await client.get('helloworld');
 
       expect(response.statusCode, equals(200));
     });
 
-    test('helloWorld accepts POST requests', () async {
-      print('POST ${client.baseUrl}/helloWorld');
-      final response = await client.post('helloWorld');
+    test('helloworld accepts POST requests', () async {
+      print('POST ${client.baseUrl}/helloworld');
+      final response = await client.post('helloworld');
 
       expect(response.statusCode, equals(200));
     });
@@ -63,7 +63,7 @@ void runHttpsOnRequestTests(
 
         for (var i = 0; i < 5; i++) {
           futures.add(() async {
-            final response = await client.get('helloWorld');
+            final response = await client.get('helloworld');
             expect(response.statusCode, equals(200));
             expect(response.body, contains('Hello from Dart Functions!'));
           }());
@@ -75,13 +75,13 @@ void runHttpsOnRequestTests(
     );
 
     test('function is discoverable via emulator', () async {
-      print('GET ${client.baseUrl}/helloWorld');
-      final response = await client.get('helloWorld');
+      print('GET ${client.baseUrl}/helloworld');
+      final response = await client.get('helloworld');
 
       expect(
         response.statusCode,
         equals(200),
-        reason: 'Function helloWorld should be deployed',
+        reason: 'Function helloworld should be deployed',
       );
     });
 
@@ -90,8 +90,8 @@ void runHttpsOnRequestTests(
       emulator.clearOutputBuffer();
 
       // Make a request
-      print('GET ${client.baseUrl}/helloWorld (verifying execution logs)');
-      final response = await client.get('helloWorld');
+      print('GET ${client.baseUrl}/helloworld (verifying execution logs)');
+      final response = await client.get('helloworld');
 
       // Wait a bit for logs to be captured
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -101,7 +101,7 @@ void runHttpsOnRequestTests(
 
       // Verify Firebase emulator logged the execution
       final executionLogged = emulator.verifyFunctionExecution(
-        'us-central1-helloWorld',
+        'us-central1-helloworld',
       );
       expect(
         executionLogged,
@@ -114,7 +114,7 @@ void runHttpsOnRequestTests(
       final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
         'GET',
         200,
-        '/helloWorld',
+        '/helloworld',
       );
       expect(
         dartRuntimeLogged,

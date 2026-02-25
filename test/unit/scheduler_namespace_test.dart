@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 // Helper to find function by name
 FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
   try {
-    return firebase.functions.firstWhere((f) => f.name == name);
+    return firebase.functions.firstWhere((f) => f.name == name.toLowerCase());
   } catch (e) {
     return null;
   }

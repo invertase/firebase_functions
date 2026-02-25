@@ -64,7 +64,11 @@ class EmulatorHelper {
         '--non-interactive',
       ],
       workingDirectory: projectPath,
-      environment: {'FIREBASE_EMULATOR_HUB': 'true', ...Platform.environment},
+      environment: {
+        'FIREBASE_EMULATOR_HUB': 'true',
+        'FIREBASE_CLI_EXPERIMENTS': 'functionsrunapionly',
+        ...Platform.environment,
+      },
     );
 
     // Create completer to signal readiness
@@ -148,7 +152,7 @@ class EmulatorHelper {
         final request = await client
             .getUrl(
               Uri.parse(
-                'http://127.0.0.1:$functionsPort/demo-test/us-central1/helloWorld',
+                'http://127.0.0.1:$functionsPort/demo-test/us-central1/helloworld',
               ),
             )
             .timeout(const Duration(seconds: 5));

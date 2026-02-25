@@ -314,10 +314,14 @@ void main() {
         reason: 'Node.js reference should also have 42 endpoints',
       );
 
-      // Verify both manifests have the same endpoint names
+      // Verify both manifests have the same endpoint names (case-insensitive,
+      // since Dart lowercases endpoint keys for Cloud Run compatibility)
+      final nodejsLowerKeys = nodejsEndpoints.keys
+          .map((k) => (k as String).toLowerCase())
+          .toSet();
       for (final name in dartEndpoints.keys) {
         expect(
-          nodejsEndpoints.containsKey(name),
+          nodejsLowerKeys.contains((name as String).toLowerCase()),
           isTrue,
           reason: 'Node.js manifest should contain endpoint "$name"',
         );
@@ -335,7 +339,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('greet'));
       expect(nodejsFunc!['entryPoint'], equals('greet'));
       expect(dartFunc['platform'], equals('run'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
@@ -356,7 +360,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('greettyped'));
       expect(nodejsFunc!['entryPoint'], equals('greetTyped'));
       expect(dartFunc['callableTrigger'], isNotNull);
       expect(nodejsFunc['callableTrigger'], isNotNull);
@@ -369,7 +373,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('divide'));
       expect(nodejsFunc!['entryPoint'], equals('divide'));
       expect(dartFunc['callableTrigger'], isNotNull);
       expect(nodejsFunc['callableTrigger'], isNotNull);
@@ -382,7 +386,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('getauthinfo'));
       expect(nodejsFunc!['entryPoint'], equals('getAuthInfo'));
       expect(dartFunc['callableTrigger'], isNotNull);
       expect(nodejsFunc['callableTrigger'], isNotNull);
@@ -395,7 +399,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('countdown'));
       expect(nodejsFunc!['entryPoint'], equals('countdown'));
       expect(dartFunc['callableTrigger'], isNotNull);
       expect(nodejsFunc['callableTrigger'], isNotNull);
@@ -415,7 +419,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('helloworld'));
       expect(nodejsFunc!['entryPoint'], equals('helloWorld'));
       expect(dartFunc['platform'], equals('run'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
@@ -469,7 +473,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('onmessagepublished_mytopic'));
       expect(nodejsFunc!['entryPoint'], equals('onMessagePublished_mytopic'));
       expect(dartFunc['eventTrigger'], isNotNull);
       expect(nodejsFunc['eventTrigger'], isNotNull);
@@ -1082,7 +1086,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('onconfigupdated'));
       expect(nodejsFunc!['entryPoint'], equals('onConfigUpdated'));
       expect(dartFunc['platform'], equals('run'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
@@ -1139,7 +1143,10 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(
+        dartFunc!['entryPoint'],
+        equals('onobjectfinalized_demotestfirebasestorageapp'),
+      );
       expect(
         nodejsFunc!['entryPoint'],
         equals('onObjectFinalized_demotestfirebasestorageapp'),
@@ -1315,7 +1322,10 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(
+        dartFunc!['entryPoint'],
+        equals('oncustomeventpublished_comexamplemyevent'),
+      );
       expect(
         nodejsFunc!['entryPoint'],
         equals('onCustomEventPublished_comexamplemyevent'),
@@ -1568,7 +1578,7 @@ void main() {
       expect(dartFunc, isNotNull);
       expect(nodejsFunc, isNotNull);
 
-      expect(dartFunc!['entryPoint'], equals('server'));
+      expect(dartFunc!['entryPoint'], equals('ontestmatrixcompleted'));
       expect(nodejsFunc!['entryPoint'], equals('onTestMatrixCompleted'));
       expect(dartFunc['platform'], equals('run'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
@@ -1747,9 +1757,21 @@ void main() {
 }
 
 /// Gets an endpoint from the manifest.
+/// Looks up by exact name first, then falls back to case-insensitive match
+/// (Dart manifests use lowercase endpoint keys for Cloud Run compatibility).
 Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
   final endpoints = manifest['endpoints'] as Map?;
-  return endpoints?[name] as Map<String, dynamic>?;
+  if (endpoints == null) return null;
+  // Exact match first
+  if (endpoints[name] != null) return endpoints[name] as Map<String, dynamic>?;
+  // Case-insensitive fallback (Dart lowercases endpoint keys)
+  final lowerName = name.toLowerCase();
+  for (final key in endpoints.keys) {
+    if ((key as String).toLowerCase() == lowerName) {
+      return endpoints[key] as Map<String, dynamic>?;
+    }
+  }
+  return null;
 }
 
 /// Gets a param from the manifest by name.

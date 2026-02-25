@@ -38,10 +38,12 @@ Map<String, dynamic> _buildManifestMap(
   manifest['requiredAPIs'] = _buildRequiredAPIs(endpoints);
 
   // Endpoints section
+  // Endpoint keys are lowercased to produce valid Cloud Run service IDs
+  // (Cloud Run requires lowercase, digits, and hyphens only).
   if (endpoints.isNotEmpty) {
     manifest['endpoints'] = {
       for (final endpoint in endpoints.values)
-        endpoint.name: _buildEndpointMap(endpoint),
+        endpoint.name.toLowerCase(): _buildEndpointMap(endpoint),
     };
   }
 
@@ -194,7 +196,7 @@ Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
     map['baseImageUri'] = '$primaryRegion$_baseImageUriSuffix';
   }
   map['command'] = ['./bin/server'];
-  map['entryPoint'] = 'server';
+  map['entryPoint'] = endpoint.name.toLowerCase();
 
   return map;
 }
@@ -208,8 +210,9 @@ void _addTrigger(
   switch (endpoint.type) {
     case 'https':
       final httpsTrigger = <String, dynamic>{};
-      if (options['invoker'] case final List<String>? invokers) {
-        httpsTrigger['invoker'] = invokers ?? <String>[];
+      if (options['invoker'] case final List<String> invokers
+          when invokers.isNotEmpty) {
+        httpsTrigger['invoker'] = invokers;
       }
       map['httpsTrigger'] = httpsTrigger;
 

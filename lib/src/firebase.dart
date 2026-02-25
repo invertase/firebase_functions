@@ -147,8 +147,9 @@ extension FirebaseX on Firebase {
       throw StateError('Function "$name" is already registered');
     }
 
-    // Transform the name to be URL-safe
-    final transformedName = name.replaceAll(' ', '_');
+    // Transform the name to be URL-safe and Cloud Run compatible
+    // (Cloud Run service IDs must be lowercase with hyphens only)
+    final transformedName = name.replaceAll(' ', '_').toLowerCase();
 
     functions.add(
       FirebaseFunctionDeclaration(
