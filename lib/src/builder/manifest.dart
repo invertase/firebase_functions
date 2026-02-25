@@ -196,7 +196,7 @@ Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
     map['baseImageUri'] = '$primaryRegion$_baseImageUriSuffix';
   }
   map['command'] = ['./bin/server'];
-  map['entryPoint'] = 'server';
+  map['entryPoint'] = endpoint.name.toLowerCase();
 
   return map;
 }

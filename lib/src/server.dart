@@ -242,26 +242,10 @@ FutureOr<Response> _routeToTargetFunction(
     );
   }
 
-  // Validate signature type if specified
-  final signatureType = env.environment['FUNCTION_SIGNATURE_TYPE'];
-  if (signatureType != null) {
-    final isHttpSignature = signatureType == 'http';
-    final isHttpFunction = targetFunction.external;
-
-    // Signature type mismatch
-    if (isHttpSignature && !isHttpFunction) {
-      return Response.internalServerError(
-        body:
-            'Function "$functionTarget" is an event function but FUNCTION_SIGNATURE_TYPE=http',
-      );
-    }
-    if (!isHttpSignature && isHttpFunction) {
-      return Response.internalServerError(
-        body:
-            'Function "$functionTarget" is an HTTP function but FUNCTION_SIGNATURE_TYPE=$signatureType',
-      );
-    }
-  }
+  // Note: FUNCTION_SIGNATURE_TYPE validation is skipped for Dart Cloud Run
+  // deployments. All Dart functions (onRequest, onCall, event triggers) are
+  // served via HTTP in a single process, so the signature type distinction
+  // from the Node.js model does not apply here.
 
   // Validate HTTP method for event functions
   if (!targetFunction.external && request.method.toUpperCase() != 'POST') {
