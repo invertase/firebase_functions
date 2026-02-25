@@ -314,10 +314,14 @@ void main() {
         reason: 'Node.js reference should also have 42 endpoints',
       );
 
-      // Verify both manifests have the same endpoint names
+      // Verify both manifests have the same endpoint names (case-insensitive,
+      // since Dart lowercases endpoint keys for Cloud Run compatibility)
+      final nodejsLowerKeys = nodejsEndpoints.keys
+          .map((k) => (k as String).toLowerCase())
+          .toSet();
       for (final name in dartEndpoints.keys) {
         expect(
-          nodejsEndpoints.containsKey(name),
+          nodejsLowerKeys.contains((name as String).toLowerCase()),
           isTrue,
           reason: 'Node.js manifest should contain endpoint "$name"',
         );
@@ -1747,9 +1751,21 @@ void main() {
 }
 
 /// Gets an endpoint from the manifest.
+/// Looks up by exact name first, then falls back to case-insensitive match
+/// (Dart manifests use lowercase endpoint keys for Cloud Run compatibility).
 Map<String, dynamic>? _getEndpoint(Map<String, dynamic> manifest, String name) {
   final endpoints = manifest['endpoints'] as Map?;
-  return endpoints?[name] as Map<String, dynamic>?;
+  if (endpoints == null) return null;
+  // Exact match first
+  if (endpoints[name] != null) return endpoints[name] as Map<String, dynamic>?;
+  // Case-insensitive fallback (Dart lowercases endpoint keys)
+  final lowerName = name.toLowerCase();
+  for (final key in endpoints.keys) {
+    if ((key as String).toLowerCase() == lowerName) {
+      return endpoints[key] as Map<String, dynamic>?;
+    }
+  }
+  return null;
 }
 
 /// Gets a param from the manifest by name.

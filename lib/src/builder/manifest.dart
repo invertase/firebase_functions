@@ -38,10 +38,12 @@ Map<String, dynamic> _buildManifestMap(
   manifest['requiredAPIs'] = _buildRequiredAPIs(endpoints);
 
   // Endpoints section
+  // Endpoint keys are lowercased to produce valid Cloud Run service IDs
+  // (Cloud Run requires lowercase, digits, and hyphens only).
   if (endpoints.isNotEmpty) {
     manifest['endpoints'] = {
       for (final endpoint in endpoints.values)
-        endpoint.name: _buildEndpointMap(endpoint),
+        endpoint.name.toLowerCase(): _buildEndpointMap(endpoint),
     };
   }
 
