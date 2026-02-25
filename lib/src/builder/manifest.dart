@@ -210,8 +210,9 @@ void _addTrigger(
   switch (endpoint.type) {
     case 'https':
       final httpsTrigger = <String, dynamic>{};
-      if (options['invoker'] case final List<String>? invokers) {
-        httpsTrigger['invoker'] = invokers ?? <String>[];
+      if (options['invoker'] case final List<String> invokers
+          when invokers.isNotEmpty) {
+        httpsTrigger['invoker'] = invokers;
       }
       map['httpsTrigger'] = httpsTrigger;
 
