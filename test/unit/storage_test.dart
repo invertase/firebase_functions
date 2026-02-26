@@ -148,7 +148,10 @@ void main() {
       test('registers function with firebase', () {
         storage.onObjectArchived(bucket: 'my-bucket', (event) async {});
 
-        expect(_findFunction(firebase, 'on-object-archived-mybucket'), isNotNull);
+        expect(
+          _findFunction(firebase, 'on-object-archived-mybucket'),
+          isNotNull,
+        );
       });
 
       test('handler receives StorageEvent', () async {
@@ -174,7 +177,10 @@ void main() {
       test('registers function with firebase', () {
         storage.onObjectDeleted(bucket: 'my-bucket', (event) async {});
 
-        expect(_findFunction(firebase, 'on-object-deleted-mybucket'), isNotNull);
+        expect(
+          _findFunction(firebase, 'on-object-deleted-mybucket'),
+          isNotNull,
+        );
       });
 
       test('handler receives StorageEvent', () async {
