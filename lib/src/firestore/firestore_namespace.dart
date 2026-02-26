@@ -695,7 +695,6 @@ class FirestoreNamespace extends FunctionsNamespace {
           }
 
           final event = FirestoreAuthEvent<EmulatorDocumentSnapshot?>(
-            data: null,
             id: json['id'] as String,
             source: json['source'] as String,
             specversion: json['specversion'] as String,
