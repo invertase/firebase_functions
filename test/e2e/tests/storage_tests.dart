@@ -292,9 +292,7 @@ void runStorageTests(
       emulator.clearOutputBuffer();
 
       // Overwrite to trigger archive
-      final content2 = Uint8List.fromList(
-        utf8.encode('Replacement content'),
-      );
+      final content2 = Uint8List.fromList(utf8.encode('Replacement content'));
       await storageClient.uploadObject(
         objectPath,
         data: content2,
@@ -306,9 +304,7 @@ void runStorageTests(
       final logs = emulator.outputLines;
 
       // Verify the function logged the object name
-      final hasName = logs.any(
-        (line) => line.contains(objectPath),
-      );
+      final hasName = logs.any((line) => line.contains(objectPath));
 
       expect(
         hasName,
@@ -327,9 +323,7 @@ void runStorageTests(
       print('Uploading initial object...');
 
       // Upload initial object
-      final initial = Uint8List.fromList(
-        utf8.encode('Initial version'),
-      );
+      final initial = Uint8List.fromList(utf8.encode('Initial version'));
       await storageClient.uploadObject(
         objectPath,
         data: initial,
@@ -345,9 +339,7 @@ void runStorageTests(
 
       // Overwrite 3 times — each should archive the previous version
       for (var i = 1; i <= 3; i++) {
-        final content = Uint8List.fromList(
-          utf8.encode('Version $i content'),
-        );
+        final content = Uint8List.fromList(utf8.encode('Version $i content'));
         await storageClient.uploadObject(
           objectPath,
           data: content,
@@ -477,20 +469,10 @@ void runStorageTests(
         (line) => line.contains('test/metadata-verify.txt'),
       );
       // Verify metadata key appears in logs
-      final hasMetadata = logs.any(
-        (line) => line.contains('Metadata:'),
-      );
+      final hasMetadata = logs.any((line) => line.contains('Metadata:'));
 
-      expect(
-        hasName,
-        isTrue,
-        reason: 'Function should log the object name',
-      );
-      expect(
-        hasMetadata,
-        isTrue,
-        reason: 'Function should log the metadata',
-      );
+      expect(hasName, isTrue, reason: 'Function should log the object name');
+      expect(hasMetadata, isTrue, reason: 'Function should log the metadata');
 
       print('✓ Metadata event data received correctly');
     });
