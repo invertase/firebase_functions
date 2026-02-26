@@ -179,6 +179,102 @@ void main() {
     });
   });
 
+  group('SelectOption', () {
+    test('can be created with value only', () {
+      const option = SelectOption(value: 42);
+      expect(option.value, 42);
+      expect(option.label, isNull);
+    });
+
+    test('can be created with value and label', () {
+      const option = SelectOption(value: 512, label: 'Medium');
+      expect(option.value, 512);
+      expect(option.label, 'Medium');
+    });
+
+    test('works with String type', () {
+      const option = SelectOption(value: 'us-central1', label: 'US Central');
+      expect(option.value, 'us-central1');
+      expect(option.label, 'US Central');
+    });
+
+    test('works with double type', () {
+      const option = SelectOption(value: 0.5, label: 'Half');
+      expect(option.value, 0.5);
+      expect(option.label, 'Half');
+    });
+
+    test('select factory creates options with null labels', () {
+      final input = ParamInput.select([10, 20, 30]);
+      for (final option in input.options) {
+        expect(option.label, isNull);
+      }
+      expect(input.options.map((o) => o.value).toList(), [10, 20, 30]);
+    });
+
+    test('selectWithLabels factory maps labels to values', () {
+      final input = ParamInput.selectWithLabels({
+        'Small': 256,
+        'Medium': 512,
+        'Large': 1024,
+      });
+      expect(input.options[0].label, 'Small');
+      expect(input.options[0].value, 256);
+      expect(input.options[1].label, 'Medium');
+      expect(input.options[1].value, 512);
+      expect(input.options[2].label, 'Large');
+      expect(input.options[2].value, 1024);
+    });
+
+    test('multiSelect factory creates options with null labels', () {
+      final input = ParamInput.multiSelect(['a', 'b', 'c']);
+      for (final option in input.options) {
+        expect(option.label, isNull);
+      }
+      expect(input.options.map((o) => o.value).toList(), ['a', 'b', 'c']);
+    });
+
+    test('multiSelectWithLabels factory maps labels to values', () {
+      final input = ParamInput.multiSelectWithLabels({
+        'Option A': 'a',
+        'Option B': 'b',
+        'Option C': 'c',
+      });
+      expect(input, isA<MultiSelectParamInput>());
+      expect(input.options.length, 3);
+      expect(input.options[0].label, 'Option A');
+      expect(input.options[0].value, 'a');
+      expect(input.options[1].label, 'Option B');
+      expect(input.options[1].value, 'b');
+      expect(input.options[2].label, 'Option C');
+      expect(input.options[2].value, 'c');
+    });
+
+    test('can be used in SelectParamInput directly', () {
+      final input = SelectParamInput<String>(
+        options: [
+          SelectOption(value: 'us-central1', label: 'US Central'),
+          SelectOption(value: 'europe-west1', label: 'Europe West'),
+        ],
+      );
+      expect(input.options.length, 2);
+      expect(input.options[0].value, 'us-central1');
+      expect(input.options[1].label, 'Europe West');
+    });
+
+    test('can be used in MultiSelectParamInput directly', () {
+      final input = MultiSelectParamInput(
+        options: [
+          SelectOption(value: 'read', label: 'Read Access'),
+          SelectOption(value: 'write', label: 'Write Access'),
+        ],
+      );
+      expect(input.options.length, 2);
+      expect(input.options[0].value, 'read');
+      expect(input.options[1].label, 'Write Access');
+    });
+  });
+
   group('ParamInput', () {
     test('select creates SelectParamInput', () {
       final input = ParamInput.select([1, 2, 3]);
@@ -202,6 +298,17 @@ void main() {
       final input = ParamInput.multiSelect(['a', 'b', 'c']);
       expect(input, isA<MultiSelectParamInput>());
       expect(input.options.length, 3);
+    });
+
+    test('multiSelectWithLabels creates MultiSelectParamInput with labels', () {
+      final input = ParamInput.multiSelectWithLabels({
+        'Label A': 'val_a',
+        'Label B': 'val_b',
+      });
+      expect(input, isA<MultiSelectParamInput>());
+      expect(input.options.length, 2);
+      expect(input.options[0].label, 'Label A');
+      expect(input.options[0].value, 'val_a');
     });
 
     test('bucketPicker is a ResourceInput', () {
