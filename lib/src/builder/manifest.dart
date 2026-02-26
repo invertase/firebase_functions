@@ -120,7 +120,10 @@ const _baseImageUriSuffix =
 
 /// Builds a single endpoint entry as a map.
 Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
-  final map = <String, dynamic>{'platform': 'run'};
+  // Use "gcfv2" as the platform in the manifest so that firebase-tools
+  // recognises these as v2 CloudEvent functions (needed by the emulator).
+  // The Dart delegate converts this to "run" during `firebase deploy`.
+  final map = <String, dynamic>{'platform': 'gcfv2'};
 
   final options = endpoint.extractOptions();
 

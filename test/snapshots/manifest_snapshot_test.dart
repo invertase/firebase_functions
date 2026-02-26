@@ -342,7 +342,7 @@ void main() {
 
       expect(dartFunc!['entryPoint'], equals('greet'));
       expect(nodejsFunc!['entryPoint'], equals('greet'));
-      expect(dartFunc['platform'], equals('run'));
+      expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['callableTrigger'], isNotNull);
       expect(nodejsFunc['callableTrigger'], isNotNull);
@@ -422,7 +422,7 @@ void main() {
 
       expect(dartFunc!['entryPoint'], equals('hello-world'));
       expect(nodejsFunc!['entryPoint'], equals('helloWorld'));
-      expect(dartFunc['platform'], equals('run'));
+      expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['httpsTrigger'], isNotNull);
       expect(nodejsFunc['httpsTrigger'], isNotNull);
@@ -1089,7 +1089,7 @@ void main() {
 
       expect(dartFunc!['entryPoint'], equals('on-config-updated'));
       expect(nodejsFunc!['entryPoint'], equals('onConfigUpdated'));
-      expect(dartFunc['platform'], equals('run'));
+      expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['eventTrigger'], isNotNull);
       expect(nodejsFunc['eventTrigger'], isNotNull);
@@ -1152,7 +1152,7 @@ void main() {
         nodejsFunc!['entryPoint'],
         equals('onObjectFinalized_demotestfirebasestorageapp'),
       );
-      expect(dartFunc['platform'], equals('run'));
+      expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['eventTrigger'], isNotNull);
       expect(nodejsFunc['eventTrigger'], isNotNull);
@@ -1331,7 +1331,7 @@ void main() {
         nodejsFunc!['entryPoint'],
         equals('onCustomEventPublished_comexamplemyevent'),
       );
-      expect(dartFunc['platform'], equals('run'));
+      expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['eventTrigger'], isNotNull);
       expect(nodejsFunc['eventTrigger'], isNotNull);
@@ -1581,7 +1581,7 @@ void main() {
 
       expect(dartFunc!['entryPoint'], equals('on-test-matrix-completed'));
       expect(nodejsFunc!['entryPoint'], equals('onTestMatrixCompleted'));
-      expect(dartFunc['platform'], equals('run'));
+      expect(dartFunc['platform'], equals('gcfv2'));
       expect(nodejsFunc['platform'], equals('gcfv2'));
       expect(dartFunc['eventTrigger'], isNotNull);
       expect(nodejsFunc['eventTrigger'], isNotNull);
