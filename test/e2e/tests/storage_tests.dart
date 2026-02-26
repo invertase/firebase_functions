@@ -181,4 +181,197 @@ void runStorageTests(
       print('✓ All sequential uploads triggered');
     });
   });
+
+  group('Storage onObjectArchived', () {
+    late String examplePath;
+    late StorageClient storageClient;
+    late EmulatorHelper emulator;
+
+    setUpAll(() async {
+      examplePath = getExamplePath();
+      storageClient = getStorageClient();
+      emulator = getEmulator();
+
+      // Enable versioning so overwriting an object archives the old version
+      try {
+        await storageClient.enableVersioning();
+        print('✓ Bucket versioning enabled');
+      } catch (e) {
+        print('Warning: Could not enable versioning: $e');
+      }
+    });
+
+    test('function is registered with emulator', () {
+      final manifestPath = '$examplePath/functions.yaml';
+      final manifestFile = File(manifestPath);
+
+      expect(
+        manifestFile.existsSync(),
+        isTrue,
+        reason: 'functions.yaml should exist',
+      );
+
+      final manifestContent = manifestFile.readAsStringSync();
+      expect(
+        manifestContent,
+        contains('on-object-archived-demotestfirebasestorageapp'),
+        reason: 'Manifest should contain Storage archived function',
+      );
+    });
+
+    test('overwriting object triggers onObjectArchived', () async {
+      emulator.clearOutputBuffer();
+
+      final objectPath = 'test/archive-test.txt';
+
+      // Upload the object for the first time
+      final content1 = Uint8List.fromList(
+        utf8.encode('Original content for archiving'),
+      );
+      await storageClient.uploadObject(
+        objectPath,
+        data: content1,
+        contentType: 'text/plain',
+      );
+
+      // Wait for finalized trigger to complete
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Clear logs so we only capture the archive event
+      emulator.clearOutputBuffer();
+
+      print('Overwriting object to trigger archive...');
+
+      // Upload again with same path — archives the old version
+      final content2 = Uint8List.fromList(
+        utf8.encode('New content replacing archived version'),
+      );
+      await storageClient.uploadObject(
+        objectPath,
+        data: content2,
+        contentType: 'text/plain',
+      );
+
+      // Wait for function to process the event
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      final logs = emulator.outputLines;
+      final functionExecuted = logs.any(
+        (line) => line.contains('Object archived in bucket'),
+      );
+      expect(
+        functionExecuted,
+        isTrue,
+        reason:
+            'onObjectArchived should be triggered when overwriting an object. '
+            'Logs: ${logs.where((l) => l.contains("storage") || l.contains("Object") || l.contains("archived")).join("\n")}',
+      );
+
+      print('✓ onObjectArchived triggered');
+    });
+
+    test('function receives correct event data', () async {
+      emulator.clearOutputBuffer();
+
+      final objectPath = 'test/archive-metadata.txt';
+
+      // Upload the initial object
+      final content1 = Uint8List.fromList(
+        utf8.encode('Initial content for metadata test'),
+      );
+      await storageClient.uploadObject(
+        objectPath,
+        data: content1,
+        contentType: 'text/plain',
+      );
+
+      // Wait for finalized trigger
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Clear logs
+      emulator.clearOutputBuffer();
+
+      // Overwrite to trigger archive
+      final content2 = Uint8List.fromList(
+        utf8.encode('Replacement content'),
+      );
+      await storageClient.uploadObject(
+        objectPath,
+        data: content2,
+        contentType: 'text/plain',
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      final logs = emulator.outputLines;
+
+      // Verify the function logged the object name
+      final hasName = logs.any(
+        (line) => line.contains(objectPath),
+      );
+
+      expect(
+        hasName,
+        isTrue,
+        reason: 'Function should log the archived object name',
+      );
+
+      print('✓ Archive event data received correctly');
+    });
+
+    test('handles multiple overwrites in sequence', () async {
+      emulator.clearOutputBuffer();
+
+      final objectPath = 'test/archive-sequential.txt';
+
+      print('Uploading initial object...');
+
+      // Upload initial object
+      final initial = Uint8List.fromList(
+        utf8.encode('Initial version'),
+      );
+      await storageClient.uploadObject(
+        objectPath,
+        data: initial,
+        contentType: 'text/plain',
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Clear logs before overwrite sequence
+      emulator.clearOutputBuffer();
+
+      print('Overwriting object multiple times...');
+
+      // Overwrite 3 times — each should archive the previous version
+      for (var i = 1; i <= 3; i++) {
+        final content = Uint8List.fromList(
+          utf8.encode('Version $i content'),
+        );
+        await storageClient.uploadObject(
+          objectPath,
+          data: content,
+          contentType: 'text/plain',
+        );
+        print('  Uploaded version $i');
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+
+      // Wait for all triggers
+      await Future<void>.delayed(const Duration(seconds: 4));
+
+      final logs = emulator.outputLines;
+      final archiveCount = logs
+          .where((line) => line.contains('Object archived in bucket'))
+          .length;
+
+      expect(
+        archiveCount,
+        greaterThanOrEqualTo(3),
+        reason: 'All 3 overwrites should trigger onObjectArchived',
+      );
+
+      print('✓ All sequential overwrites triggered archive events');
+    });
+  });
 }

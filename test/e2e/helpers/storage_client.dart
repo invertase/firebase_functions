@@ -76,6 +76,28 @@ class StorageClient {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// Enables object versioning on the bucket.
+  ///
+  /// When versioning is enabled, overwriting an object archives the old version,
+  /// which triggers the `onObjectArchived` event.
+  Future<void> enableVersioning() async {
+    final url = Uri.parse('$baseUrl/storage/v1/b/$bucket');
+
+    final response = await _client.patch(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'versioning': {'enabled': true},
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw StorageException(
+        'Failed to enable versioning: ${response.statusCode} ${response.body}',
+      );
+    }
+  }
+
   /// Closes the HTTP client.
   void close() {
     _client.close();
