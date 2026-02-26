@@ -237,7 +237,9 @@ void runFirestoreTests(
       final retrieved = await client.getDocument('orders/$orderId');
       expect(retrieved, isNotNull);
       expect(retrieved!['fields']['product']['stringValue'], 'Widget');
-      print('✓ WithAuthContext trigger verified (check function logs for authType/authId)');
+      print(
+        '✓ WithAuthContext trigger verified (check function logs for authType/authId)',
+      );
 
       // Cleanup
       try {

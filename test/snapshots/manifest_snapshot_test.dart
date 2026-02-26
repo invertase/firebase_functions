@@ -694,15 +694,11 @@ void main() {
 
       expect(
         dartTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.created.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.created.withAuthContext'),
       );
       expect(
         nodejsTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.created.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.created.withAuthContext'),
       );
 
       final dartPatterns = dartTrigger['eventFilterPathPatterns'] as Map;
@@ -730,15 +726,11 @@ void main() {
 
       expect(
         dartTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.updated.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.updated.withAuthContext'),
       );
       expect(
         nodejsTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.updated.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.updated.withAuthContext'),
       );
     });
 
@@ -760,15 +752,11 @@ void main() {
 
       expect(
         dartTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.deleted.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.deleted.withAuthContext'),
       );
       expect(
         nodejsTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.deleted.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.deleted.withAuthContext'),
       );
     });
 
@@ -790,15 +778,11 @@ void main() {
 
       expect(
         dartTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.written.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.written.withAuthContext'),
       );
       expect(
         nodejsTrigger['eventType'],
-        equals(
-          'google.cloud.firestore.document.v1.written.withAuthContext',
-        ),
+        equals('google.cloud.firestore.document.v1.written.withAuthContext'),
       );
     });
 

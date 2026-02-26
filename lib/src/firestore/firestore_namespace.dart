@@ -594,9 +594,7 @@ class FirestoreNamespace extends FunctionsNamespace {
   /// );
   /// ```
   void onDocumentCreatedWithAuthContext(
-    Future<void> Function(
-      FirestoreAuthEvent<EmulatorDocumentSnapshot?> event,
-    )
+    Future<void> Function(FirestoreAuthEvent<EmulatorDocumentSnapshot?> event)
     handler, {
     // ignore: experimental_member_use
     @mustBeConst required String document,
@@ -822,8 +820,7 @@ class FirestoreNamespace extends FunctionsNamespace {
               after: afterSnapshot,
             );
 
-            final event =
-                FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?>(
+            final event = FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?>(
               data: change,
               id: ceId,
               source: ceSource,
@@ -880,9 +877,7 @@ class FirestoreNamespace extends FunctionsNamespace {
   /// );
   /// ```
   void onDocumentDeletedWithAuthContext(
-    Future<void> Function(
-      FirestoreAuthEvent<EmulatorDocumentSnapshot?> event,
-    )
+    Future<void> Function(FirestoreAuthEvent<EmulatorDocumentSnapshot?> event)
     handler, {
     // ignore: experimental_member_use
     @mustBeConst required String document,
@@ -1080,8 +1075,7 @@ class FirestoreNamespace extends FunctionsNamespace {
               after: afterSnapshot,
             );
 
-            final event =
-                FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?>(
+            final event = FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?>(
               data: change,
               id: ceId,
               source: ceSource,
