@@ -2,7 +2,6 @@
 ///
 /// This test ensures that the Dart builder generates manifests compatible
 /// with the Node.js Firebase Functions SDK.
-@Tags(['snapshot'])
 library;
 
 import 'dart:convert';
