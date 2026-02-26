@@ -172,3 +172,4 @@ test/fixtures/dart_reference/package-lock.json
 # Build artifacts from CI
 artifacts/
 example/https/.env.*
+**/bin/server
