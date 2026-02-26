@@ -50,7 +50,7 @@ Request _createRemoteConfigRequest({
 
   return Request(
     'POST',
-    Uri.parse('http://localhost/onConfigUpdated'),
+    Uri.parse('http://localhost/on-config-updated'),
     body: jsonEncode(cloudEvent),
     headers: {'content-type': 'application/json'},
   );
@@ -70,13 +70,13 @@ void main() {
       test('registers function with firebase', () {
         remoteConfig.onConfigUpdated((event) async {});
 
-        expect(_findFunction(firebase, 'onConfigUpdated'), isNotNull);
+        expect(_findFunction(firebase, 'on-config-updated'), isNotNull);
       });
 
       test('registered function is not external', () {
         remoteConfig.onConfigUpdated((event) async {});
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         expect(func.external, isFalse);
       });
 
@@ -87,7 +87,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final request = _createRemoteConfigRequest(
           versionNumber: 42,
           description: 'My config update',
@@ -114,7 +114,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(_createRemoteConfigRequest());
 
         expect(response.statusCode, 200);
@@ -138,7 +138,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(
           _createRemoteConfigRequest(updateOrigin: 'REST_API'),
         );
@@ -154,7 +154,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(
           _createRemoteConfigRequest(updateType: 'FORCED_UPDATE'),
         );
@@ -170,7 +170,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(
           _createRemoteConfigRequest(updateType: 'ROLLBACK', rollbackSource: 5),
         );
@@ -187,7 +187,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(_createRemoteConfigRequest());
 
         expect(response.statusCode, 200);
@@ -197,7 +197,7 @@ void main() {
       test('returns 200 on success', () async {
         remoteConfig.onConfigUpdated((event) async {});
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(_createRemoteConfigRequest());
 
         expect(response.statusCode, 200);
@@ -208,7 +208,7 @@ void main() {
           throw Exception('Handler error');
         });
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final response = await func.handler(_createRemoteConfigRequest());
 
         expect(response.statusCode, 500);
@@ -219,10 +219,10 @@ void main() {
       test('returns 400 for invalid CloudEvent', () async {
         remoteConfig.onConfigUpdated((event) async {});
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/onConfigUpdated'),
+          Uri.parse('http://localhost/on-config-updated'),
           body: 'not json',
           headers: {'content-type': 'application/json'},
         );
@@ -234,10 +234,10 @@ void main() {
       test('returns 400 for wrong event type', () async {
         remoteConfig.onConfigUpdated((event) async {});
 
-        final func = _findFunction(firebase, 'onConfigUpdated')!;
+        final func = _findFunction(firebase, 'on-config-updated')!;
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/onConfigUpdated'),
+          Uri.parse('http://localhost/on-config-updated'),
           body: jsonEncode({
             'specversion': '1.0',
             'id': 'test',

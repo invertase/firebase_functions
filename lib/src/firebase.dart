@@ -6,6 +6,7 @@ import 'package:googleapis_firestore/googleapis_firestore.dart' as gfs;
 import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
+import 'common/cloud_run_id.dart';
 import 'database/database_namespace.dart';
 import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
@@ -147,9 +148,9 @@ extension FirebaseX on Firebase {
       throw StateError('Function "$name" is already registered');
     }
 
-    // Transform the name to be URL-safe and Cloud Run compatible
-    // (Cloud Run service IDs must be lowercase with hyphens only)
-    final transformedName = name.replaceAll(' ', '_').toLowerCase();
+    // Transform the name to a valid Cloud Run service ID
+    // (lowercase, digits, and hyphens only, <50 chars)
+    final transformedName = toCloudRunId(name);
 
     functions.add(
       FirebaseFunctionDeclaration(

@@ -16,39 +16,39 @@ void runHttpsOnRequestTests(
       client = getClient();
       emulator = getEmulator();
     });
-    test('helloworld returns expected response', () async {
-      print('GET ${client.baseUrl}/helloworld');
-      final response = await client.get('helloworld');
+    test('hello-world returns expected response', () async {
+      print('GET ${client.baseUrl}/hello-world');
+      final response = await client.get('hello-world');
 
       expect(response.statusCode, equals(200));
       expect(response.body, contains('Hello from Dart Functions!'));
     });
 
-    test('helloworld has correct content type', () async {
-      print('GET ${client.baseUrl}/helloworld');
-      final response = await client.get('helloworld');
+    test('hello-world has correct content type', () async {
+      print('GET ${client.baseUrl}/hello-world');
+      final response = await client.get('hello-world');
 
       expect(response.statusCode, equals(200));
       expect(response.headers['content-type'], contains('text/plain'));
     });
 
-    test('helloworld accepts GET requests', () async {
-      print('GET ${client.baseUrl}/helloworld');
-      final response = await client.get('helloworld');
+    test('hello-world accepts GET requests', () async {
+      print('GET ${client.baseUrl}/hello-world');
+      final response = await client.get('hello-world');
 
       expect(response.statusCode, equals(200));
     });
 
-    test('helloworld accepts POST requests', () async {
-      print('POST ${client.baseUrl}/helloworld');
-      final response = await client.post('helloworld');
+    test('hello-world accepts POST requests', () async {
+      print('POST ${client.baseUrl}/hello-world');
+      final response = await client.post('hello-world');
 
       expect(response.statusCode, equals(200));
     });
 
     test('calling non-existent function returns 404', () async {
-      print('GET ${client.baseUrl}/nonExistentFunction');
-      final response = await client.get('nonExistentFunction');
+      print('GET ${client.baseUrl}/non-existent-function');
+      final response = await client.get('non-existent-function');
 
       expect(response.statusCode, equals(404));
     });
@@ -63,7 +63,7 @@ void runHttpsOnRequestTests(
 
         for (var i = 0; i < 5; i++) {
           futures.add(() async {
-            final response = await client.get('helloworld');
+            final response = await client.get('hello-world');
             expect(response.statusCode, equals(200));
             expect(response.body, contains('Hello from Dart Functions!'));
           }());
@@ -75,13 +75,13 @@ void runHttpsOnRequestTests(
     );
 
     test('function is discoverable via emulator', () async {
-      print('GET ${client.baseUrl}/helloworld');
-      final response = await client.get('helloworld');
+      print('GET ${client.baseUrl}/hello-world');
+      final response = await client.get('hello-world');
 
       expect(
         response.statusCode,
         equals(200),
-        reason: 'Function helloworld should be deployed',
+        reason: 'Function hello-world should be deployed',
       );
     });
 
@@ -90,8 +90,8 @@ void runHttpsOnRequestTests(
       emulator.clearOutputBuffer();
 
       // Make a request
-      print('GET ${client.baseUrl}/helloworld (verifying execution logs)');
-      final response = await client.get('helloworld');
+      print('GET ${client.baseUrl}/hello-world (verifying execution logs)');
+      final response = await client.get('hello-world');
 
       // Wait a bit for logs to be captured
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -101,7 +101,7 @@ void runHttpsOnRequestTests(
 
       // Verify Firebase emulator logged the execution
       final executionLogged = emulator.verifyFunctionExecution(
-        'us-central1-helloworld',
+        'us-central1-hello-world',
       );
       expect(
         executionLogged,
@@ -114,7 +114,7 @@ void runHttpsOnRequestTests(
       final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
         'GET',
         200,
-        '/helloworld',
+        '/hello-world',
       );
       expect(
         dartRuntimeLogged,
