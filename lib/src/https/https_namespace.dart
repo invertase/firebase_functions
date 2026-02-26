@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'auth.dart';
 import 'callable.dart';
@@ -55,19 +56,9 @@ class HttpsNamespace extends FunctionsNamespace {
       try {
         return await handler(request);
       } on HttpsError catch (e) {
-        return Response(
-          e.httpStatusCode,
-          body: jsonEncode(e.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return e.toShelfResponse();
       } catch (e) {
-        // Unexpected error - don't expose details to client
-        final error = InternalError();
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return InternalError().toShelfResponse();
       }
     }, external: true);
   }
@@ -119,33 +110,18 @@ class HttpsNamespace extends FunctionsNamespace {
 
       // Check for invalid auth token
       if (tokens.result.auth == TokenStatus.invalid) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       // Check for invalid or missing app check token if enforced
       final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
       if (tokens.result.app == TokenStatus.invalid) {
         if (enforceAppCheck) {
-          final error = UnauthenticatedError('Unauthenticated');
-          return Response(
-            error.httpStatusCode,
-            body: jsonEncode(error.toErrorResponse()),
-            headers: {'Content-Type': 'application/json'},
-          );
+          return UnauthenticatedError().toShelfResponse();
         }
       }
       if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       final callableRequest = CallableRequest(
@@ -214,33 +190,18 @@ class HttpsNamespace extends FunctionsNamespace {
 
       // Check for invalid auth token
       if (tokens.result.auth == TokenStatus.invalid) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       // Check for invalid or missing app check token if enforced
       final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
       if (tokens.result.app == TokenStatus.invalid) {
         if (enforceAppCheck) {
-          final error = UnauthenticatedError('Unauthenticated');
-          return Response(
-            error.httpStatusCode,
-            body: jsonEncode(error.toErrorResponse()),
-            headers: {'Content-Type': 'application/json'},
-          );
+          return UnauthenticatedError().toShelfResponse();
         }
       }
       if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       final callableRequest = CallableRequest<Input>(
@@ -289,12 +250,7 @@ class HttpsNamespace extends FunctionsNamespace {
   ) async {
     // Validate request - pass empty map if body is null to avoid double-read
     if (!await request.isValidRequest(body ?? {})) {
-      final error = InvalidArgumentError('Invalid callable request');
-      return Response(
-        error.httpStatusCode,
-        body: jsonEncode(error.toErrorResponse()),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return InvalidArgumentError('Invalid callable request').toShelfResponse();
     }
 
     final heartbeatSeconds = options?.heartBeatIntervalSeconds?.runtimeValue();
@@ -330,11 +286,7 @@ class HttpsNamespace extends FunctionsNamespace {
         return callableResponse.streamingResponse!;
       }
 
-      return Response(
-        e.httpStatusCode,
-        body: jsonEncode(e.toErrorResponse()),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return e.toShelfResponse();
     } catch (e) {
       // Unexpected error - don't expose details to client
       final error = InternalError();
@@ -345,11 +297,7 @@ class HttpsNamespace extends FunctionsNamespace {
         return callableResponse.streamingResponse!;
       }
 
-      return Response(
-        error.httpStatusCode,
-        body: jsonEncode(error.toErrorResponse()),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return error.toShelfResponse();
     } finally {
       callableResponse.clearHeartbeat();
     }
