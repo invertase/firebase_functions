@@ -374,4 +374,169 @@ void runStorageTests(
       print('✓ All sequential overwrites triggered archive events');
     });
   });
+
+  group('Storage onObjectMetadataUpdated', () {
+    late String examplePath;
+    late StorageClient storageClient;
+    late EmulatorHelper emulator;
+
+    setUpAll(() {
+      examplePath = getExamplePath();
+      storageClient = getStorageClient();
+      emulator = getEmulator();
+    });
+
+    test('function is registered with emulator', () {
+      final manifestPath = '$examplePath/functions.yaml';
+      final manifestFile = File(manifestPath);
+
+      expect(
+        manifestFile.existsSync(),
+        isTrue,
+        reason: 'functions.yaml should exist',
+      );
+
+      final manifestContent = manifestFile.readAsStringSync();
+      expect(
+        manifestContent,
+        contains('on-object-metadata-updated-demotestfirebasestorageapp'),
+        reason: 'Manifest should contain Storage metadata updated function',
+      );
+    });
+
+    test('updating metadata triggers onObjectMetadataUpdated', () async {
+      // Upload an object first
+      final content = Uint8List.fromList(
+        utf8.encode('Content for metadata update test'),
+      );
+      await storageClient.uploadObject(
+        'test/metadata-update.txt',
+        data: content,
+        contentType: 'text/plain',
+      );
+
+      // Wait for finalized trigger to complete
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Clear logs so we only capture the metadata update event
+      emulator.clearOutputBuffer();
+
+      print('Updating object metadata...');
+
+      await storageClient.updateObjectMetadata(
+        'test/metadata-update.txt',
+        metadata: {'customKey': 'customValue'},
+      );
+
+      // Wait for function to process the event
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      final logs = emulator.outputLines;
+      final functionExecuted = logs.any(
+        (line) => line.contains('Object metadata updated in bucket'),
+      );
+      expect(
+        functionExecuted,
+        isTrue,
+        reason:
+            'onObjectMetadataUpdated should be triggered on metadata change. '
+            'Logs: ${logs.where((l) => l.contains("storage") || l.contains("Object") || l.contains("metadata")).join("\n")}',
+      );
+
+      print('✓ onObjectMetadataUpdated triggered');
+    });
+
+    test('function receives correct metadata', () async {
+      // Upload an object
+      final content = Uint8List.fromList(
+        utf8.encode('Content for metadata verification'),
+      );
+      await storageClient.uploadObject(
+        'test/metadata-verify.txt',
+        data: content,
+        contentType: 'text/plain',
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Clear logs
+      emulator.clearOutputBuffer();
+
+      // Update metadata with specific key-value pairs
+      await storageClient.updateObjectMetadata(
+        'test/metadata-verify.txt',
+        metadata: {'env': 'test', 'version': '42'},
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 3));
+
+      final logs = emulator.outputLines;
+
+      // Verify the function logged the object name
+      final hasName = logs.any(
+        (line) => line.contains('test/metadata-verify.txt'),
+      );
+      // Verify metadata key appears in logs
+      final hasMetadata = logs.any(
+        (line) => line.contains('Metadata:'),
+      );
+
+      expect(
+        hasName,
+        isTrue,
+        reason: 'Function should log the object name',
+      );
+      expect(
+        hasMetadata,
+        isTrue,
+        reason: 'Function should log the metadata',
+      );
+
+      print('✓ Metadata event data received correctly');
+    });
+
+    test('handles sequential metadata updates', () async {
+      // Upload an object
+      final content = Uint8List.fromList(
+        utf8.encode('Content for sequential metadata test'),
+      );
+      await storageClient.uploadObject(
+        'test/metadata-sequential.txt',
+        data: content,
+        contentType: 'text/plain',
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Clear logs before update sequence
+      emulator.clearOutputBuffer();
+
+      print('Updating metadata multiple times...');
+
+      for (var i = 1; i <= 3; i++) {
+        await storageClient.updateObjectMetadata(
+          'test/metadata-sequential.txt',
+          metadata: {'iteration': '$i'},
+        );
+        print('  Updated metadata iteration $i');
+        await Future<void>.delayed(const Duration(seconds: 1));
+      }
+
+      // Wait for all triggers
+      await Future<void>.delayed(const Duration(seconds: 4));
+
+      final logs = emulator.outputLines;
+      final updateCount = logs
+          .where((line) => line.contains('Object metadata updated in bucket'))
+          .length;
+
+      expect(
+        updateCount,
+        greaterThanOrEqualTo(3),
+        reason: 'All 3 metadata updates should trigger onObjectMetadataUpdated',
+      );
+
+      print('✓ All sequential metadata updates triggered');
+    });
+  });
 }

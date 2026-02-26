@@ -76,6 +76,33 @@ class StorageClient {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// Updates custom metadata on an object in the storage emulator.
+  ///
+  /// Uses the GCS JSON API PATCH endpoint to update object metadata,
+  /// which triggers the `onObjectMetadataUpdated` event.
+  Future<Map<String, dynamic>> updateObjectMetadata(
+    String objectPath, {
+    required Map<String, String> metadata,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/storage/v1/b/$bucket/o/${Uri.encodeComponent(objectPath)}',
+    );
+
+    final response = await _client.patch(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'metadata': metadata}),
+    );
+
+    if (response.statusCode != 200) {
+      throw StorageException(
+        'Failed to update metadata: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   /// Enables object versioning on the bucket.
   ///
   /// When versioning is enabled, overwriting an object archives the old version,
