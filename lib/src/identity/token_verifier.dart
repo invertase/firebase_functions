@@ -116,8 +116,8 @@ class AuthBlockingTokenVerifier {
     final response = await _httpClient.get(Uri.parse(_googleJwksUrl));
 
     if (response.statusCode != 200) {
-      throw InternalError(
-        'Failed to fetch Google public keys: ${response.statusCode}',
+      throw StateError(
+        'Failed to fetch Google public keys from $_googleJwksUrl: ${response.statusCode}',
       );
     }
 
