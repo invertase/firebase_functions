@@ -9,6 +9,9 @@ import '../helpers/emulator.dart';
 import '../helpers/storage_client.dart';
 
 /// Creates a Storage CloudEvent JSON payload.
+///
+/// Matches the format produced by the Firebase Storage emulator's
+/// `StorageCloudFunctions.createCloudEventRequestBody`.
 Map<String, dynamic> _storageCloudEvent({
   required String eventType,
   String bucket = 'demo-test.firebasestorage.app',
@@ -21,11 +24,12 @@ Map<String, dynamic> _storageCloudEvent({
   return {
     'specversion': '1.0',
     'id': 'test-event-${DateTime.now().millisecondsSinceEpoch}',
-    'source': '//storage.googleapis.com/projects/_/buckets/$bucket',
+    'source':
+        '//storage.googleapis.com/projects/_/buckets/$bucket/objects/$objectName',
     'type': eventType,
     'time': DateTime.now().toUtc().toIso8601String(),
-    'subject': 'objects/$objectName',
     'data': {
+      'kind': 'storage#object',
       'bucket': bucket,
       'name': objectName,
       'generation': '1234567890',
@@ -39,6 +43,17 @@ Map<String, dynamic> _storageCloudEvent({
     },
   };
 }
+
+/// Builds the URL for the functions emulator's trigger_multicast endpoint.
+///
+/// This is the same endpoint the Storage emulator uses internally to dispatch
+/// CloudEvents to matching functions.
+String _triggerMulticastUrl(EmulatorHelper emulator) =>
+    'http://localhost:${emulator.functionsPort}/functions/projects/demo-test/trigger_multicast';
+
+/// Content-Type header used by the Storage emulator when dispatching
+/// CloudEvents to the functions emulator.
+const _cloudEventContentType = 'application/cloudevents+json; charset=UTF-8';
 
 /// Finds the actual function name from the manifest that starts with [prefix].
 ///
@@ -229,21 +244,22 @@ void runStorageTests(
   // onObjectArchived and onObjectMetadataUpdated tests
   //
   // The Firebase Storage emulator does not emit "archived" or "metadataUpdated"
-  // events. Instead, we test these by posting CloudEvent payloads directly to
-  // the function HTTP endpoints, which validates the Dart runtime handler logic.
+  // events. Instead, we test these by posting CloudEvent payloads to the
+  // functions emulator's trigger_multicast endpoint — the same internal
+  // endpoint the Storage emulator uses to dispatch events to functions.
   // ===========================================================================
 
   group('Storage onObjectArchived', () {
     late String examplePath;
     late EmulatorHelper emulator;
     late http.Client client;
-    late String functionsUrl;
+    late String multicastUrl;
 
     setUpAll(() {
       examplePath = getExamplePath();
       emulator = getEmulator();
       client = http.Client();
-      functionsUrl = emulator.functionsUrl;
+      multicastUrl = _triggerMulticastUrl(emulator);
     });
 
     tearDownAll(() {
@@ -271,7 +287,7 @@ void runStorageTests(
     test('CloudEvent triggers onObjectArchived handler', () async {
       emulator.clearOutputBuffer();
 
-      print('Sending archived CloudEvent directly to function endpoint...');
+      print('Sending archived CloudEvent via trigger_multicast...');
 
       final cloudEvent = _storageCloudEvent(
         eventType: 'google.cloud.storage.object.v1.archived',
@@ -279,17 +295,15 @@ void runStorageTests(
       );
 
       final response = await client.post(
-        Uri.parse(
-          '$functionsUrl/on-object-archived-demotestfirebasestorageapp',
-        ),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(multicastUrl),
+        headers: {'Content-Type': _cloudEventContentType},
         body: jsonEncode(cloudEvent),
       );
 
       expect(
         response.statusCode,
         200,
-        reason: 'Function should return 200. Body: ${response.body}',
+        reason: 'trigger_multicast should return 200. Body: ${response.body}',
       );
 
       // Wait for logs to propagate
@@ -320,10 +334,8 @@ void runStorageTests(
       );
 
       final response = await client.post(
-        Uri.parse(
-          '$functionsUrl/on-object-archived-demotestfirebasestorageapp',
-        ),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(multicastUrl),
+        headers: {'Content-Type': _cloudEventContentType},
         body: jsonEncode(cloudEvent),
       );
 
@@ -364,10 +376,8 @@ void runStorageTests(
         );
 
         final response = await client.post(
-          Uri.parse(
-            '$functionsUrl/on-object-archived-demotestfirebasestorageapp',
-          ),
-          headers: {'Content-Type': 'application/json'},
+          Uri.parse(multicastUrl),
+          headers: {'Content-Type': _cloudEventContentType},
           body: jsonEncode(cloudEvent),
         );
 
@@ -397,14 +407,14 @@ void runStorageTests(
     late String examplePath;
     late EmulatorHelper emulator;
     late http.Client client;
-    late String functionsUrl;
+    late String multicastUrl;
     late String functionName;
 
     setUpAll(() {
       examplePath = getExamplePath();
       emulator = getEmulator();
       client = http.Client();
-      functionsUrl = emulator.functionsUrl;
+      multicastUrl = _triggerMulticastUrl(emulator);
 
       // Read the actual function name from the manifest since it may be
       // truncated with a hash suffix due to the 50-char Cloud Run ID limit.
@@ -442,7 +452,7 @@ void runStorageTests(
     test('CloudEvent triggers onObjectMetadataUpdated handler', () async {
       emulator.clearOutputBuffer();
 
-      print('Sending metadataUpdated CloudEvent directly to function...');
+      print('Sending metadataUpdated CloudEvent via trigger_multicast...');
 
       final cloudEvent = _storageCloudEvent(
         eventType: 'google.cloud.storage.object.v1.metadataUpdated',
@@ -451,15 +461,15 @@ void runStorageTests(
       );
 
       final response = await client.post(
-        Uri.parse('$functionsUrl/$functionName'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(multicastUrl),
+        headers: {'Content-Type': _cloudEventContentType},
         body: jsonEncode(cloudEvent),
       );
 
       expect(
         response.statusCode,
         200,
-        reason: 'Function should return 200. Body: ${response.body}',
+        reason: 'trigger_multicast should return 200. Body: ${response.body}',
       );
 
       await Future<void>.delayed(const Duration(seconds: 2));
@@ -489,8 +499,8 @@ void runStorageTests(
       );
 
       final response = await client.post(
-        Uri.parse('$functionsUrl/$functionName'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse(multicastUrl),
+        headers: {'Content-Type': _cloudEventContentType},
         body: jsonEncode(cloudEvent),
       );
 
@@ -524,8 +534,8 @@ void runStorageTests(
         );
 
         final response = await client.post(
-          Uri.parse('$functionsUrl/$functionName'),
-          headers: {'Content-Type': 'application/json'},
+          Uri.parse(multicastUrl),
+          headers: {'Content-Type': _cloudEventContentType},
           body: jsonEncode(cloudEvent),
         );
 
