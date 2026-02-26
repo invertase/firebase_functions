@@ -236,8 +236,8 @@ class IdentityNamespace extends FunctionsNamespace {
         );
       } on HttpsError catch (e) {
         return e.toShelfResponse();
-      } catch (e) {
-        return InternalError().toShelfResponse();
+      } catch (e, stackTrace) {
+        return logInternalError(e, stackTrace).toShelfResponse();
       }
     });
   }
