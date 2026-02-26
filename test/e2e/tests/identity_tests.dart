@@ -69,12 +69,12 @@ void runIdentityTests(
           final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
             'POST',
             200,
-            '/beforeCreate',
+            '/before-create',
           );
           expect(
             dartRuntimeLogged,
             isTrue,
-            reason: 'Dart runtime should have processed beforeCreate request',
+            reason: 'Dart runtime should have processed before-create request',
           );
 
           // Clean up
@@ -99,13 +99,13 @@ void runIdentityTests(
           final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
             'POST',
             403,
-            '/beforeCreate',
+            '/before-create',
           );
           expect(
             dartRuntimeLogged,
             isTrue,
             reason:
-                'Dart runtime should have processed and blocked beforeCreate request',
+                'Dart runtime should have processed and blocked before-create request',
           );
         });
 
@@ -133,7 +133,7 @@ void runIdentityTests(
           final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
             'POST',
             200,
-            '/beforeCreate',
+            '/before-create',
           );
           expect(dartRuntimeLogged, isTrue);
 
@@ -176,12 +176,12 @@ void runIdentityTests(
           final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
             'POST',
             200,
-            '/beforeSignIn',
+            '/before-sign-in',
           );
           expect(
             dartRuntimeLogged,
             isTrue,
-            reason: 'Dart runtime should have processed beforeSignIn request',
+            reason: 'Dart runtime should have processed before-sign-in request',
           );
 
           // Clean up
@@ -215,7 +215,7 @@ void runIdentityTests(
           final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
             'POST',
             200,
-            '/beforeSignIn',
+            '/before-sign-in',
           );
           expect(dartRuntimeLogged, isTrue);
 
@@ -240,7 +240,7 @@ void runIdentityTests(
 
             // Verify beforeUserCreated was triggered via Dart runtime logs
             expect(
-              emulator.verifyDartRuntimeRequest('POST', 200, '/beforeCreate'),
+              emulator.verifyDartRuntimeRequest('POST', 200, '/before-create'),
               isTrue,
               reason: 'beforeUserCreated should trigger on signup',
             );
@@ -260,7 +260,7 @@ void runIdentityTests(
 
             // Verify beforeUserSignedIn was triggered via Dart runtime logs
             expect(
-              emulator.verifyDartRuntimeRequest('POST', 200, '/beforeSignIn'),
+              emulator.verifyDartRuntimeRequest('POST', 200, '/before-sign-in'),
               isTrue,
               reason: 'beforeUserSignedIn should trigger on sign-in',
             );

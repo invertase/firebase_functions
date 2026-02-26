@@ -115,9 +115,7 @@ class TasksNamespace extends FunctionsNamespace {
 
         // Return 204 No Content (matching Node.js behavior)
         return Response(204);
-      } catch (e, stackTrace) {
-        print('Error in task queue function: $e');
-        print('Stack trace: $stackTrace');
+      } catch (e) {
         return Response(
           500,
           body: jsonEncode({

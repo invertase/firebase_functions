@@ -7,6 +7,7 @@ library;
 
 import 'package:yaml_edit/yaml_edit.dart';
 
+import '../common/cloud_run_id.dart';
 import 'spec.dart';
 
 /// Generates the YAML manifest string from discovered params and endpoints.
@@ -38,12 +39,12 @@ Map<String, dynamic> _buildManifestMap(
   manifest['requiredAPIs'] = _buildRequiredAPIs(endpoints);
 
   // Endpoints section
-  // Endpoint keys are lowercased to produce valid Cloud Run service IDs
-  // (Cloud Run requires lowercase, digits, and hyphens only).
+  // Endpoint keys are sanitized to produce valid Cloud Run service IDs
+  // (Cloud Run requires lowercase, digits, and hyphens only, <50 chars).
   if (endpoints.isNotEmpty) {
     manifest['endpoints'] = {
       for (final endpoint in endpoints.values)
-        endpoint.name.toLowerCase(): _buildEndpointMap(endpoint),
+        toCloudRunId(endpoint.name): _buildEndpointMap(endpoint),
     };
   }
 
@@ -119,7 +120,10 @@ const _baseImageUriSuffix =
 
 /// Builds a single endpoint entry as a map.
 Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
-  final map = <String, dynamic>{'platform': 'run'};
+  // Use "gcfv2" as the platform in the manifest so that firebase-tools
+  // recognises these as v2 CloudEvent functions (needed by the emulator).
+  // The Dart delegate converts this to "run" during `firebase deploy`.
+  final map = <String, dynamic>{'platform': 'gcfv2'};
 
   final options = endpoint.extractOptions();
 
@@ -196,7 +200,7 @@ Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {
     map['baseImageUri'] = '$primaryRegion$_baseImageUriSuffix';
   }
   map['command'] = ['./bin/server'];
-  map['entryPoint'] = endpoint.name.toLowerCase();
+  map['entryPoint'] = toCloudRunId(endpoint.name);
 
   return map;
 }

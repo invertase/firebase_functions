@@ -90,11 +90,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueCreated triggered!');
-          print('Ref: $refPath');
-          print('Instance: $instanceName');
-          print('Params: $params');
-
           // Parse JSON body
           DataSnapshot? snapshot;
           try {
@@ -109,9 +104,8 @@ class DatabaseNamespace extends FunctionsNamespace {
                 data: deltaData,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - snapshot remains null
           }
 
           try {
@@ -131,10 +125,7 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
@@ -254,10 +245,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueUpdated triggered!');
-          print('Ref: $refPath');
-          print('Params: $params');
-
           // Parse JSON body
           Change<DataSnapshot>? change;
           try {
@@ -285,9 +272,8 @@ class DatabaseNamespace extends FunctionsNamespace {
                 after: afterSnapshot,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - change remains null
           }
 
           try {
@@ -307,10 +293,7 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
@@ -436,10 +419,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueDeleted triggered!');
-          print('Ref: $refPath');
-          print('Params: $params');
-
           // Parse JSON body
           DataSnapshot? snapshot;
           try {
@@ -454,9 +433,8 @@ class DatabaseNamespace extends FunctionsNamespace {
                 data: deletedData,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - snapshot remains null
           }
 
           try {
@@ -476,10 +454,7 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
@@ -605,10 +580,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueWritten triggered!');
-          print('Ref: $refPath');
-          print('Params: $params');
-
           // Parse JSON body
           Change<DataSnapshot>? change;
           try {
@@ -632,23 +603,13 @@ class DatabaseNamespace extends FunctionsNamespace {
                 data: afterData,
               );
 
-              // Determine operation type
-              if (beforeData == null && afterData != null) {
-                print('  Operation: CREATE');
-              } else if (beforeData != null && afterData == null) {
-                print('  Operation: DELETE');
-              } else {
-                print('  Operation: UPDATE');
-              }
-
               change = Change<DataSnapshot>(
                 before: beforeSnapshot,
                 after: afterSnapshot,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - change remains null
           }
 
           try {
@@ -668,10 +629,7 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 

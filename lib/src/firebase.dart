@@ -6,6 +6,7 @@ import 'package:googleapis_firestore/googleapis_firestore.dart' as gfs;
 import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
+import 'common/cloud_run_id.dart';
 import 'database/database_namespace.dart';
 import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
@@ -43,10 +44,6 @@ class Firebase {
     final isEmulator = firestoreEmulatorHost != null;
 
     if (isEmulator) {
-      print('Running in emulator mode - Firestore Admin SDK disabled');
-      print('Firestore emulator: $firestoreEmulatorHost');
-      print('Document fetching from emulator not yet implemented');
-      print('Handler will receive CloudEvent metadata only');
       // TODO: Implement direct REST API calls to emulator
       // For now, we'll skip document fetching in emulator mode
       return;
@@ -54,8 +51,6 @@ class Firebase {
 
     // Production mode only
     try {
-      print('Initializing Firebase Admin SDK (project: $projectId)');
-
       // Initialize Admin SDK
       _adminApp = FirebaseApp.initializeApp(
         options: AppOptions(
@@ -66,11 +61,8 @@ class Firebase {
 
       // Create Firestore instance
       _firestoreInstance = _adminApp!.firestore();
-
-      print('Firebase Admin SDK initialized successfully');
     } catch (e) {
       print('Warning: Failed to initialize Firebase Admin SDK: $e');
-      print('Firestore triggers will not be able to fetch document data');
     }
   }
 
@@ -147,9 +139,9 @@ extension FirebaseX on Firebase {
       throw StateError('Function "$name" is already registered');
     }
 
-    // Transform the name to be URL-safe and Cloud Run compatible
-    // (Cloud Run service IDs must be lowercase with hyphens only)
-    final transformedName = name.replaceAll(' ', '_').toLowerCase();
+    // Transform the name to a valid Cloud Run service ID
+    // (lowercase, digits, and hyphens only, <50 chars)
+    final transformedName = toCloudRunId(name);
 
     functions.add(
       FirebaseFunctionDeclaration(

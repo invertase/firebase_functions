@@ -41,7 +41,7 @@ void runSchedulerTests(
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('onschedule_0_0___'),
+        contains('on-schedule-0-0'),
         reason: 'Manifest should contain basic scheduler function',
       );
       expect(
@@ -63,7 +63,7 @@ void runSchedulerTests(
 
       expect(
         manifestContent,
-        contains('onschedule_0_9___15'),
+        contains('on-schedule-0-9-15'),
         reason: 'Manifest should contain scheduler function with options',
       );
       expect(

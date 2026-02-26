@@ -90,11 +90,7 @@ class SchedulerNamespace extends FunctionsNamespace {
 
         // Return success (Cloud Scheduler expects 2xx response)
         return Response.ok('');
-      } catch (e, stackTrace) {
-        // Log the error for debugging
-        print('Error in scheduled function: $e');
-        print('Stack trace: $stackTrace');
-
+      } catch (e) {
         // Return error response
         // Cloud Scheduler will retry based on retry config
         return Response(500, body: 'Error executing scheduled function: $e');
