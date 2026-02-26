@@ -56,7 +56,6 @@ class EmulatorHelper {
       [
         ...baseArgs,
         'emulators:start',
-        '--debug',
         '--only',
         'functions,pubsub,firestore,database,auth,storage',
         '--project',

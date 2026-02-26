@@ -76,79 +76,12 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 
   // Build request handler with middleware pipeline
   final handler = const Pipeline()
-      .addMiddleware(_logRequestsWithFunctionName())
       .addMiddleware(_corsMiddleware(emulatorEnv))
       .addHandler((request) => _routeRequest(request, firebase, emulatorEnv));
 
   // Start HTTP server
   final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
-  final server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
-
-  print(
-    'Firebase Functions serving at http://${server.address.host}:${server.port}',
-  );
-}
-
-/// Custom logging middleware that includes the function name from the header.
-///
-/// Firebase-tools sets the `x-firebase-function` header for Dart runtimes
-/// when routing requests. This middleware logs the function name from the
-/// header when the path is empty or just `/`.
-Middleware _logRequestsWithFunctionName() {
-  return (innerHandler) {
-    return (request) {
-      final startTime = DateTime.now();
-      final watch = Stopwatch()..start();
-
-      return Future.sync(() => innerHandler(request)).then(
-        (response) {
-          // Get the path to log - use function name from header if path is empty
-          var logPath = request.url.path;
-          if (logPath.isEmpty || logPath == '/') {
-            final functionName = request.headers['x-firebase-function'];
-            if (functionName != null && functionName.isNotEmpty) {
-              logPath = '/$functionName';
-            } else {
-              logPath = '/';
-            }
-          } else if (!logPath.startsWith('/')) {
-            logPath = '/$logPath';
-          }
-
-          final method = request.method.toUpperCase().padRight(7);
-          final statusCode = response.statusCode;
-          final elapsed = watch.elapsed;
-          final timestamp = startTime.toIso8601String();
-
-          print('$timestamp  $elapsed $method [$statusCode] $logPath');
-
-          return response;
-        },
-        onError: (Object error, StackTrace stackTrace) {
-          var logPath = request.url.path;
-          if (logPath.isEmpty || logPath == '/') {
-            final functionName = request.headers['x-firebase-function'];
-            if (functionName != null && functionName.isNotEmpty) {
-              logPath = '/$functionName';
-            } else {
-              logPath = '/';
-            }
-          } else if (!logPath.startsWith('/')) {
-            logPath = '/$logPath';
-          }
-
-          final method = request.method.toUpperCase().padRight(7);
-          final elapsed = watch.elapsed;
-          final timestamp = startTime.toIso8601String();
-
-          print('$timestamp  $elapsed $method [ERROR] $logPath');
-          print('  Error: $error');
-
-          throw error;
-        },
-      );
-    };
-  };
+  await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
 }
 
 /// CORS middleware for emulator mode.
@@ -391,10 +324,6 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
       // Try to find a matching function
       for (final function in functions) {
         if (function.name == expectedFunctionName && !function.external) {
-          print(
-            'CloudEvent fallback matched topic "$topicName" to function "$expectedFunctionName"',
-          );
-
           // For structured mode, recreate request with body; for binary mode, use original
           final newRequest = bodyString != null
               ? request.change(body: bodyString)
@@ -425,27 +354,15 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         // Map CloudEvent type to method name
         final methodName = _mapCloudEventTypeToFirestoreMethod(type);
         if (methodName != null) {
-          print(
-            'DEBUG: Looking for Firestore function with method: $methodName',
-          );
-
           // Try to find a matching function by pattern matching
           for (final function in functions) {
             if (!function.external && function.name.startsWith(methodName)) {
               // Check if this function has a document pattern to match against
               if (function.documentPattern != null) {
-                print(
-                  'DEBUG: Checking pattern: ${function.documentPattern} against $documentPath',
-                );
                 if (_matchesDocumentPattern(
                   documentPath,
                   function.documentPattern!,
                 )) {
-                  print(
-                    'CloudEvent matched Firestore document "$documentPath" '
-                    'to function "${function.name}" with pattern "${function.documentPattern}"',
-                  );
-
                   // For structured mode, recreate request with body; for binary mode, use original
                   final newRequest = bodyString != null
                       ? request.change(body: bodyString)
@@ -477,24 +394,12 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         // Map CloudEvent type to method name
         final methodName = _mapCloudEventTypeToDatabaseMethod(type);
         if (methodName != null) {
-          print(
-            'DEBUG: Looking for Database function with method: $methodName',
-          );
-
           // Try to find a matching function by pattern matching
           for (final function in functions) {
             if (!function.external && function.name.startsWith(methodName)) {
               // Check if this function has a ref pattern to match against
               if (function.refPattern != null) {
-                print(
-                  'DEBUG: Checking pattern: ${function.refPattern} against $refPath',
-                );
                 if (_matchesRefPattern(refPath, function.refPattern!)) {
-                  print(
-                    'CloudEvent matched Database ref "$refPath" '
-                    'to function "${function.name}" with pattern "${function.refPattern}"',
-                  );
-
                   // For structured mode, recreate request with body; for binary mode, use original
                   final newRequest = bodyString != null
                       ? request.change(body: bodyString)
@@ -540,10 +445,6 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
           // Try to find a matching function
           for (final function in functions) {
             if (function.name == expectedFunctionName && !function.external) {
-              print(
-                'CloudEvent matched storage bucket "$bucketName" to function "$expectedFunctionName"',
-              );
-
               final newRequest = bodyString != null
                   ? request.change(body: bodyString)
                   : request;
@@ -561,9 +462,8 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         ? request.change(body: bodyString)
         : request;
     return (finalRequest, null);
-  } catch (e) {
-    print('Failed to parse CloudEvent for function matching: $e');
-    // Return the original request since we likely didn't consume the body on error
+  } catch (_) {
+    // CloudEvent parsing failed - not a CloudEvent request
     return (request, null);
   }
 }
@@ -638,8 +538,6 @@ Response _handleQuitQuitQuit(Request request) {
   // In Node.js, this closes the HTTP server
   // In Dart, we'll just acknowledge the request
   // Actual shutdown would need to be handled by the server instance
-  print('Received shutdown signal via /__/quitquitquit');
-
   return Response.ok('OK');
 }
 

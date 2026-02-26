@@ -59,9 +59,7 @@ Map<String, EmulatorDocumentSnapshot?>? parseDocumentEventData(
     }
 
     return {'value': value, 'old_value': oldValue};
-  } catch (e, stack) {
-    print('Error parsing DocumentEventData protobuf: $e');
-    print('Stack: $stack');
+  } catch (_) {
     return null;
   }
 }
@@ -135,7 +133,6 @@ EmulatorDocumentSnapshot? _parseFirestoreDocument(Uint8List bytes) {
     }
 
     if (name == null) {
-      print('Warning: Document has no name field');
       return null;
     }
 
@@ -153,9 +150,7 @@ EmulatorDocumentSnapshot? _parseFirestoreDocument(Uint8List bytes) {
       createTime: createTime,
       updateTime: updateTime,
     );
-  } catch (e, stack) {
-    print('Error parsing Document protobuf: $e');
-    print('Stack: $stack');
+  } catch (_) {
     return null;
   }
 }
@@ -223,8 +218,7 @@ dynamic _parseFirestoreValue(Uint8List bytes) {
     }
 
     return null;
-  } catch (e) {
-    print('Error parsing Value: $e');
+  } catch (_) {
     return null;
   }
 }
@@ -320,8 +314,7 @@ DateTime? _parseTimestamp(Uint8List bytes) {
     }
 
     return null;
-  } catch (e) {
-    print('Error parsing Timestamp: $e');
+  } catch (_) {
     return null;
   }
 }
@@ -358,8 +351,7 @@ Map<String, double>? _parseGeoPoint(Uint8List bytes) {
     }
 
     return null;
-  } catch (e) {
-    print('Error parsing GeoPoint: $e');
+  } catch (_) {
     return null;
   }
 }

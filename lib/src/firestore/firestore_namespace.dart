@@ -93,15 +93,6 @@ class FirestoreNamespace extends FunctionsNamespace {
           // Extract path parameters from document path
           final params = _extractParams(document, documentPath);
 
-          // Print event information for debugging
-          print('Firestore onDocumentCreated triggered!');
-          print('Document: $documentPath');
-          print('Database: $database');
-          print('Namespace: $namespace');
-          print('Params: $params');
-          print('Event ID: $ceId');
-          print('Event time: $ceTime');
-
           // Parse protobuf body to get document snapshot
           EmulatorDocumentSnapshot? snapshot;
           try {
@@ -111,43 +102,19 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             if (bodyBytes.isNotEmpty) {
-              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
               final parsed = parseDocumentEventData(
                 Uint8List.fromList(bodyBytes),
               );
 
               if (parsed != null) {
                 snapshot = parsed['value'];
-                print('Protobuf parsing successful!');
-                if (snapshot != null) {
-                  print('  Document ID: ${snapshot.id}');
-                  print('  Document path: ${snapshot.path}');
-                  print('  Document data: ${snapshot.data()}');
-                } else {
-                  print('  Warning: value field is null');
-                }
-              } else {
-                print('Warning: Protobuf parsing returned null');
               }
-            } else {
-              print('Warning: Request body is empty');
             }
-          } catch (e, stack) {
-            print('Error parsing protobuf body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Protobuf parsing failed - snapshot remains null
           }
 
           // Create event with parsed document snapshot
-          print('');
-          print('Calling user handler...');
-          if (snapshot != null) {
-            print(
-              'event.data available - use event.data.data() to access fields',
-            );
-          } else {
-            print('Note: event.data is null - could not fetch from emulator');
-          }
-
           try {
             final event = FirestoreEvent<EmulatorDocumentSnapshot?>(
               data: snapshot,
@@ -166,10 +133,7 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
@@ -281,10 +245,6 @@ class FirestoreNamespace extends FunctionsNamespace {
 
           final params = _extractParams(document, documentPath);
 
-          print('Firestore onDocumentUpdated triggered!');
-          print('Document: $documentPath');
-          print('Params: $params');
-
           // Parse protobuf body to get before/after snapshots
           EmulatorDocumentSnapshot? beforeSnapshot;
           EmulatorDocumentSnapshot? afterSnapshot;
@@ -295,7 +255,6 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             if (bodyBytes.isNotEmpty) {
-              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
               final parsed = parseDocumentEventData(
                 Uint8List.fromList(bodyBytes),
               );
@@ -303,28 +262,10 @@ class FirestoreNamespace extends FunctionsNamespace {
               if (parsed != null) {
                 beforeSnapshot = parsed['old_value'];
                 afterSnapshot = parsed['value'];
-                print('Protobuf parsing successful!');
-                if (beforeSnapshot != null) {
-                  print('  Before - Document ID: ${beforeSnapshot.id}');
-                  print('  Before - Document data: ${beforeSnapshot.data()}');
-                } else {
-                  print('  Warning: old_value field is null');
-                }
-                if (afterSnapshot != null) {
-                  print('  After - Document ID: ${afterSnapshot.id}');
-                  print('  After - Document data: ${afterSnapshot.data()}');
-                } else {
-                  print('  Warning: value field is null');
-                }
-              } else {
-                print('Warning: Protobuf parsing returned null');
               }
-            } else {
-              print('Warning: Request body is empty');
             }
-          } catch (e, stack) {
-            print('Error parsing protobuf body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Protobuf parsing failed - snapshots remain null
           }
 
           try {
@@ -350,10 +291,7 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
@@ -436,10 +374,6 @@ class FirestoreNamespace extends FunctionsNamespace {
 
           final params = _extractParams(document, documentPath);
 
-          print('Firestore onDocumentDeleted triggered!');
-          print('Document: $documentPath');
-          print('Params: $params');
-
           // Parse protobuf body to get deleted document snapshot
           EmulatorDocumentSnapshot? snapshot;
           try {
@@ -449,7 +383,6 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             if (bodyBytes.isNotEmpty) {
-              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
               final parsed = parseDocumentEventData(
                 Uint8List.fromList(bodyBytes),
               );
@@ -457,22 +390,10 @@ class FirestoreNamespace extends FunctionsNamespace {
               if (parsed != null) {
                 // For delete events, the document state before deletion is in 'value'
                 snapshot = parsed['value'];
-                print('Protobuf parsing successful!');
-                if (snapshot != null) {
-                  print('  Deleted document ID: ${snapshot.id}');
-                  print('  Deleted document data: ${snapshot.data()}');
-                } else {
-                  print('  Warning: value field is null');
-                }
-              } else {
-                print('Warning: Protobuf parsing returned null');
               }
-            } else {
-              print('Warning: Request body is empty');
             }
-          } catch (e, stack) {
-            print('Error parsing protobuf body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Protobuf parsing failed - snapshot remains null
           }
 
           try {
@@ -493,10 +414,7 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
@@ -589,10 +507,6 @@ class FirestoreNamespace extends FunctionsNamespace {
 
           final params = _extractParams(document, documentPath);
 
-          print('Firestore onDocumentWritten triggered!');
-          print('Document: $documentPath');
-          print('Params: $params');
-
           // Parse protobuf body to get before/after snapshots
           EmulatorDocumentSnapshot? beforeSnapshot;
           EmulatorDocumentSnapshot? afterSnapshot;
@@ -603,7 +517,6 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             if (bodyBytes.isNotEmpty) {
-              print('Parsing protobuf body (${bodyBytes.length} bytes)...');
               final parsed = parseDocumentEventData(
                 Uint8List.fromList(bodyBytes),
               );
@@ -611,34 +524,10 @@ class FirestoreNamespace extends FunctionsNamespace {
               if (parsed != null) {
                 beforeSnapshot = parsed['old_value'];
                 afterSnapshot = parsed['value'];
-                print('Protobuf parsing successful!');
-
-                // Determine operation type
-                if (beforeSnapshot == null && afterSnapshot != null) {
-                  print('  Operation: CREATE');
-                } else if (beforeSnapshot != null && afterSnapshot == null) {
-                  print('  Operation: DELETE');
-                } else if (beforeSnapshot != null && afterSnapshot != null) {
-                  print('  Operation: UPDATE');
-                }
-
-                if (beforeSnapshot != null) {
-                  print('  Before - Document ID: ${beforeSnapshot.id}');
-                  print('  Before - Document data: ${beforeSnapshot.data()}');
-                }
-                if (afterSnapshot != null) {
-                  print('  After - Document ID: ${afterSnapshot.id}');
-                  print('  After - Document data: ${afterSnapshot.data()}');
-                }
-              } else {
-                print('Warning: Protobuf parsing returned null');
               }
-            } else {
-              print('Warning: Request body is empty');
             }
-          } catch (e, stack) {
-            print('Error parsing protobuf body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Protobuf parsing failed - snapshots remain null
           }
 
           try {
@@ -664,10 +553,7 @@ class FirestoreNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
+          } catch (e) {
             return Response(500, body: 'Handler error: $e');
           }
 
