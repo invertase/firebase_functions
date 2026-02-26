@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
+import 'common/cloud_run_id.dart';
 import 'common/on_init.dart';
 import 'firebase.dart';
 
@@ -317,9 +318,11 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
       final topicName = source.split('/topics/').last;
 
       // Sanitize topic name to match function naming convention
-      // Topic "my-topic" becomes function "onMessagePublished_mytopic"
+      // Topic "my-topic" becomes function "on-message-published-mytopic"
       final sanitizedTopic = topicName.replaceAll('-', '').toLowerCase();
-      final expectedFunctionName = 'onMessagePublished_$sanitizedTopic';
+      final expectedFunctionName = toCloudRunId(
+        'onMessagePublished_$sanitizedTopic',
+      );
 
       // Try to find a matching function
       for (final function in functions) {
@@ -354,9 +357,10 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         // Map CloudEvent type to method name
         final methodName = _mapCloudEventTypeToFirestoreMethod(type);
         if (methodName != null) {
+          final methodPrefix = toCloudRunId(methodName);
           // Try to find a matching function by pattern matching
           for (final function in functions) {
-            if (!function.external && function.name.startsWith(methodName)) {
+            if (!function.external && function.name.startsWith(methodPrefix)) {
               // Check if this function has a document pattern to match against
               if (function.documentPattern != null) {
                 if (_matchesDocumentPattern(
@@ -394,9 +398,10 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         // Map CloudEvent type to method name
         final methodName = _mapCloudEventTypeToDatabaseMethod(type);
         if (methodName != null) {
+          final methodPrefix = toCloudRunId(methodName);
           // Try to find a matching function by pattern matching
           for (final function in functions) {
-            if (!function.external && function.name.startsWith(methodName)) {
+            if (!function.external && function.name.startsWith(methodPrefix)) {
               // Check if this function has a ref pattern to match against
               if (function.refPattern != null) {
                 if (_matchesRefPattern(refPath, function.refPattern!)) {
@@ -440,7 +445,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
             RegExp('[^a-zA-Z0-9]'),
             '',
           );
-          final expectedFunctionName = '${methodName}_$sanitizedBucket';
+          final expectedFunctionName = toCloudRunId(
+            '${methodName}_$sanitizedBucket',
+          );
 
           // Try to find a matching function
           for (final function in functions) {

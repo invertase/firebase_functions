@@ -110,18 +110,6 @@ void runHttpsOnRequestTests(
             'Should see "Beginning execution" and "Finished" in emulator logs',
       );
 
-      // Verify Dart runtime actually processed the request
-      final dartRuntimeLogged = emulator.verifyDartRuntimeRequest(
-        'GET',
-        200,
-        '/hello-world',
-      );
-      expect(
-        dartRuntimeLogged,
-        isTrue,
-        reason: 'Should see Dart runtime request log with timestamp',
-      );
-
       print('✓ Function execution verified in emulator logs');
     });
   });

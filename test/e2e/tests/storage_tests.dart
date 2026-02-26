@@ -37,12 +37,12 @@ void runStorageTests(
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('onobjectfinalized_demotestfirebasestorageapp'),
+        contains('on-object-finalized-demotestfirebasestorageapp'),
         reason: 'Manifest should contain Storage finalized function',
       );
       expect(
         manifestContent,
-        contains('onobjectdeleted_demotestfirebasestorageapp'),
+        contains('on-object-deleted-demotestfirebasestorageapp'),
         reason: 'Manifest should contain Storage deleted function',
       );
     });
