@@ -2,10 +2,53 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 import '../helpers/emulator.dart';
 import '../helpers/storage_client.dart';
+
+/// Creates a Storage CloudEvent JSON payload.
+Map<String, dynamic> _storageCloudEvent({
+  required String eventType,
+  String bucket = 'demo-test.firebasestorage.app',
+  String objectName = 'test/file.txt',
+  String contentType = 'text/plain',
+  String size = '1024',
+  String storageClass = 'STANDARD',
+  Map<String, String>? metadata,
+}) {
+  return {
+    'specversion': '1.0',
+    'id': 'test-event-${DateTime.now().millisecondsSinceEpoch}',
+    'source': '//storage.googleapis.com/projects/_/buckets/$bucket',
+    'type': eventType,
+    'time': DateTime.now().toUtc().toIso8601String(),
+    'subject': 'objects/$objectName',
+    'data': {
+      'bucket': bucket,
+      'name': objectName,
+      'generation': '1234567890',
+      'metageneration': '1',
+      'contentType': contentType,
+      'size': size,
+      'storageClass': storageClass,
+      if (metadata != null) 'metadata': metadata,
+      'timeCreated': '2024-01-01T12:00:00Z',
+      'updated': '2024-01-01T12:00:00Z',
+    },
+  };
+}
+
+/// Finds the actual function name from the manifest that starts with [prefix].
+///
+/// Needed because long names get truncated with a hash suffix by [toCloudRunId].
+String? _findFunctionName(String manifestContent, String prefix) {
+  // Match a line like "  on-object-archived-demotestfirebasestorageapp:"
+  final pattern = RegExp('^\\s+($prefix[a-z0-9-]*):', multiLine: true);
+  final match = pattern.firstMatch(manifestContent);
+  return match?.group(1);
+}
 
 /// Storage trigger test group
 void runStorageTests(
@@ -182,23 +225,29 @@ void runStorageTests(
     });
   });
 
+  // ===========================================================================
+  // onObjectArchived and onObjectMetadataUpdated tests
+  //
+  // The Firebase Storage emulator does not emit "archived" or "metadataUpdated"
+  // events. Instead, we test these by posting CloudEvent payloads directly to
+  // the function HTTP endpoints, which validates the Dart runtime handler logic.
+  // ===========================================================================
+
   group('Storage onObjectArchived', () {
     late String examplePath;
-    late StorageClient storageClient;
     late EmulatorHelper emulator;
+    late http.Client client;
+    late String functionsUrl;
 
-    setUpAll(() async {
+    setUpAll(() {
       examplePath = getExamplePath();
-      storageClient = getStorageClient();
       emulator = getEmulator();
+      client = http.Client();
+      functionsUrl = emulator.functionsUrl;
+    });
 
-      // Enable versioning so overwriting an object archives the old version
-      try {
-        await storageClient.enableVersioning();
-        print('✓ Bucket versioning enabled');
-      } catch (e) {
-        print('Warning: Could not enable versioning: $e');
-      }
+    tearDownAll(() {
+      client.close();
     });
 
     test('function is registered with emulator', () {
@@ -219,41 +268,32 @@ void runStorageTests(
       );
     });
 
-    test('overwriting object triggers onObjectArchived', () async {
+    test('CloudEvent triggers onObjectArchived handler', () async {
       emulator.clearOutputBuffer();
 
-      final objectPath = 'test/archive-test.txt';
+      print('Sending archived CloudEvent directly to function endpoint...');
 
-      // Upload the object for the first time
-      final content1 = Uint8List.fromList(
-        utf8.encode('Original content for archiving'),
-      );
-      await storageClient.uploadObject(
-        objectPath,
-        data: content1,
-        contentType: 'text/plain',
+      final cloudEvent = _storageCloudEvent(
+        eventType: 'google.cloud.storage.object.v1.archived',
+        objectName: 'test/archive-test.txt',
       );
 
-      // Wait for finalized trigger to complete
+      final response = await client.post(
+        Uri.parse(
+          '$functionsUrl/on-object-archived-demotestfirebasestorageapp',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(cloudEvent),
+      );
+
+      expect(
+        response.statusCode,
+        200,
+        reason: 'Function should return 200. Body: ${response.body}',
+      );
+
+      // Wait for logs to propagate
       await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Clear logs so we only capture the archive event
-      emulator.clearOutputBuffer();
-
-      print('Overwriting object to trigger archive...');
-
-      // Upload again with same path — archives the old version
-      final content2 = Uint8List.fromList(
-        utf8.encode('New content replacing archived version'),
-      );
-      await storageClient.uploadObject(
-        objectPath,
-        data: content2,
-        contentType: 'text/plain',
-      );
-
-      // Wait for function to process the event
-      await Future<void>.delayed(const Duration(seconds: 3));
 
       final logs = emulator.outputLines;
       final functionExecuted = logs.any(
@@ -263,8 +303,8 @@ void runStorageTests(
         functionExecuted,
         isTrue,
         reason:
-            'onObjectArchived should be triggered when overwriting an object. '
-            'Logs: ${logs.where((l) => l.contains("storage") || l.contains("Object") || l.contains("archived")).join("\n")}',
+            'onObjectArchived handler should log the event. '
+            'Logs: ${logs.where((l) => l.contains("Object") || l.contains("archived")).join("\n")}',
       );
 
       print('✓ onObjectArchived triggered');
@@ -273,84 +313,70 @@ void runStorageTests(
     test('function receives correct event data', () async {
       emulator.clearOutputBuffer();
 
-      final objectPath = 'test/archive-metadata.txt';
-
-      // Upload the initial object
-      final content1 = Uint8List.fromList(
-        utf8.encode('Initial content for metadata test'),
-      );
-      await storageClient.uploadObject(
-        objectPath,
-        data: content1,
-        contentType: 'text/plain',
+      final cloudEvent = _storageCloudEvent(
+        eventType: 'google.cloud.storage.object.v1.archived',
+        objectName: 'test/archive-metadata.txt',
+        storageClass: 'NEARLINE',
       );
 
-      // Wait for finalized trigger
+      final response = await client.post(
+        Uri.parse(
+          '$functionsUrl/on-object-archived-demotestfirebasestorageapp',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(cloudEvent),
+      );
+
+      expect(response.statusCode, 200);
+
       await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Clear logs
-      emulator.clearOutputBuffer();
-
-      // Overwrite to trigger archive
-      final content2 = Uint8List.fromList(utf8.encode('Replacement content'));
-      await storageClient.uploadObject(
-        objectPath,
-        data: content2,
-        contentType: 'text/plain',
-      );
-
-      await Future<void>.delayed(const Duration(seconds: 3));
 
       final logs = emulator.outputLines;
 
-      // Verify the function logged the object name
-      final hasName = logs.any((line) => line.contains(objectPath));
+      final hasName = logs.any(
+        (line) => line.contains('test/archive-metadata.txt'),
+      );
+      final hasStorageClass = logs.any((line) => line.contains('NEARLINE'));
 
       expect(
         hasName,
         isTrue,
         reason: 'Function should log the archived object name',
       );
+      expect(
+        hasStorageClass,
+        isTrue,
+        reason: 'Function should log the storage class',
+      );
 
       print('✓ Archive event data received correctly');
     });
 
-    test('handles multiple overwrites in sequence', () async {
+    test('handles multiple archived events in sequence', () async {
       emulator.clearOutputBuffer();
 
-      final objectPath = 'test/archive-sequential.txt';
+      print('Sending multiple archived CloudEvents...');
 
-      print('Uploading initial object...');
-
-      // Upload initial object
-      final initial = Uint8List.fromList(utf8.encode('Initial version'));
-      await storageClient.uploadObject(
-        objectPath,
-        data: initial,
-        contentType: 'text/plain',
-      );
-
-      await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Clear logs before overwrite sequence
-      emulator.clearOutputBuffer();
-
-      print('Overwriting object multiple times...');
-
-      // Overwrite 3 times — each should archive the previous version
       for (var i = 1; i <= 3; i++) {
-        final content = Uint8List.fromList(utf8.encode('Version $i content'));
-        await storageClient.uploadObject(
-          objectPath,
-          data: content,
-          contentType: 'text/plain',
+        final cloudEvent = _storageCloudEvent(
+          eventType: 'google.cloud.storage.object.v1.archived',
+          objectName: 'test/archive-sequential-$i.txt',
         );
-        print('  Uploaded version $i');
-        await Future<void>.delayed(const Duration(seconds: 1));
+
+        final response = await client.post(
+          Uri.parse(
+            '$functionsUrl/on-object-archived-demotestfirebasestorageapp',
+          ),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(cloudEvent),
+        );
+
+        expect(response.statusCode, 200);
+        print('  Sent archived event $i');
+        await Future<void>.delayed(const Duration(milliseconds: 500));
       }
 
-      // Wait for all triggers
-      await Future<void>.delayed(const Duration(seconds: 4));
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       final logs = emulator.outputLines;
       final archiveCount = logs
@@ -360,22 +386,39 @@ void runStorageTests(
       expect(
         archiveCount,
         greaterThanOrEqualTo(3),
-        reason: 'All 3 overwrites should trigger onObjectArchived',
+        reason: 'All 3 archived events should trigger onObjectArchived',
       );
 
-      print('✓ All sequential overwrites triggered archive events');
+      print('✓ All sequential archived events triggered');
     });
   });
 
   group('Storage onObjectMetadataUpdated', () {
     late String examplePath;
-    late StorageClient storageClient;
     late EmulatorHelper emulator;
+    late http.Client client;
+    late String functionsUrl;
+    late String functionName;
 
     setUpAll(() {
       examplePath = getExamplePath();
-      storageClient = getStorageClient();
       emulator = getEmulator();
+      client = http.Client();
+      functionsUrl = emulator.functionsUrl;
+
+      // Read the actual function name from the manifest since it may be
+      // truncated with a hash suffix due to the 50-char Cloud Run ID limit.
+      final manifestContent = File(
+        '$examplePath/functions.yaml',
+      ).readAsStringSync();
+      functionName =
+          _findFunctionName(manifestContent, 'on-object-metadata-updated') ??
+          'on-object-metadata-updated-demotestfirebasestorageapp';
+      print('Using function name: $functionName');
+    });
+
+    tearDownAll(() {
+      client.close();
     });
 
     test('function is registered with emulator', () {
@@ -391,37 +434,35 @@ void runStorageTests(
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('on-object-metadata-updated-demotestfirebasestorageapp'),
+        contains(functionName),
         reason: 'Manifest should contain Storage metadata updated function',
       );
     });
 
-    test('updating metadata triggers onObjectMetadataUpdated', () async {
-      // Upload an object first
-      final content = Uint8List.fromList(
-        utf8.encode('Content for metadata update test'),
-      );
-      await storageClient.uploadObject(
-        'test/metadata-update.txt',
-        data: content,
-        contentType: 'text/plain',
-      );
-
-      // Wait for finalized trigger to complete
-      await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Clear logs so we only capture the metadata update event
+    test('CloudEvent triggers onObjectMetadataUpdated handler', () async {
       emulator.clearOutputBuffer();
 
-      print('Updating object metadata...');
+      print('Sending metadataUpdated CloudEvent directly to function...');
 
-      await storageClient.updateObjectMetadata(
-        'test/metadata-update.txt',
+      final cloudEvent = _storageCloudEvent(
+        eventType: 'google.cloud.storage.object.v1.metadataUpdated',
+        objectName: 'test/metadata-update.txt',
         metadata: {'customKey': 'customValue'},
       );
 
-      // Wait for function to process the event
-      await Future<void>.delayed(const Duration(seconds: 3));
+      final response = await client.post(
+        Uri.parse('$functionsUrl/$functionName'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(cloudEvent),
+      );
+
+      expect(
+        response.statusCode,
+        200,
+        reason: 'Function should return 200. Body: ${response.body}',
+      );
+
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       final logs = emulator.outputLines;
       final functionExecuted = logs.any(
@@ -431,44 +472,37 @@ void runStorageTests(
         functionExecuted,
         isTrue,
         reason:
-            'onObjectMetadataUpdated should be triggered on metadata change. '
-            'Logs: ${logs.where((l) => l.contains("storage") || l.contains("Object") || l.contains("metadata")).join("\n")}',
+            'onObjectMetadataUpdated handler should log the event. '
+            'Logs: ${logs.where((l) => l.contains("Object") || l.contains("metadata")).join("\n")}',
       );
 
       print('✓ onObjectMetadataUpdated triggered');
     });
 
     test('function receives correct metadata', () async {
-      // Upload an object
-      final content = Uint8List.fromList(
-        utf8.encode('Content for metadata verification'),
-      );
-      await storageClient.uploadObject(
-        'test/metadata-verify.txt',
-        data: content,
-        contentType: 'text/plain',
-      );
-
-      await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Clear logs
       emulator.clearOutputBuffer();
 
-      // Update metadata with specific key-value pairs
-      await storageClient.updateObjectMetadata(
-        'test/metadata-verify.txt',
+      final cloudEvent = _storageCloudEvent(
+        eventType: 'google.cloud.storage.object.v1.metadataUpdated',
+        objectName: 'test/metadata-verify.txt',
         metadata: {'env': 'test', 'version': '42'},
       );
 
-      await Future<void>.delayed(const Duration(seconds: 3));
+      final response = await client.post(
+        Uri.parse('$functionsUrl/$functionName'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(cloudEvent),
+      );
+
+      expect(response.statusCode, 200);
+
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       final logs = emulator.outputLines;
 
-      // Verify the function logged the object name
       final hasName = logs.any(
         (line) => line.contains('test/metadata-verify.txt'),
       );
-      // Verify metadata key appears in logs
       final hasMetadata = logs.any((line) => line.contains('Metadata:'));
 
       expect(hasName, isTrue, reason: 'Function should log the object name');
@@ -477,35 +511,30 @@ void runStorageTests(
       print('✓ Metadata event data received correctly');
     });
 
-    test('handles sequential metadata updates', () async {
-      // Upload an object
-      final content = Uint8List.fromList(
-        utf8.encode('Content for sequential metadata test'),
-      );
-      await storageClient.uploadObject(
-        'test/metadata-sequential.txt',
-        data: content,
-        contentType: 'text/plain',
-      );
-
-      await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Clear logs before update sequence
+    test('handles sequential metadata update events', () async {
       emulator.clearOutputBuffer();
 
-      print('Updating metadata multiple times...');
+      print('Sending multiple metadataUpdated CloudEvents...');
 
       for (var i = 1; i <= 3; i++) {
-        await storageClient.updateObjectMetadata(
-          'test/metadata-sequential.txt',
+        final cloudEvent = _storageCloudEvent(
+          eventType: 'google.cloud.storage.object.v1.metadataUpdated',
+          objectName: 'test/metadata-sequential.txt',
           metadata: {'iteration': '$i'},
         );
-        print('  Updated metadata iteration $i');
-        await Future<void>.delayed(const Duration(seconds: 1));
+
+        final response = await client.post(
+          Uri.parse('$functionsUrl/$functionName'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(cloudEvent),
+        );
+
+        expect(response.statusCode, 200);
+        print('  Sent metadata update event $i');
+        await Future<void>.delayed(const Duration(milliseconds: 500));
       }
 
-      // Wait for all triggers
-      await Future<void>.delayed(const Duration(seconds: 4));
+      await Future<void>.delayed(const Duration(seconds: 2));
 
       final logs = emulator.outputLines;
       final updateCount = logs
@@ -515,10 +544,11 @@ void runStorageTests(
       expect(
         updateCount,
         greaterThanOrEqualTo(3),
-        reason: 'All 3 metadata updates should trigger onObjectMetadataUpdated',
+        reason:
+            'All 3 metadata update events should trigger onObjectMetadataUpdated',
       );
 
-      print('✓ All sequential metadata updates triggered');
+      print('✓ All sequential metadata update events triggered');
     });
   });
 }
