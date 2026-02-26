@@ -87,6 +87,34 @@ void main(List<String> args) async {
       }
     });
 
+    // Test onDocumentCreatedWithAuthContext
+    firebase.firestore.onDocumentCreatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER CREATED WITH AUTH CONTEXT ===');
+        print('Order created: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+        print('Params: ${event.params}');
+
+        if (event.data != null) {
+          final data = event.data!.data();
+          print('Order data: $data');
+        }
+      },
+    );
+
+    // Test onDocumentWrittenWithAuthContext
+    firebase.firestore.onDocumentWrittenWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER WRITTEN WITH AUTH CONTEXT ===');
+        print('Order written: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+      },
+    );
+
     // Test onDocumentWritten (catches all operations)
     firebase.firestore.onDocumentWritten(document: 'users/{userId}', (
       event,

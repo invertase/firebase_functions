@@ -117,6 +117,10 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
           'onDocumentUpdated',
           'onDocumentDeleted',
           'onDocumentWritten',
+          'onDocumentCreatedWithAuthContext',
+          'onDocumentUpdatedWithAuthContext',
+          'onDocumentDeletedWithAuthContext',
+          'onDocumentWrittenWithAuthContext',
         ],
       ),
       _Namespace(

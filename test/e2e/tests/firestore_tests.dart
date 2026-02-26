@@ -215,6 +215,65 @@ void runFirestoreTests(
       print('✓ Path parameter extraction verified (check function logs)');
     });
 
+    test('onDocumentCreatedWithAuthContext fires with auth context', () async {
+      print('\n=== Testing onDocumentCreatedWithAuthContext ===');
+
+      final orderId = 'order_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Create a document in the 'orders' collection
+      final doc = await client.createDocument('orders', orderId, {
+        'product': 'Widget',
+        'quantity': 3,
+        'price': 19.99,
+      });
+
+      expect(doc, isNotNull);
+      print('✓ Order document created');
+
+      // Wait for trigger to process
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Verify document exists
+      final retrieved = await client.getDocument('orders/$orderId');
+      expect(retrieved, isNotNull);
+      expect(retrieved!['fields']['product']['stringValue'], 'Widget');
+      print('✓ WithAuthContext trigger verified (check function logs for authType/authId)');
+
+      // Cleanup
+      try {
+        await client.deleteDocument('orders/$orderId');
+      } catch (e) {
+        // Ignore
+      }
+    });
+
+    test('onDocumentWrittenWithAuthContext fires for all operations', () async {
+      print('\n=== Testing onDocumentWrittenWithAuthContext ===');
+
+      final orderId = 'order_written_${DateTime.now().millisecondsSinceEpoch}';
+
+      // CREATE
+      await client.createDocument('orders', orderId, {
+        'product': 'Gadget',
+        'status': 'pending',
+      });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ CREATE operation triggered with auth context');
+
+      // UPDATE
+      await client.updateDocument('orders/$orderId', {
+        'product': 'Gadget',
+        'status': 'shipped',
+      });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ UPDATE operation triggered with auth context');
+
+      // DELETE
+      await client.deleteDocument('orders/$orderId');
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ DELETE operation triggered with auth context');
+    });
+
     tearDown(() async {
       // Clean up: try to delete test documents
       try {

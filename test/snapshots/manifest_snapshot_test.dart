@@ -305,14 +305,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(42),
+        equals(46),
         reason:
-            'Should discover 42 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options)',
+            'Should discover 46 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(42),
-        reason: 'Node.js reference should also have 42 endpoints',
+        equals(46),
+        reason: 'Node.js reference should also have 46 endpoints',
       );
 
       // Verify both manifests have the same endpoints (normalized via
@@ -669,6 +669,136 @@ void main() {
       expect(
         nodejsPatterns['document'],
         equals('posts/{postId}/comments/{commentId}'),
+      );
+    });
+
+    // =========================================================================
+    // Firestore WithAuthContext Tests
+    // =========================================================================
+
+    test('should have Firestore onDocumentCreatedWithAuthContext trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onDocumentCreatedWithAuthContext_orders_orderId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentCreatedWithAuthContext_orders_orderId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.created.withAuthContext',
+        ),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.created.withAuthContext',
+        ),
+      );
+
+      final dartPatterns = dartTrigger['eventFilterPathPatterns'] as Map;
+      final nodejsAuthPatterns =
+          nodejsTrigger['eventFilterPathPatterns'] as Map;
+      expect(dartPatterns['document'], equals('orders/{orderId}'));
+      expect(nodejsAuthPatterns['document'], equals('orders/{orderId}'));
+    });
+
+    test('should have Firestore onDocumentUpdatedWithAuthContext trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onDocumentUpdatedWithAuthContext_orders_orderId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentUpdatedWithAuthContext_orders_orderId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.updated.withAuthContext',
+        ),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.updated.withAuthContext',
+        ),
+      );
+    });
+
+    test('should have Firestore onDocumentDeletedWithAuthContext trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onDocumentDeletedWithAuthContext_orders_orderId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentDeletedWithAuthContext_orders_orderId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.deleted.withAuthContext',
+        ),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.deleted.withAuthContext',
+        ),
+      );
+    });
+
+    test('should have Firestore onDocumentWrittenWithAuthContext trigger', () {
+      final dartFunc = _getEndpoint(
+        dartManifest,
+        'onDocumentWrittenWithAuthContext_orders_orderId',
+      );
+      final nodejsFunc = _getEndpoint(
+        nodejsManifest,
+        'onDocumentWrittenWithAuthContext_orders_orderId',
+      );
+
+      expect(dartFunc, isNotNull);
+      expect(nodejsFunc, isNotNull);
+
+      final dartTrigger = dartFunc!['eventTrigger'] as Map;
+      final nodejsTrigger = nodejsFunc!['eventTrigger'] as Map;
+
+      expect(
+        dartTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.written.withAuthContext',
+        ),
+      );
+      expect(
+        nodejsTrigger['eventType'],
+        equals(
+          'google.cloud.firestore.document.v1.written.withAuthContext',
+        ),
       );
     });
 

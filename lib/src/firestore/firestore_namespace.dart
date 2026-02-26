@@ -574,6 +574,553 @@ class FirestoreNamespace extends FunctionsNamespace {
     }, documentPattern: document);
   }
 
+  /// Event handler that triggers when a document is created in Firestore,
+  /// with authentication context.
+  ///
+  /// Similar to [onDocumentCreated], but the handler receives a
+  /// [FirestoreAuthEvent] that includes [AuthType] and an optional auth ID
+  /// identifying the principal that triggered the write.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentCreatedWithAuthContext(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     print('Auth type: ${event.authType}');
+  ///     print('Auth ID: ${event.authId}');
+  ///     final data = event.data?.data();
+  ///     print('Document created: ${event.document}');
+  ///   },
+  /// );
+  /// ```
+  void onDocumentCreatedWithAuthContext(
+    Future<void> Function(
+      FirestoreAuthEvent<EmulatorDocumentSnapshot?> event,
+    )
+    handler, {
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName(
+      'onDocumentCreatedWithAuthContext',
+      document,
+    );
+
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
+
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
+
+          if (ceType != null && !_isFirestoreCreatedEvent(ceType)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentCreatedWithAuthContext: $ceType',
+            );
+          }
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+          final authType = request.headers['ce-authtype'];
+          final authId = request.headers['ce-authid'];
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          EmulatorDocumentSnapshot? snapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                snapshot = parsed['value'];
+              }
+            }
+          } catch (_) {}
+
+          try {
+            final event = FirestoreAuthEvent<EmulatorDocumentSnapshot?>(
+              data: snapshot,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+              authType: AuthType.fromString(authType ?? 'unknown'),
+              authId: authId,
+            );
+
+            await handler(event);
+          } catch (e) {
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
+          final json = await parseAndValidateCloudEvent(request);
+
+          if (!_isFirestoreCreatedEvent(json['type'] as String)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentCreatedWithAuthContext: ${json['type']}',
+            );
+          }
+
+          final event = FirestoreAuthEvent<EmulatorDocumentSnapshot?>(
+            data: null,
+            id: json['id'] as String,
+            source: json['source'] as String,
+            specversion: json['specversion'] as String,
+            subject: json['subject'] as String?,
+            time: DateTime.parse(json['time'] as String),
+            type: json['type'] as String,
+            location: json['location'] as String? ?? 'us-central1',
+            project: 'unknown',
+            database: '(default)',
+            namespace: '(default)',
+            document: '',
+            params: {},
+            authType: AuthType.fromString(
+              json['authtype'] as String? ?? 'unknown',
+            ),
+            authId: json['authid'] as String?,
+          );
+
+          await handler(event);
+          return Response.ok('');
+        }
+      } on FormatException catch (e) {
+        return Response(400, body: 'Invalid CloudEvent: ${e.message}');
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
+  }
+
+  /// Event handler that triggers when a document is updated in Firestore,
+  /// with authentication context.
+  ///
+  /// Similar to [onDocumentUpdated], but the handler receives a
+  /// [FirestoreAuthEvent] that includes [AuthType] and an optional auth ID.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentUpdatedWithAuthContext(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     print('Auth type: ${event.authType}');
+  ///     final before = event.data?.before.data();
+  ///     final after = event.data?.after.data();
+  ///   },
+  /// );
+  /// ```
+  void onDocumentUpdatedWithAuthContext(
+    Future<void> Function(
+      FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?> event,
+    )
+    handler, {
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName(
+      'onDocumentUpdatedWithAuthContext',
+      document,
+    );
+
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
+
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
+
+          if (ceType != null && !_isFirestoreUpdatedEvent(ceType)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentUpdatedWithAuthContext: $ceType',
+            );
+          }
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+          final authType = request.headers['ce-authtype'];
+          final authId = request.headers['ce-authid'];
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          EmulatorDocumentSnapshot? beforeSnapshot;
+          EmulatorDocumentSnapshot? afterSnapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                beforeSnapshot = parsed['old_value'];
+                afterSnapshot = parsed['value'];
+              }
+            }
+          } catch (_) {}
+
+          try {
+            final change = Change<EmulatorDocumentSnapshot>(
+              before: beforeSnapshot,
+              after: afterSnapshot,
+            );
+
+            final event =
+                FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?>(
+              data: change,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+              authType: AuthType.fromString(authType ?? 'unknown'),
+              authId: authId,
+            );
+
+            await handler(event);
+          } catch (e) {
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
+          return Response(
+            501,
+            body:
+                'Structured CloudEvent mode not yet supported for onDocumentUpdatedWithAuthContext',
+          );
+        }
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
+  }
+
+  /// Event handler that triggers when a document is deleted in Firestore,
+  /// with authentication context.
+  ///
+  /// Similar to [onDocumentDeleted], but the handler receives a
+  /// [FirestoreAuthEvent] that includes [AuthType] and an optional auth ID.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentDeletedWithAuthContext(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     print('Auth type: ${event.authType}');
+  ///     print('Deleted by: ${event.authId}');
+  ///   },
+  /// );
+  /// ```
+  void onDocumentDeletedWithAuthContext(
+    Future<void> Function(
+      FirestoreAuthEvent<EmulatorDocumentSnapshot?> event,
+    )
+    handler, {
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName(
+      'onDocumentDeletedWithAuthContext',
+      document,
+    );
+
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
+
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
+
+          if (ceType != null && !_isFirestoreDeletedEvent(ceType)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentDeletedWithAuthContext: $ceType',
+            );
+          }
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+          final authType = request.headers['ce-authtype'];
+          final authId = request.headers['ce-authid'];
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          EmulatorDocumentSnapshot? snapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                snapshot = parsed['value'];
+              }
+            }
+          } catch (_) {}
+
+          try {
+            final event = FirestoreAuthEvent<EmulatorDocumentSnapshot?>(
+              data: snapshot,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+              authType: AuthType.fromString(authType ?? 'unknown'),
+              authId: authId,
+            );
+
+            await handler(event);
+          } catch (e) {
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
+          return Response(
+            501,
+            body:
+                'Structured CloudEvent mode not yet supported for onDocumentDeletedWithAuthContext',
+          );
+        }
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
+  }
+
+  /// Event handler that triggers on any write to a document (create, update,
+  /// or delete), with authentication context.
+  ///
+  /// Similar to [onDocumentWritten], but the handler receives a
+  /// [FirestoreAuthEvent] that includes [AuthType] and an optional auth ID.
+  ///
+  /// Example:
+  /// ```dart
+  /// firebase.firestore.onDocumentWrittenWithAuthContext(
+  ///   document: 'users/{userId}',
+  ///   (event) async {
+  ///     print('Auth type: ${event.authType}');
+  ///     print('Auth ID: ${event.authId}');
+  ///     final before = event.data?.before;
+  ///     final after = event.data?.after;
+  ///   },
+  /// );
+  /// ```
+  void onDocumentWrittenWithAuthContext(
+    Future<void> Function(
+      FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?> event,
+    )
+    handler, {
+    // ignore: experimental_member_use
+    @mustBeConst required String document,
+    // ignore: experimental_member_use
+    @mustBeConst DocumentOptions? options,
+  }) {
+    final functionName = _documentToFunctionName(
+      'onDocumentWrittenWithAuthContext',
+      document,
+    );
+
+    firebase.registerFunction(functionName, (request) async {
+      try {
+        final isBinaryMode = request.headers.containsKey('ce-type');
+
+        if (isBinaryMode) {
+          final ceType = request.headers['ce-type'];
+
+          if (ceType != null && !_isFirestoreWrittenEvent(ceType)) {
+            return Response(
+              400,
+              body:
+                  'Invalid event type for Firestore onDocumentWrittenWithAuthContext: $ceType',
+            );
+          }
+
+          final ceId = request.headers['ce-id'];
+          final ceSource = request.headers['ce-source'];
+          final ceTime = request.headers['ce-time'];
+          final ceSubject = request.headers['ce-subject'];
+          final documentPath = request.headers['ce-document'];
+          final database = request.headers['ce-database'] ?? '(default)';
+          final namespace = request.headers['ce-namespace'] ?? '(default)';
+          final authType = request.headers['ce-authtype'];
+          final authId = request.headers['ce-authid'];
+
+          if (ceId == null ||
+              ceSource == null ||
+              ceTime == null ||
+              documentPath == null) {
+            return Response(400, body: 'Missing required CloudEvent headers');
+          }
+
+          final params = _extractParams(document, documentPath);
+
+          EmulatorDocumentSnapshot? beforeSnapshot;
+          EmulatorDocumentSnapshot? afterSnapshot;
+          try {
+            final bodyBytes = await request.read().fold<List<int>>(
+              [],
+              (previous, element) => previous..addAll(element),
+            );
+
+            if (bodyBytes.isNotEmpty) {
+              final parsed = parseDocumentEventData(
+                Uint8List.fromList(bodyBytes),
+              );
+
+              if (parsed != null) {
+                beforeSnapshot = parsed['old_value'];
+                afterSnapshot = parsed['value'];
+              }
+            }
+          } catch (_) {}
+
+          try {
+            final change = Change<EmulatorDocumentSnapshot>(
+              before: beforeSnapshot,
+              after: afterSnapshot,
+            );
+
+            final event =
+                FirestoreAuthEvent<Change<EmulatorDocumentSnapshot>?>(
+              data: change,
+              id: ceId,
+              source: ceSource,
+              specversion: '1.0',
+              subject: ceSubject,
+              time: DateTime.parse(ceTime),
+              type: ceType!,
+              location: 'us-central1',
+              project: _extractProject(ceSource),
+              database: database,
+              namespace: namespace,
+              document: documentPath,
+              params: params,
+              authType: AuthType.fromString(authType ?? 'unknown'),
+              authId: authId,
+            );
+
+            await handler(event);
+          } catch (e) {
+            return Response(500, body: 'Handler error: $e');
+          }
+
+          return Response.ok('');
+        } else {
+          return Response(
+            501,
+            body:
+                'Structured CloudEvent mode not yet supported for onDocumentWrittenWithAuthContext',
+          );
+        }
+      } catch (e, stackTrace) {
+        return Response(
+          500,
+          body: 'Error processing Firestore event: $e\n$stackTrace',
+        );
+      }
+    }, documentPattern: document);
+  }
+
   /// Converts a document path to a function name.
   ///
   /// Examples:
@@ -594,20 +1141,28 @@ class FirestoreNamespace extends FunctionsNamespace {
   }
 
   /// Checks if the CloudEvent type is a Firestore document created event.
+  /// Accepts both the base type and the `.withAuthContext` variant.
   bool _isFirestoreCreatedEvent(String type) =>
-      type == 'google.cloud.firestore.document.v1.created';
+      type == 'google.cloud.firestore.document.v1.created' ||
+      type == 'google.cloud.firestore.document.v1.created.withAuthContext';
 
   /// Checks if the CloudEvent type is a Firestore document updated event.
+  /// Accepts both the base type and the `.withAuthContext` variant.
   bool _isFirestoreUpdatedEvent(String type) =>
-      type == 'google.cloud.firestore.document.v1.updated';
+      type == 'google.cloud.firestore.document.v1.updated' ||
+      type == 'google.cloud.firestore.document.v1.updated.withAuthContext';
 
   /// Checks if the CloudEvent type is a Firestore document deleted event.
+  /// Accepts both the base type and the `.withAuthContext` variant.
   bool _isFirestoreDeletedEvent(String type) =>
-      type == 'google.cloud.firestore.document.v1.deleted';
+      type == 'google.cloud.firestore.document.v1.deleted' ||
+      type == 'google.cloud.firestore.document.v1.deleted.withAuthContext';
 
   /// Checks if the CloudEvent type is a Firestore document written event.
+  /// Accepts both the base type and the `.withAuthContext` variant.
   bool _isFirestoreWrittenEvent(String type) =>
-      type == 'google.cloud.firestore.document.v1.written';
+      type == 'google.cloud.firestore.document.v1.written' ||
+      type == 'google.cloud.firestore.document.v1.written.withAuthContext';
 
   /// Extracts path parameters from a document path by matching against a pattern.
   ///
