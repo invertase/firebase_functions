@@ -13,7 +13,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 |-------------|--------|-----------|
 | **HTTPS** | ✅ Complete | `onRequest`, `onCall`, `onCallWithData` |
 | **Pub/Sub** | ✅ Complete | `onMessagePublished` |
-| **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten` |
+| **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten` + `onDocument*WithAuthContext` |
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
@@ -214,6 +214,29 @@ firebase.firestore.onDocumentCreated(
   (event) async {
     print('Post: ${event.params['postId']}');
     print('Comment: ${event.params['commentId']}');
+  },
+);
+
+// With auth context (identifies the principal that triggered the write)
+firebase.firestore.onDocumentCreatedWithAuthContext(
+  document: 'orders/{orderId}',
+  (event) async {
+    print('Auth type: ${event.authType}');
+    print('Auth ID: ${event.authId}');
+    final data = event.data?.data();
+    print('Order: ${data?['product']}');
+  },
+);
+
+firebase.firestore.onDocumentWrittenWithAuthContext(
+  document: 'orders/{orderId}',
+  (event) async {
+    print('Written by: ${event.authType} (${event.authId})');
+    final before = event.data?.before;
+    final after = event.data?.after;
+    if (before == null || !before.exists) print('CREATE');
+    else if (after == null || !after.exists) print('DELETE');
+    else print('UPDATE');
   },
 );
 ```
