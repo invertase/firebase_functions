@@ -201,6 +201,37 @@ void main(List<String> args) async {
       }
     });
 
+    // Firestore WithAuthContext trigger examples
+    firebase.firestore.onDocumentCreatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('Document created by: ${event.authType} (${event.authId})');
+        final data = event.data?.data();
+        print('  Order: ${data?['product']}');
+      },
+    );
+
+    firebase.firestore.onDocumentUpdatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('Document updated by: ${event.authType} (${event.authId})');
+      },
+    );
+
+    firebase.firestore.onDocumentDeletedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('Document deleted by: ${event.authType} (${event.authId})');
+      },
+    );
+
+    firebase.firestore.onDocumentWrittenWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('Document written by: ${event.authType} (${event.authId})');
+      },
+    );
+
     // Nested collection trigger example
     firebase.firestore.onDocumentCreated(
       document: 'posts/{postId}/comments/{commentId}',

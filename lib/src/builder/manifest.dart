@@ -414,6 +414,14 @@ String _mapFirestoreEventType(String methodName) => switch (methodName) {
   'onDocumentUpdated' => 'google.cloud.firestore.document.v1.updated',
   'onDocumentDeleted' => 'google.cloud.firestore.document.v1.deleted',
   'onDocumentWritten' => 'google.cloud.firestore.document.v1.written',
+  'onDocumentCreatedWithAuthContext' =>
+    'google.cloud.firestore.document.v1.created.withAuthContext',
+  'onDocumentUpdatedWithAuthContext' =>
+    'google.cloud.firestore.document.v1.updated.withAuthContext',
+  'onDocumentDeletedWithAuthContext' =>
+    'google.cloud.firestore.document.v1.deleted.withAuthContext',
+  'onDocumentWrittenWithAuthContext' =>
+    'google.cloud.firestore.document.v1.written.withAuthContext',
   _ => throw ArgumentError('Unknown Firestore event type: $methodName'),
 };
 

@@ -1,5 +1,43 @@
 import '../common/cloud_event.dart';
 
+/// The type of principal that triggered the event.
+///
+/// Matches the Node.js SDK's `AuthType` type.
+enum AuthType {
+  /// A non-user principal used to identify a workload or machine user.
+  serviceAccount('service_account'),
+
+  /// A non-user client API key.
+  apiKey('api_key'),
+
+  /// An obscured identity used when Cloud Platform or another system
+  /// triggered the event (e.g., TTL-based database deletion).
+  system('system'),
+
+  /// An unauthenticated action.
+  unauthenticated('unauthenticated'),
+
+  /// A general type to capture all other principals not captured
+  /// in other auth types.
+  unknown('unknown');
+
+  const AuthType(this.value);
+
+  /// The wire value as sent in CloudEvent headers.
+  final String value;
+
+  /// Parses an [AuthType] from the wire value string.
+  ///
+  /// Returns [AuthType.unknown] if the value is not recognized.
+  static AuthType fromString(String value) => switch (value) {
+    'service_account' => AuthType.serviceAccount,
+    'api_key' => AuthType.apiKey,
+    'system' => AuthType.system,
+    'unauthenticated' => AuthType.unauthenticated,
+    _ => AuthType.unknown,
+  };
+}
+
 /// A CloudEvent that contains a DocumentSnapshot or a `Change<DocumentSnapshot>`.
 ///
 /// This event type extends the base [CloudEvent] with Firestore-specific fields.
@@ -90,6 +128,61 @@ class FirestoreEvent<T extends Object?> extends CloudEvent<T> {
     json['namespace'] = namespace;
     json['document'] = document;
     json['params'] = params;
+    return json;
+  }
+}
+
+/// A [FirestoreEvent] that includes authentication context.
+///
+/// This event type is used by the `WithAuthContext` trigger variants
+/// (e.g., [FirestoreNamespace.onDocumentCreatedWithAuthContext]).
+///
+/// The auth context identifies which principal triggered the Firestore write.
+/// Note: this is different from HTTPS callable auth — it identifies the
+/// principal type (service account, API key, etc.), not a Firebase Auth user.
+///
+/// Example:
+/// ```dart
+/// firebase.firestore.onDocumentCreatedWithAuthContext(
+///   document: 'users/{userId}',
+///   (event) async {
+///     print('Auth type: ${event.authType}');
+///     print('Auth ID: ${event.authId}');
+///   },
+/// );
+/// ```
+class FirestoreAuthEvent<T extends Object?> extends FirestoreEvent<T> {
+  const FirestoreAuthEvent({
+    super.data,
+    required super.id,
+    required super.source,
+    required super.specversion,
+    super.subject,
+    required super.time,
+    required super.type,
+    required super.location,
+    required super.project,
+    required super.database,
+    required super.namespace,
+    required super.document,
+    required super.params,
+    required this.authType,
+    this.authId,
+  });
+
+  /// The type of principal that triggered the event.
+  final AuthType authType;
+
+  /// The unique identifier for the principal.
+  ///
+  /// May be `null` for system-triggered or unauthenticated events.
+  final String? authId;
+
+  @override
+  Map<String, dynamic> toJson(Map<String, dynamic> Function(T) dataEncoder) {
+    final json = super.toJson(dataEncoder);
+    json['authType'] = authType.value;
+    if (authId != null) json['authId'] = authId;
     return json;
   }
 }

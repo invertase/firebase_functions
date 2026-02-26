@@ -7,7 +7,7 @@
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onTaskDispatched } = require("firebase-functions/v2/tasks");
 const { onMessagePublished } = require("firebase-functions/v2/pubsub");
-const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten, onDocumentCreatedWithAuthContext, onDocumentUpdatedWithAuthContext, onDocumentDeletedWithAuthContext, onDocumentWrittenWithAuthContext } = require("firebase-functions/v2/firestore");
 const { onValueCreated, onValueUpdated, onValueDeleted, onValueWritten } = require("firebase-functions/v2/database");
 const { onNewFatalIssuePublished } = require("firebase-functions/v2/alerts/crashlytics");
 const { onPlanUpdatePublished } = require("firebase-functions/v2/alerts/billing");
@@ -196,6 +196,37 @@ exports.onDocumentWritten_users_userId = onDocumentWritten(
     } else if (before && !after) {
       console.log("  Operation: DELETE");
     }
+  }
+);
+
+// Firestore WithAuthContext trigger examples
+exports.onDocumentCreatedWithAuthContext_orders_orderId = onDocumentCreatedWithAuthContext(
+  "orders/{orderId}",
+  (event) => {
+    console.log("Document created by:", event.authType, event.authId);
+    const data = event.data?.data();
+    console.log("  Order:", data?.product);
+  }
+);
+
+exports.onDocumentUpdatedWithAuthContext_orders_orderId = onDocumentUpdatedWithAuthContext(
+  "orders/{orderId}",
+  (event) => {
+    console.log("Document updated by:", event.authType, event.authId);
+  }
+);
+
+exports.onDocumentDeletedWithAuthContext_orders_orderId = onDocumentDeletedWithAuthContext(
+  "orders/{orderId}",
+  (event) => {
+    console.log("Document deleted by:", event.authType, event.authId);
+  }
+);
+
+exports.onDocumentWrittenWithAuthContext_orders_orderId = onDocumentWrittenWithAuthContext(
+  "orders/{orderId}",
+  (event) => {
+    console.log("Document written by:", event.authType, event.authId);
   }
 );
 
