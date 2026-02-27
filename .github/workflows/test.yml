@@ -38,8 +38,15 @@ jobs:
         run: dart pub get
 
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
         if: matrix.sdk == 'stable'
+        run: |
+          dart format --output=none --set-exit-if-changed . || {
+            echo "::error::Formatting check failed. Showing diff:"
+            dart format --output=show . | diff - /dev/null || true
+            dart format .
+            git diff
+            exit 1
+          }
 
       - name: Analyze all packages
         run: |
