@@ -5,7 +5,10 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
+import 'package:stack_trace/stack_trace.dart' show Trace;
+
 import '../firebase.dart';
+import '../logger/logger.dart';
 import 'options.dart';
 import 'task_request.dart';
 
@@ -115,7 +118,8 @@ class TasksNamespace extends FunctionsNamespace {
 
         // Return 204 No Content (matching Node.js behavior)
         return Response(204);
-      } catch (e) {
+      } catch (e, stackTrace) {
+        logger.error('$e\n${Trace.from(stackTrace).terse}');
         return Response(
           500,
           body: jsonEncode({
