@@ -671,7 +671,7 @@ void main(List<String> args) async {
     // Used by E2E tests to verify errors are logged but NOT leaked to clients.
     firebase.https.onRequest(name: 'crashWithSecret', (request) async {
       throw StateError(
-        'Unexpected failure — sensitive data: sk_live_T0P_s3cReT_k3y!2026',
+        'Unexpected failure — sensitive data: SECRET_DATA',
       );
     });
 

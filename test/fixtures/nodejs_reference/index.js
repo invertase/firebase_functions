@@ -584,7 +584,7 @@ exports.callableFull = onCall(
 // Used by E2E tests to verify errors are logged but NOT leaked to clients.
 exports.crashWithSecret = onRequest(
   (request, response) => {
-    throw new Error("Unexpected failure — sensitive data: sk_live_T0P_s3cReT_k3y!2026");
+    throw new Error("Unexpected failure — sensitive data: SECRET_DATA");
   }
 );
 

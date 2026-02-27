@@ -105,7 +105,7 @@ void runHttpsOnRequestTests(
         expect(error['message'], equals('An unexpected error occurred.'));
 
         // Sensitive details must NOT appear anywhere in the response
-        expect(response.body, isNot(contains('sk_live_T0P_s3cReT_k3y!2026')));
+        expect(response.body, isNot(contains('SECRET_DATA')));
         expect(response.body, isNot(contains('sensitive data')));
         expect(response.body, isNot(contains('Unexpected failure')));
 
@@ -117,7 +117,7 @@ void runHttpsOnRequestTests(
         ].join('\n');
         expect(
           allLogs,
-          contains('sk_live_T0P_s3cReT_k3y!2026'),
+          contains('SECRET_DATA'),
           reason: 'The actual error should be logged server-side for debugging',
         );
 
