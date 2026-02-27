@@ -184,6 +184,12 @@ void main(List<String> args) async {
       final data = event.data?.data();
       print('Document deleted: users/${event.params['userId']}');
       print('  Final data: $data');
+      print(
+        '[onDocumentDeleted] hasData=${data != null}'
+        ' name=${data?['name']}'
+        ' email=${data?['email']}'
+        ' finalMessage=${data?['finalMessage']}',
+      );
     });
 
     firebase.firestore.onDocumentWritten(document: 'users/{userId}', (
