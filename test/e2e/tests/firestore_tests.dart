@@ -98,7 +98,7 @@ void runFirestoreTests(
       await client.deleteDocument('users/$testUserId');
       print('✓ Document deleted successfully');
 
-      // Wait for trigger to fire and write result
+      // Wait for trigger to fire
       await Future<void>.delayed(const Duration(seconds: 2));
 
       // Verify document no longer exists
@@ -106,30 +106,21 @@ void runFirestoreTests(
       expect(doc, isNull, reason: 'Document should not exist after deletion');
       print('✓ Document deletion verified');
 
-      // Poll for the side-channel result doc written by the handler
-      // (up to 5 attempts × 500ms = 2.5s extra headroom)
-      Map<String, dynamic>? result;
-      for (var i = 0; i < 5; i++) {
-        result = await client.getDocument(
-          'trigger_results/deleted_$testUserId',
-        );
-        if (result != null) break;
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-      }
-
+      // Verify handler received the pre-deletion document data by checking
+      // the structured log line emitted by the handler.
+      final emulator = getEmulator();
+      final allLogs = [
+        ...emulator.outputLines,
+        ...emulator.errorLines,
+      ].join('\n');
       expect(
-        result,
-        isNotNull,
-        reason: 'trigger_results doc should have been written by handler',
-      );
-      expect(
-        result!['fields']['hasData']['booleanValue'],
-        isTrue,
+        allLogs,
+        contains('[onDocumentDeleted] hasData=true'),
         reason: 'event.data should be non-null for delete events',
       );
-      expect(result['fields']['name']['stringValue'], 'To Be Deleted');
-      expect(result['fields']['email']['stringValue'], 'delete@example.com');
-      expect(result['fields']['finalMessage']['stringValue'], 'goodbye');
+      expect(allLogs, contains('name=To Be Deleted'));
+      expect(allLogs, contains('email=delete@example.com'));
+      expect(allLogs, contains('finalMessage=goodbye'));
       print('✓ Handler received correct pre-deletion document data');
     });
 
@@ -306,12 +297,6 @@ void runFirestoreTests(
       // Clean up: try to delete test documents
       try {
         await client.deleteDocument('users/$testUserId');
-      } catch (e) {
-        // Ignore errors during cleanup
-      }
-      // Clean up side-channel result doc written by the onDocumentDeleted handler
-      try {
-        await client.deleteDocument('trigger_results/deleted_$testUserId');
       } catch (e) {
         // Ignore errors during cleanup
       }

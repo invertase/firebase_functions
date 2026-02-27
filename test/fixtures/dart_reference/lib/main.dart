@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:firebase_functions/firebase_functions.dart';
 
 // =============================================================================
@@ -187,43 +184,12 @@ void main(List<String> args) async {
       final data = event.data?.data();
       print('Document deleted: users/${event.params['userId']}');
       print('  Final data: $data');
-
-      // write result to Firestore so the e2e test can assert on
-      // what the handler actually received (exposes the old_value/value).
-      final userId = event.params['userId'] as String;
-      final firestoreHost =
-          Platform.environment['FIRESTORE_EMULATOR_HOST'] ?? '127.0.0.1:8080';
-      final parts = firestoreHost.split(':');
-      final host = parts[0];
-      final port = int.tryParse(parts.length > 1 ? parts[1] : '8080') ?? 8080;
-
-      final resultFields = <String, dynamic>{
-        'hasData': {'booleanValue': data != null},
-        'name': {'stringValue': data?['name']?.toString() ?? ''},
-        'email': {'stringValue': data?['email']?.toString() ?? ''},
-        'finalMessage': {
-          'stringValue': data?['finalMessage']?.toString() ?? '',
-        },
-      };
-
-      try {
-        final httpClient = HttpClient();
-        final req = await httpClient.post(
-          host,
-          port,
-          '/v1/projects/demo-test/databases/(default)/documents/'
-          'trigger_results?documentId=deleted_$userId',
-        );
-        req.headers.contentType = ContentType.json;
-        req.write(jsonEncode({'fields': resultFields}));
-        await req.close();
-        httpClient.close();
-      } catch (e) {
-        print(
-          '  Firestore write to verify handler '
-          'received event.data failed: $e',
-        );
-      }
+      print(
+        '[onDocumentDeleted] hasData=${data != null}'
+        ' name=${data?['name']}'
+        ' email=${data?['email']}'
+        ' finalMessage=${data?['finalMessage']}',
+      );
     });
 
     firebase.firestore.onDocumentWritten(document: 'users/{userId}', (
