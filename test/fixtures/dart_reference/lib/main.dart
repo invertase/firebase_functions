@@ -675,6 +675,15 @@ void main(List<String> args) async {
       );
     });
 
+    // HTTPS onRequest that crashes from an unexpected runtime error.
+    // Simulates a real bug (bad cast) to verify we don't leak internals.
+    firebase.https.onRequest(name: 'crashUnexpected', (request) async {
+      final data = {'count': 'not_a_number'};
+      // This will throw a TypeError at runtime
+      final count = data['count'] as int;
+      return Response.ok('count=$count');
+    });
+
     // GCF Gen1 CPU option
     firebase.https.onRequest(
       name: 'httpsGen1',

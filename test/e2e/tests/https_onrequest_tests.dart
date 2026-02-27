@@ -128,6 +128,36 @@ void runHttpsOnRequestTests(
       },
     );
 
+    test(
+      'unexpected runtime error returns INTERNAL without leaking internals',
+      () async {
+        print('GET ${client.baseUrl}/crash-unexpected');
+        final response = await client.get('crash-unexpected');
+
+        // Should return 500
+        expect(response.statusCode, equals(500));
+
+        // Parse the JSON error body
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final error = json['error'] as Map<String, dynamic>;
+
+        // Generic INTERNAL error is returned
+        expect(error['status'], equals('INTERNAL'));
+        expect(error['message'], equals('An unexpected error occurred.'));
+
+        // No internal details leaked (no type names, stack traces, file paths)
+        expect(response.body, isNot(contains('TypeError')));
+        expect(response.body, isNot(contains('not_a_number')));
+        expect(response.body, isNot(contains('.dart')));
+        expect(response.body, isNot(contains('type ')));
+
+        print(
+          '✓ Verified: unexpected runtime crash returns generic 500, '
+          'no internals leaked',
+        );
+      },
+    );
+
     test('function execution is visible in emulator logs', () async {
       // Clear previous logs to isolate this test
       emulator.clearOutputBuffer();
