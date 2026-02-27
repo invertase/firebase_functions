@@ -588,6 +588,18 @@ exports.crashWithSecret = onRequest(
   }
 );
 
+// HTTPS onRequest that crashes from an unexpected runtime error.
+// Simulates a real bug (bad cast) to verify we don't leak internals.
+exports.crashUnexpected = onRequest(
+  (request, response) => {
+    const data = { count: "not_a_number" };
+    // Force a runtime error
+    const count = /** @type {number} */ (data.count);
+    if (typeof count !== "number") throw new TypeError("Expected number");
+    response.send(`count=${count}`);
+  }
+);
+
 // GCF Gen1 CPU
 exports.httpsGen1 = onRequest(
   {
