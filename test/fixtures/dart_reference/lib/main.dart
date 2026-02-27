@@ -676,7 +676,7 @@ void main(List<String> args) async {
 
     // Custom invoker list
     firebase.https.onRequest(
-      name: 'httpsCustomInvoker',
+      name: _OptionsSilly.httpsCustomInvoker,
       options: const HttpsOptions(
         invoker: Invoker(['user1@example.com', 'user2@example.com']),
       ),
@@ -685,7 +685,7 @@ void main(List<String> args) async {
 
     // Pub/Sub with options
     firebase.pubsub.onMessagePublished(
-      topic: 'options-topic',
+      topic: optionsTopic,
       options: const PubSubOptions(
         memory: Memory(MemoryOption.mb256),
         timeoutSeconds: TimeoutSeconds(120),
@@ -698,6 +698,14 @@ void main(List<String> args) async {
 
     print('Functions registered successfully!');
   });
+}
+
+/// Testing constant expression evaluation
+const optionsTopic = 'options-topic';
+
+class _OptionsSilly {
+  /// Testing constant expression evaluation
+  static const httpsCustomInvoker = 'httpsCustomInvoker';
 }
 
 // =============================================================================

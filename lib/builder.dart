@@ -58,7 +58,7 @@ class _SpecBuilder implements Builder {
       if (ast == null) continue;
 
       // Visit the AST to find function declarations
-      final visitor = _FirebaseFunctionsVisitor(resolver);
+      final visitor = _FirebaseFunctionsVisitor();
       ast.accept(visitor);
 
       // Collect discovered functions and parameters
@@ -97,7 +97,7 @@ class _Namespace {
 
 /// AST visitor that discovers Firebase Functions declarations.
 class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
-  _FirebaseFunctionsVisitor(this.resolver) {
+  _FirebaseFunctionsVisitor() {
     namespaces = <_Namespace>[
       _Namespace(
         _extractHttpsFunction,
@@ -213,7 +213,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       ),
     ];
   }
-  final Resolver resolver;
+
   final Map<String, ParamSpec> params = {};
   final Map<String, EndpointSpec> endpoints = {};
   late final List<_Namespace> namespaces;
@@ -224,6 +224,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMethodInvocation(MethodInvocation node) {
+    super.visitMethodInvocation(node);
     final target = node.target;
     final methodName = node.methodName.name;
     if (target != null) {
@@ -1035,29 +1036,14 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   String? _extractStringField(
     InstanceCreationExpression node,
     String fieldName,
-  ) => node.argumentList.arguments
-      .whereType<NamedExpression>()
-      .where((e) => e.name.label.name == fieldName)
-      .map((e) => e.expression)
-      .whereType<StringLiteral>()
-      .map((e) => e.stringValue!)
-      .firstOrNull;
+  ) {
+    final arg = node.argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((e) => e.name.label.name == fieldName)
+        .map((e) => e.expression)
+        .firstOrNull;
 
-  /// Extracts a constant value from an expression.
-  Object? _extractConstValue(Expression expression) {
-    return switch (expression) {
-      StringLiteral() => expression.stringValue,
-      IntegerLiteral() => expression.value,
-      DoubleLiteral() => expression.value,
-      BooleanLiteral() => expression.value,
-      ListLiteral() =>
-        expression.elements
-            .whereType<Expression>()
-            .map(_extractConstValue)
-            .whereType<dynamic>()
-            .toList(),
-      _ => null,
-    };
+    return _extractStringLiteral(arg);
   }
 }
 
@@ -1078,6 +1064,55 @@ extension on MethodInvocation {
   }
 }
 
-/// Extracts a string literal value.
-String? _extractStringLiteral(Expression? expression) =>
-    expression is StringLiteral ? expression.stringValue : null;
+/// Extracts a string literal or constant value.
+String? _extractStringLiteral(Expression? expression) {
+  if (expression == null) return null;
+  final value = _extractConstValue(expression);
+  return value is String ? value : null;
+}
+
+/// Extracts a constant value from an expression.
+Object? _extractConstValue(Expression expression) {
+  final literal = switch (expression) {
+    StringLiteral() => expression.stringValue,
+    IntegerLiteral() => expression.value,
+    DoubleLiteral() => expression.value,
+    BooleanLiteral() => expression.value,
+    ListLiteral() =>
+      expression.elements
+          .whereType<Expression>()
+          .map(_extractConstValue)
+          .whereType<Object>()
+          .toList(),
+    _ => null,
+  };
+
+  if (literal != null) return literal;
+
+  // Try to evaluate as constant if it's an identifier or property access
+  Element? element;
+  if (expression is SimpleIdentifier) {
+    element = expression.element;
+  } else if (expression is PrefixedIdentifier) {
+    element = expression.element;
+  } else if (expression is PropertyAccess) {
+    element = expression.propertyName.element;
+  }
+
+  if (element is PropertyAccessorElement) {
+    element = element.variable;
+  }
+
+  if (element is VariableElement && element.isConst) {
+    final constant = element.computeConstantValue();
+    if (constant != null) {
+      final reader = ConstantReader(constant);
+      if (reader.isString) return reader.stringValue;
+      if (reader.isInt) return reader.intValue;
+      if (reader.isDouble) return reader.doubleValue;
+      if (reader.isBool) return reader.boolValue;
+    }
+  }
+
+  return null;
+}
