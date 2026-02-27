@@ -710,9 +710,7 @@ void main(List<String> args) async {
     // HTTPS onRequest that crashes with sensitive data in the exception.
     // Used by E2E tests to verify errors are logged but NOT leaked to clients.
     firebase.https.onRequest(name: 'crashWithSecret', (request) async {
-      throw StateError(
-        'Unexpected failure — sensitive data: SECRET_DATA',
-      );
+      throw StateError('Unexpected failure — sensitive data: SECRET_DATA');
     });
 
     // HTTPS onRequest that crashes from an unexpected runtime error.
