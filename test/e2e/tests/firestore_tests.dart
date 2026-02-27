@@ -98,13 +98,38 @@ void runFirestoreTests(
       await client.deleteDocument('users/$testUserId');
       print('✓ Document deleted successfully');
 
-      // Wait for trigger
+      // Wait for trigger to fire and write result
       await Future<void>.delayed(const Duration(seconds: 2));
 
       // Verify document no longer exists
       final doc = await client.getDocument('users/$testUserId');
       expect(doc, isNull, reason: 'Document should not exist after deletion');
       print('✓ Document deletion verified');
+
+      // Poll for the side-channel result doc written by the handler
+      // (up to 5 attempts × 500ms = 2.5s extra headroom)
+      Map<String, dynamic>? result;
+      for (var i = 0; i < 5; i++) {
+        result =
+            await client.getDocument('trigger_results/deleted_$testUserId');
+        if (result != null) break;
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+
+      expect(
+        result,
+        isNotNull,
+        reason: 'trigger_results doc should have been written by handler',
+      );
+      expect(
+        result!['fields']['hasData']['booleanValue'],
+        isTrue,
+        reason: 'event.data should be non-null for delete events',
+      );
+      expect(result['fields']['name']['stringValue'], 'To Be Deleted');
+      expect(result['fields']['email']['stringValue'], 'delete@example.com');
+      expect(result['fields']['finalMessage']['stringValue'], 'goodbye');
+      print('✓ Handler received correct pre-deletion document data');
     });
 
     test('onDocumentWritten fires for all operations', () async {
@@ -280,6 +305,12 @@ void runFirestoreTests(
       // Clean up: try to delete test documents
       try {
         await client.deleteDocument('users/$testUserId');
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+      // Clean up side-channel result doc written by the onDocumentDeleted handler
+      try {
+        await client.deleteDocument('trigger_results/deleted_$testUserId');
       } catch (e) {
         // Ignore errors during cleanup
       }
