@@ -110,8 +110,9 @@ void runFirestoreTests(
       // (up to 5 attempts × 500ms = 2.5s extra headroom)
       Map<String, dynamic>? result;
       for (var i = 0; i < 5; i++) {
-        result =
-            await client.getDocument('trigger_results/deleted_$testUserId');
+        result = await client.getDocument(
+          'trigger_results/deleted_$testUserId',
+        );
         if (result != null) break;
         await Future<void>.delayed(const Duration(milliseconds: 500));
       }

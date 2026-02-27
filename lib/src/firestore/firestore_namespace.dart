@@ -452,7 +452,12 @@ class FirestoreNamespace extends FunctionsNamespace {
           final params = _extractParams(document, headers.documentPath);
 
           final parsed = await _parseBody(request);
-          final snapshot = parsed?['value'];
+          final snapshotKey =
+              (methodName == 'onDocumentDeleted' ||
+                  methodName == 'onDocumentDeletedWithAuthContext')
+              ? 'old_value'
+              : 'value';
+          final snapshot = parsed?[snapshotKey];
 
           try {
             if (withAuthContext) {
