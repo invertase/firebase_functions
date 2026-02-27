@@ -219,7 +219,10 @@ void main(List<String> args) async {
         await req.close();
         httpClient.close();
       } catch (e) {
-        print('  Side-channel write failed: $e');
+        print(
+          '  Firestore write to verify handler '
+          'received event.data failed: $e',
+        );
       }
     });
 
