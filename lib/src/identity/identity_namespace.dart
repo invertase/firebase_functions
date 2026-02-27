@@ -235,18 +235,9 @@ class IdentityNamespace extends FunctionsNamespace {
           headers: {'Content-Type': 'application/json'},
         );
       } on HttpsError catch (e) {
-        return Response(
-          e.httpStatusCode,
-          body: jsonEncode({'error': e.toErrorResponse()}),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return e.toShelfResponse();
       } catch (e) {
-        final error = InternalError('An unexpected error occurred.');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode({'error': error.toErrorResponse()}),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return InternalError().toShelfResponse();
       }
     });
   }

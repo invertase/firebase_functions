@@ -182,8 +182,10 @@ final class UnimplementedError extends HttpsError {
 
 /// Error indicating an internal error occurred.
 final class InternalError extends HttpsError {
-  InternalError([String? message, dynamic details])
-    : super(FunctionsErrorCode.internal, message, details);
+  InternalError([
+    String message = 'An unexpected error occurred.',
+    dynamic details,
+  ]) : super(FunctionsErrorCode.internal, message, details);
 }
 
 /// Error indicating the service is unavailable.
@@ -200,6 +202,6 @@ final class DataLossError extends HttpsError {
 
 /// Error indicating the user is not authenticated.
 final class UnauthenticatedError extends HttpsError {
-  UnauthenticatedError([String? message, dynamic details])
+  UnauthenticatedError([String message = 'Unauthenticated', dynamic details])
     : super(FunctionsErrorCode.unauthenticated, message, details);
 }
