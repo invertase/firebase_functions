@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'options.dart';
 import 'test_matrix_completed_data.dart';
@@ -56,8 +57,8 @@ class TestLabNamespace extends FunctionsNamespace {
         return Response.ok('');
       } on FormatException catch (e) {
         return Response(400, body: 'Invalid CloudEvent: ${e.message}');
-      } catch (e) {
-        return Response(500, body: 'Error processing Test Lab event: $e');
+      } catch (e, stackTrace) {
+        return logEventHandlerError(e, stackTrace);
       }
     });
   }

@@ -5,9 +5,12 @@ import 'dart:io';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
+import 'package:stack_trace/stack_trace.dart' show Trace;
+
 import 'common/cloud_run_id.dart';
 import 'common/on_init.dart';
 import 'firebase.dart';
+import 'logger/logger.dart';
 
 /// Callback type for the user's function registration code.
 typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
@@ -469,8 +472,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
         ? request.change(body: bodyString)
         : request;
     return (finalRequest, null);
-  } catch (_) {
+  } catch (e, stackTrace) {
     // CloudEvent parsing failed - not a CloudEvent request
+    logger.warn('CloudEvent parsing failed: $e\n${Trace.from(stackTrace).terse}');
     return (request, null);
   }
 }

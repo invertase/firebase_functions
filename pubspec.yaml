@@ -36,6 +36,7 @@ dependencies:
       url: https://github.com/invertase/dart_firebase_admin.git
       ref: next
       path: packages/googleapis_firestore
+  stack_trace: ^1.12.1
   protobuf: ^6.0.0
   http: ^1.6.0
   # Pin as this is an external dependency. 
