@@ -12,6 +12,7 @@ import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'identity/identity_namespace.dart';
+import 'logger/logger.dart';
 import 'pubsub/pubsub_namespace.dart';
 import 'remote_config/remote_config_namespace.dart';
 import 'scheduler/scheduler_namespace.dart';
@@ -62,7 +63,7 @@ class Firebase {
       // Create Firestore instance
       _firestoreInstance = _adminApp!.firestore();
     } catch (e) {
-      print('Warning: Failed to initialize Firebase Admin SDK: $e');
+      logger.warn('Failed to initialize Firebase Admin SDK: $e');
     }
   }
 

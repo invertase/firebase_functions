@@ -274,7 +274,7 @@ void main() {
         expect(response.statusCode, 200);
       });
 
-      test('returns 500 on handler error', () async {
+      test('returns 500 on handler error without leaking details', () async {
         storage.onObjectFinalized(bucket: 'my-bucket', (event) async {
           throw Exception('Handler error');
         });
@@ -284,7 +284,7 @@ void main() {
 
         expect(response.statusCode, 500);
         final body = await response.readAsString();
-        expect(body, contains('Handler error'));
+        expect(body, isNot(contains('Handler error')));
       });
 
       test('returns 400 for invalid CloudEvent', () async {

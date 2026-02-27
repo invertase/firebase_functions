@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'alert_event.dart';
 import 'alert_type.dart';
@@ -55,8 +56,8 @@ class PerformanceNamespace {
         return Response.ok('');
       } on FormatException catch (e) {
         return Response(400, body: 'Invalid CloudEvent: ${e.message}');
-      } catch (e) {
-        return Response(500, body: 'Error processing alert: $e');
+      } catch (e, stackTrace) {
+        return logEventHandlerError(e, stackTrace);
       }
     });
   }

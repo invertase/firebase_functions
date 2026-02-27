@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'options.dart';
 import 'scheduled_event.dart';
@@ -90,10 +91,9 @@ class SchedulerNamespace extends FunctionsNamespace {
 
         // Return success (Cloud Scheduler expects 2xx response)
         return Response.ok('');
-      } catch (e) {
-        // Return error response
+      } catch (e, stackTrace) {
         // Cloud Scheduler will retry based on retry config
-        return Response(500, body: 'Error executing scheduled function: $e');
+        return logEventHandlerError(e, stackTrace);
       }
     });
   }

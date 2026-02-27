@@ -304,14 +304,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(46),
+        equals(48),
         reason:
-            'Should discover 46 functions (5 Callable + 2 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options)',
+            'Should discover 48 functions (5 Callable + 4 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(46),
-        reason: 'Node.js reference should also have 46 endpoints',
+        equals(48),
+        reason: 'Node.js reference should also have 48 endpoints',
       );
 
       // Verify both manifests have the same endpoints (normalized via
