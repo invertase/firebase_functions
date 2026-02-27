@@ -42,7 +42,6 @@ jobs:
         run: |
           dart format --output=none --set-exit-if-changed . || {
             echo "::error::Formatting check failed. Showing diff:"
-            dart format --output=show . | diff - /dev/null || true
             dart format .
             git diff
             exit 1
