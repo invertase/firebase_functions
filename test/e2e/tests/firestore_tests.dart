@@ -108,8 +108,7 @@ void runFirestoreTests(
 
       // Verify handler received the pre-deletion document data by checking
       // the structured log line emitted by the handler.
-      final emulator = getEmulator();
-      final outputLogs = [...emulator.outputLines].join('\n');
+      final outputLogs = getEmulator().outputLines.join('\n');
       expect(
         outputLogs,
         contains('[onDocumentDeleted] hasData=true'),
