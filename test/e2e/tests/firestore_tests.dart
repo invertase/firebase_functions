@@ -109,18 +109,15 @@ void runFirestoreTests(
       // Verify handler received the pre-deletion document data by checking
       // the structured log line emitted by the handler.
       final emulator = getEmulator();
-      final allLogs = [
-        ...emulator.outputLines,
-        ...emulator.errorLines,
-      ].join('\n');
+      final outputLogs = [...emulator.outputLines].join('\n');
       expect(
-        allLogs,
+        outputLogs,
         contains('[onDocumentDeleted] hasData=true'),
         reason: 'event.data should be non-null for delete events',
       );
-      expect(allLogs, contains('name=To Be Deleted'));
-      expect(allLogs, contains('email=delete@example.com'));
-      expect(allLogs, contains('finalMessage=goodbye'));
+      expect(outputLogs, contains('name=To Be Deleted'));
+      expect(outputLogs, contains('email=delete@example.com'));
+      expect(outputLogs, contains('finalMessage=goodbye'));
       print('✓ Handler received correct pre-deletion document data');
     });
 
