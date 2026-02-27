@@ -105,7 +105,7 @@ void runHttpsOnRequestTests(
         expect(error['message'], equals('An unexpected error occurred.'));
 
         // Sensitive details must NOT appear anywhere in the response
-        expect(response.body, isNot(contains('sk_live_T0P_s3cReT_k3y!2026')));
+        expect(response.body, isNot(contains('SECRET_DATA')));
         expect(response.body, isNot(contains('sensitive data')));
         expect(response.body, isNot(contains('Unexpected failure')));
 
@@ -117,13 +117,43 @@ void runHttpsOnRequestTests(
         ].join('\n');
         expect(
           allLogs,
-          contains('sk_live_T0P_s3cReT_k3y!2026'),
+          contains('SECRET_DATA'),
           reason: 'The actual error should be logged server-side for debugging',
         );
 
         print(
           '✓ Verified: 500 INTERNAL returned, no password leaked to client, '
           'error logged server-side',
+        );
+      },
+    );
+
+    test(
+      'unexpected runtime error returns INTERNAL without leaking internals',
+      () async {
+        print('GET ${client.baseUrl}/crash-unexpected');
+        final response = await client.get('crash-unexpected');
+
+        // Should return 500
+        expect(response.statusCode, equals(500));
+
+        // Parse the JSON error body
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final error = json['error'] as Map<String, dynamic>;
+
+        // Generic INTERNAL error is returned
+        expect(error['status'], equals('INTERNAL'));
+        expect(error['message'], equals('An unexpected error occurred.'));
+
+        // No internal details leaked (no type names, stack traces, file paths)
+        expect(response.body, isNot(contains('TypeError')));
+        expect(response.body, isNot(contains('not_a_number')));
+        expect(response.body, isNot(contains('.dart')));
+        expect(response.body, isNot(contains('type ')));
+
+        print(
+          '✓ Verified: unexpected runtime crash returns generic 500, '
+          'no internals leaked',
         );
       },
     );

@@ -584,7 +584,19 @@ exports.callableFull = onCall(
 // Used by E2E tests to verify errors are logged but NOT leaked to clients.
 exports.crashWithSecret = onRequest(
   (request, response) => {
-    throw new Error("Unexpected failure — sensitive data: sk_live_T0P_s3cReT_k3y!2026");
+    throw new Error("Unexpected failure — sensitive data: SECRET_DATA");
+  }
+);
+
+// HTTPS onRequest that crashes from an unexpected runtime error.
+// Simulates a real bug (bad cast) to verify we don't leak internals.
+exports.crashUnexpected = onRequest(
+  (request, response) => {
+    const data = { count: "not_a_number" };
+    // Force a runtime error
+    const count = /** @type {number} */ (data.count);
+    if (typeof count !== "number") throw new TypeError("Expected number");
+    response.send(`count=${count}`);
   }
 );
 

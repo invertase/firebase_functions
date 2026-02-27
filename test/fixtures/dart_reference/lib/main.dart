@@ -671,8 +671,17 @@ void main(List<String> args) async {
     // Used by E2E tests to verify errors are logged but NOT leaked to clients.
     firebase.https.onRequest(name: 'crashWithSecret', (request) async {
       throw StateError(
-        'Unexpected failure — sensitive data: sk_live_T0P_s3cReT_k3y!2026',
+        'Unexpected failure — sensitive data: SECRET_DATA',
       );
+    });
+
+    // HTTPS onRequest that crashes from an unexpected runtime error.
+    // Simulates a real bug (bad cast) to verify we don't leak internals.
+    firebase.https.onRequest(name: 'crashUnexpected', (request) async {
+      final data = {'count': 'not_a_number'};
+      // This will throw a TypeError at runtime
+      final count = data['count'] as int;
+      return Response.ok('count=$count');
     });
 
     // GCF Gen1 CPU option
