@@ -72,7 +72,7 @@ class _SpecBuilder implements Builder {
     // Write the YAML file
     await buildStep.writeAsString(
       AssetId(buildStep.inputId.package, 'functions.yaml'),
-      yamlContent,
+      '$yamlContent\n',
     );
   }
 }
