@@ -474,7 +474,9 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
     return (finalRequest, null);
   } catch (e, stackTrace) {
     // CloudEvent parsing failed - not a CloudEvent request
-    logger.warn('CloudEvent parsing failed: $e\n${Trace.from(stackTrace).terse}');
+    logger.warn(
+      'CloudEvent parsing failed: $e\n${Trace.from(stackTrace).terse}',
+    );
     return (request, null);
   }
 }

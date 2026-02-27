@@ -4,7 +4,6 @@ import 'package:firebase_functions/src/common/utilities.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/https/error.dart';
 import 'package:firebase_functions/src/https/https_namespace.dart';
-import 'package:firebase_functions/src/logger/logger.dart';
 import 'package:firebase_functions/src/pubsub/pubsub_namespace.dart';
 import 'package:firebase_functions/src/scheduler/scheduler_namespace.dart';
 import 'package:shelf/shelf.dart';
@@ -12,17 +11,6 @@ import 'package:test/test.dart';
 
 void main() {
   group('Error logging utilities', () {
-    late List<String> stderrLines;
-    late Logger testLogger;
-
-    setUp(() {
-      stderrLines = [];
-      testLogger = Logger(
-        stdoutWriter: (_) {},
-        stderrWriter: (line) => stderrLines.add(line),
-      );
-    });
-
     group('logInternalError', () {
       test('returns InternalError', () {
         final result = logInternalError(
@@ -92,30 +80,35 @@ void main() {
       https = HttpsNamespace(firebase);
     });
 
-    test('onRequest: unexpected error returns INTERNAL without details',
-        () async {
-      https.onRequest(name: 'crashEndpoint', (request) async {
-        throw StateError('sensitive: connection string is postgres://...');
-      });
+    test(
+      'onRequest: unexpected error returns INTERNAL without details',
+      () async {
+        https.onRequest(name: 'crashEndpoint', (request) async {
+          throw StateError('sensitive: connection string is postgres://...');
+        });
 
-      final func = firebase.functions.firstWhere(
-        (f) => f.name == 'crash-endpoint',
-      );
-      final request = Request('GET', Uri.parse('http://localhost/crash-endpoint'));
-      final response = await func.handler(request);
+        final func = firebase.functions.firstWhere(
+          (f) => f.name == 'crash-endpoint',
+        );
+        final request = Request(
+          'GET',
+          Uri.parse('http://localhost/crash-endpoint'),
+        );
+        final response = await func.handler(request);
 
-      expect(response.statusCode, 500);
-      final body = await response.readAsString();
-      final json = jsonDecode(body) as Map<String, dynamic>;
+        expect(response.statusCode, 500);
+        final body = await response.readAsString();
+        final json = jsonDecode(body) as Map<String, dynamic>;
 
-      // Error response is generic
-      expect(json['error']['status'], 'INTERNAL');
-      expect(json['error']['message'], 'An unexpected error occurred.');
+        // Error response is generic
+        expect(json['error']['status'], 'INTERNAL');
+        expect(json['error']['message'], 'An unexpected error occurred.');
 
-      // Sensitive details are NOT in the response
-      expect(body, isNot(contains('postgres://')));
-      expect(body, isNot(contains('connection string')));
-    });
+        // Sensitive details are NOT in the response
+        expect(body, isNot(contains('postgres://')));
+        expect(body, isNot(contains('connection string')));
+      },
+    );
 
     test('onRequest: HttpsError is passed through to client', () async {
       https.onRequest(name: 'knownError', (request) async {
@@ -165,7 +158,7 @@ void main() {
         'data': {
           'message': {
             'data': base64Encode(utf8.encode('test message')),
-            'attributes': {},
+            'attributes': <String, String>{},
             'messageId': '123',
             'publishTime': '2024-01-01T00:00:00Z',
             'orderingKey': '',
@@ -203,9 +196,7 @@ void main() {
       final request = Request(
         'POST',
         Uri.parse('http://localhost/on-schedule-0-0'),
-        headers: {
-          'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z',
-        },
+        headers: {'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z'},
       );
       final response = await func.handler(request);
 

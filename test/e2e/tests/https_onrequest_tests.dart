@@ -97,8 +97,7 @@ void runHttpsOnRequestTests(
         expect(response.statusCode, equals(500));
 
         // Parse the JSON error body
-        final json =
-            jsonDecode(response.body) as Map<String, dynamic>;
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
         final error = json['error'] as Map<String, dynamic>;
 
         // Generic INTERNAL error is returned
@@ -112,13 +111,14 @@ void runHttpsOnRequestTests(
 
         // Verify the error WAS logged server-side (visible in emulator output)
         await Future<void>.delayed(const Duration(milliseconds: 500));
-        final allLogs = [...emulator.outputLines, ...emulator.errorLines]
-            .join('\n');
+        final allLogs = [
+          ...emulator.outputLines,
+          ...emulator.errorLines,
+        ].join('\n');
         expect(
           allLogs,
           contains('sk_live_T0P_s3cReT_k3y!2026'),
-          reason:
-              'The actual error should be logged server-side for debugging',
+          reason: 'The actual error should be logged server-side for debugging',
         );
 
         print(
