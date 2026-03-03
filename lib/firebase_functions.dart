@@ -54,7 +54,7 @@
 library;
 
 // Re-export Firestore types for convenience
-export 'package:googleapis_firestore/googleapis_firestore.dart'
+export 'package:google_cloud_firestore/google_cloud_firestore.dart'
     show DocumentData, DocumentSnapshot, QueryDocumentSnapshot;
 // Re-export Shelf types for convenience
 export 'package:shelf/shelf.dart' show Request, Response;
