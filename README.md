@@ -216,6 +216,49 @@ firebase.firestore.onDocumentCreated(
     print('Comment: ${event.params['commentId']}');
   },
 );
+
+// With auth context (identifies the principal that triggered the write)
+firebase.firestore.onDocumentCreatedWithAuthContext(
+  document: 'orders/{orderId}',
+  (event) async {
+    print('Auth type: ${event.authType}');
+    print('Auth ID: ${event.authId}');
+    final data = event.data?.data();
+    print('Order: ${data?['product']}');
+  },
+);
+
+firebase.firestore.onDocumentUpdatedWithAuthContext(
+  document: 'orders/{orderId}',
+  (event) async {
+    print('Updated by: ${event.authType} (${event.authId})');
+    final before = event.data?.before?.data();
+    final after = event.data?.after?.data();
+    print('Before: $before');
+    print('After: $after');
+  },
+);
+
+firebase.firestore.onDocumentDeletedWithAuthContext(
+  document: 'orders/{orderId}',
+  (event) async {
+    print('Deleted by: ${event.authType} (${event.authId})');
+    final data = event.data?.data();
+    print('Deleted data: $data');
+  },
+);
+
+firebase.firestore.onDocumentWrittenWithAuthContext(
+  document: 'orders/{orderId}',
+  (event) async {
+    print('Written by: ${event.authType} (${event.authId})');
+    final before = event.data?.before;
+    final after = event.data?.after;
+    if (before == null || !before.exists) print('CREATE');
+    else if (after == null || !after.exists) print('DELETE');
+    else print('UPDATE');
+  },
+);
 ```
 
 ## Realtime Database Triggers
