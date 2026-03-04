@@ -13,7 +13,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 |-------------|--------|-----------|
 | **HTTPS** | ✅ Complete | `onRequest`, `onCall`, `onCallWithData` |
 | **Pub/Sub** | ✅ Complete | `onMessagePublished` |
-| **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten` |
+| **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
