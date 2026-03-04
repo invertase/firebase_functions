@@ -263,6 +263,8 @@ firebase.firestore.onDocumentWrittenWithAuthContext(
 
 ## Realtime Database Triggers
 
+Trigger when data at a path is created, updated, deleted, or written.
+
 ```dart
 // Value created
 firebase.database.onValueCreated(
