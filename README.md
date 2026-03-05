@@ -365,6 +365,15 @@ firebase.alerts.crashlytics.onNewFatalIssuePublished(
   },
 );
 
+// Crashlytics ANR (Application Not Responding) issues
+firebase.alerts.crashlytics.onNewAnrIssuePublished(
+  (event) async {
+    final issue = event.data?.payload.issue;
+    print('ANR issue: ${issue?.title}');
+    print('App: ${event.appId}');
+  },
+);
+
 // Billing plan updates
 firebase.alerts.billing.onPlanUpdatePublished(
   (event) async {
