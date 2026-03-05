@@ -12,6 +12,15 @@ void main(List<String> args) async {
       print('  App ID: ${event.appId}');
     });
 
+    // Crashlytics new non-fatal issue alert
+    firebase.alerts.crashlytics.onNewNonfatalIssuePublished((event) async {
+      final issue = event.data?.payload.issue;
+      print('New non-fatal issue in Crashlytics:');
+      print('  Issue ID: ${issue?.id}');
+      print('  Title: ${issue?.title}');
+      print('  App ID: ${event.appId}');
+    });
+
     // Billing plan update alert
     firebase.alerts.billing.onPlanUpdatePublished((event) async {
       final payload = event.data?.payload;
