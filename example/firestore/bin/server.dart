@@ -61,6 +61,26 @@ void main(List<String> args) async {
       },
     );
 
+    firebase.firestore.onDocumentUpdatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('Document updated by: ${event.authType} (${event.authId})');
+        final before = event.data?.before?.data();
+        final after = event.data?.after?.data();
+        print('  Before: $before');
+        print('  After: $after');
+      },
+    );
+
+    firebase.firestore.onDocumentDeletedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('Document deleted by: ${event.authType} (${event.authId})');
+        final data = event.data?.data();
+        print('  Deleted data: $data');
+      },
+    );
+
     firebase.firestore.onDocumentWrittenWithAuthContext(
       document: 'orders/{orderId}',
       (event) async {
