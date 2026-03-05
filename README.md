@@ -17,6 +17,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
+| **Eventarc** | ✅ Complete | `onCustomEventPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
 ## Features
@@ -382,6 +383,33 @@ firebase.alerts.performance.onThresholdAlertPublished(
     print('Metric: ${payload?.metricType}');
     print('Threshold: ${payload?.thresholdValue}');
     print('Actual: ${payload?.violationValue}');
+  },
+);
+```
+
+## Eventarc
+
+```dart
+// Custom event (default Firebase channel)
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.myevent',
+  (event) async {
+    print('Event: ${event.type}');
+    print('Source: ${event.source}');
+    print('Data: ${event.data}');
+  },
+);
+
+// With channel and filters
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.filtered',
+  options: const EventarcTriggerOptions(
+    channel: 'my-channel',
+    filters: {'category': 'important'},
+  ),
+  (event) async {
+    print('Event: ${event.type}');
+    print('Data: ${event.data}');
   },
 );
 ```
