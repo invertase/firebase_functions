@@ -2,6 +2,16 @@ import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
   await fireUp(args, (firebase) {
+    // App Distribution in-app feedback alert
+    firebase.alerts.appDistribution.onInAppFeedbackPublished((event) async {
+      final payload = event.data?.payload;
+      print('In-app feedback:');
+      print('  Tester: ${payload?.testerEmail}');
+      print('  App version: ${payload?.appVersion}');
+      print('  Text: ${payload?.text}');
+      print('  Console: ${payload?.feedbackConsoleUri}');
+    });
+
     // Crashlytics new fatal issue alert
     firebase.alerts.crashlytics.onNewFatalIssuePublished((event) async {
       final issue = event.data?.payload.issue;
