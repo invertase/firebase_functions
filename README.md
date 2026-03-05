@@ -365,6 +365,17 @@ firebase.alerts.crashlytics.onNewFatalIssuePublished(
   },
 );
 
+// Crashlytics velocity alerts
+firebase.alerts.crashlytics.onVelocityAlertPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Velocity alert: ${payload?.issue.title}');
+    print('Crash count: ${payload?.crashCount}');
+    print('Percentage: ${payload?.crashPercentage}%');
+    print('First version: ${payload?.firstVersion}');
+  },
+);
+
 // Billing plan updates
 firebase.alerts.billing.onPlanUpdatePublished(
   (event) async {

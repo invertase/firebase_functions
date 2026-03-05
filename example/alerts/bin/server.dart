@@ -12,6 +12,16 @@ void main(List<String> args) async {
       print('  App ID: ${event.appId}');
     });
 
+    // Crashlytics velocity alert
+    firebase.alerts.crashlytics.onVelocityAlertPublished((event) async {
+      final payload = event.data?.payload;
+      print('Crashlytics velocity alert:');
+      print('  Issue: ${payload?.issue.title}');
+      print('  Crash count: ${payload?.crashCount}');
+      print('  Percentage: ${payload?.crashPercentage}%');
+      print('  First version: ${payload?.firstVersion}');
+    });
+
     // Billing plan update alert
     firebase.alerts.billing.onPlanUpdatePublished((event) async {
       final payload = event.data?.payload;
