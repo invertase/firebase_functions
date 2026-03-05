@@ -16,6 +16,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
+| **Scheduler** | ✅ Complete | `onSchedule` |
 | **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
@@ -349,6 +350,39 @@ firebase.storage.onObjectMetadataUpdated(
     final data = event.data;
     print('Metadata updated: ${data?.name}');
     print('Metadata: ${data?.metadata}');
+  },
+);
+```
+
+## Scheduler Triggers
+
+Run functions on a schedule (cron). Supports timezone and retry options.
+
+```dart
+// Basic schedule - runs every day at midnight (UTC)
+firebase.scheduler.onSchedule(
+  schedule: '0 0 * * *',
+  (event) async {
+    print('Job: ${event.jobName}');
+    print('Schedule time: ${event.scheduleTime}');
+  },
+);
+
+// With timezone and retry config (e.g. weekday mornings)
+firebase.scheduler.onSchedule(
+  schedule: '0 9 * * 1-5',
+  options: const ScheduleOptions(
+    timeZone: TimeZone('America/New_York'),
+    retryConfig: RetryConfig(
+      retryCount: RetryCount(3),
+      maxRetrySeconds: MaxRetrySeconds(60),
+      minBackoffSeconds: MinBackoffSeconds(5),
+      maxBackoffSeconds: MaxBackoffSeconds(30),
+    ),
+    memory: Memory(MemoryOption.mb256),
+  ),
+  (event) async {
+    print('Executed at: ${event.scheduleDateTime}');
   },
 );
 ```
