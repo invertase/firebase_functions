@@ -16,7 +16,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
-| **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
+| **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance, App Distribution alerts |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
 ## Features
@@ -356,6 +356,17 @@ firebase.storage.onObjectMetadataUpdated(
 ## Firebase Alerts
 
 ```dart
+// App Distribution new tester iOS device
+firebase.alerts.appDistribution.onNewTesterIosDevicePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('New tester iOS device:');
+    print('  Tester: ${payload?.testerName} (${payload?.testerEmail})');
+    print('  Device: ${payload?.testerDeviceModelName}');
+    print('  Identifier: ${payload?.testerDeviceIdentifier}');
+  },
+);
+
 // Crashlytics fatal issues
 firebase.alerts.crashlytics.onNewFatalIssuePublished(
   (event) async {

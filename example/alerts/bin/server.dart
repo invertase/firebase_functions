@@ -2,6 +2,15 @@ import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
   await fireUp(args, (firebase) {
+    // App Distribution new tester iOS device alert
+    firebase.alerts.appDistribution.onNewTesterIosDevicePublished((event) async {
+      final payload = event.data?.payload;
+      print('New tester iOS device:');
+      print('  Tester: ${payload?.testerName} (${payload?.testerEmail})');
+      print('  Device: ${payload?.testerDeviceModelName}');
+      print('  Identifier: ${payload?.testerDeviceIdentifier}');
+    });
+
     // Crashlytics new fatal issue alert
     firebase.alerts.crashlytics.onNewFatalIssuePublished((event) async {
       final issue = event.data?.payload.issue;
