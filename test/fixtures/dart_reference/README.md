@@ -37,7 +37,7 @@ dart pub get
 ### Run Locally
 
 ```bash
-dart run lib/main.dart
+dart run bin/server.dart
 ```
 
 The server will start on `http://localhost:8080`.

@@ -15,6 +15,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Pub/Sub** | ✅ Complete | `onMessagePublished` |
 | **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
+| **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
@@ -304,6 +305,50 @@ firebase.database.onValueWritten(
     if (before == null || !before.exists()) print('CREATE');
     else if (after == null || !after.exists()) print('DELETE');
     else print('UPDATE');
+  },
+);
+```
+
+## Storage Triggers
+
+```dart
+// Object finalized (created or overwritten)
+firebase.storage.onObjectFinalized(
+  bucket: 'my-bucket',
+  (event) async {
+    final data = event.data;
+    print('Object finalized: ${data?.name}');
+    print('Content type: ${data?.contentType}');
+    print('Size: ${data?.size}');
+  },
+);
+
+// Object archived
+firebase.storage.onObjectArchived(
+  bucket: 'my-bucket',
+  (event) async {
+    final data = event.data;
+    print('Object archived: ${data?.name}');
+    print('Storage class: ${data?.storageClass}');
+  },
+);
+
+// Object deleted
+firebase.storage.onObjectDeleted(
+  bucket: 'my-bucket',
+  (event) async {
+    final data = event.data;
+    print('Object deleted: ${data?.name}');
+  },
+);
+
+// Object metadata updated
+firebase.storage.onObjectMetadataUpdated(
+  bucket: 'my-bucket',
+  (event) async {
+    final data = event.data;
+    print('Metadata updated: ${data?.name}');
+    print('Metadata: ${data?.metadata}');
   },
 );
 ```
