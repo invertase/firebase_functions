@@ -21,6 +21,14 @@ void main(List<String> args) async {
       print('  Type: ${payload?.notificationType}');
     });
 
+    // Billing automated plan update alert
+    firebase.alerts.billing.onPlanAutomatedUpdatePublished((event) async {
+      final payload = event.data?.payload;
+      print('Billing automated plan update:');
+      print('  Plan: ${payload?.billingPlan}');
+      print('  Type: ${payload?.notificationType}');
+    });
+
     // Performance threshold alert with app ID filter
     firebase.alerts.performance.onThresholdAlertPublished(
       options: const AlertOptions(appId: '1:123456789:ios:abcdef'),

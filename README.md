@@ -374,6 +374,16 @@ firebase.alerts.billing.onPlanUpdatePublished(
   },
 );
 
+// Billing automated plan updates
+firebase.alerts.billing.onPlanAutomatedUpdatePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Automated plan update:');
+    print('  Plan: ${payload?.billingPlan}');
+    print('  Type: ${payload?.notificationType}');
+  },
+);
+
 // Performance threshold alerts
 firebase.alerts.performance.onThresholdAlertPublished(
   options: const AlertOptions(appId: '1:123456789:ios:abcdef'),
