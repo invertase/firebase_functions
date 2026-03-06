@@ -20,6 +20,8 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
 | **Eventarc** | ✅ Complete | `onCustomEventPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
+| **Remote Config** | ✅ Complete | `onConfigUpdated` |
+| **Test Lab** | ✅ Complete | `onTestMatrixCompleted` |
 
 ## Table of Contents
 
@@ -35,6 +37,8 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 - [Scheduler Triggers](#scheduler-triggers)
 - [Firebase Alerts](#firebase-alerts)
 - [Identity Platform (Auth Blocking)](#identity-platform-auth-blocking)
+- [Remote Config](#remote-config)
+- [Test Lab](#test-lab)
 - [Parameters & Configuration](#parameters--configuration)
 - [Project Configuration](#project-configuration)
 - [Development](#development)
@@ -677,6 +681,38 @@ firebase.identity.beforeUserSignedIn(
 ```
 
 > **Note**: `beforeEmailSent` and `beforeSmsSent` are also available but cannot be tested with the Firebase Auth emulator (emulator only supports `beforeUserCreated` and `beforeUserSignedIn`). They work in production deployments.
+
+## Remote Config
+
+Trigger a function when Firebase Remote Config is updated.
+
+```dart
+firebase.remoteConfig.onConfigUpdated((event) async {
+  final data = event.data;
+  print('Remote Config updated:');
+  print('  Version: ${data?.versionNumber}');
+  print('  Description: ${data?.description}');
+  print('  Update Origin: ${data?.updateOrigin.value}');
+  print('  Update Type: ${data?.updateType.value}');
+  print('  Updated By: ${data?.updateUser.email}');
+});
+```
+
+## Test Lab
+
+Trigger a function when a Firebase Test Lab test matrix completes.
+
+```dart
+firebase.testLab.onTestMatrixCompleted((event) async {
+  final data = event.data;
+  print('Test matrix completed:');
+  print('  Matrix ID: ${data?.testMatrixId}');
+  print('  State: ${data?.state.value}');
+  print('  Outcome: ${data?.outcomeSummary.value}');
+  print('  Client: ${data?.clientInfo.client}');
+  print('  Results URI: ${data?.resultStorage.resultsUri}');
+});
+```
 
 ## Parameters & Configuration
 
