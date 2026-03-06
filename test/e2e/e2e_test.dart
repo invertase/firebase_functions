@@ -16,6 +16,7 @@ import 'helpers/pubsub_client.dart';
 import 'helpers/storage_client.dart';
 import 'tests/database_tests.dart';
 import 'tests/firestore_tests.dart';
+import 'tests/https_oncall_tests.dart';
 import 'tests/https_onrequest_tests.dart';
 import 'tests/identity_tests.dart';
 import 'tests/integration_tests.dart';
@@ -119,6 +120,7 @@ void main() {
 
   // Run all test groups (pass closures to defer value access)
   runHttpsOnRequestTests(() => client, () => emulator);
+  runHttpsOnCallTests(() => client);
   runIntegrationTests(() => examplePath);
   runPubSubTests(() => examplePath, () => pubsubClient, () => emulator);
   runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
