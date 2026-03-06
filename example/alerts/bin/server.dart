@@ -32,6 +32,15 @@ void main(List<String> args) async {
       print('  Resolved: ${payload?.resolveTime}');
     });
 
+    // Crashlytics new non-fatal issue alert
+    firebase.alerts.crashlytics.onNewNonfatalIssuePublished((event) async {
+      final issue = event.data?.payload.issue;
+      print('New non-fatal issue in Crashlytics:');
+      print('  Issue ID: ${issue?.id}');
+      print('  Title: ${issue?.title}');
+      print('  App ID: ${event.appId}');
+    });
+
     // Crashlytics stability digest alert
     firebase.alerts.crashlytics.onStabilityDigestPublished((event) async {
       final payload = event.data?.payload;
