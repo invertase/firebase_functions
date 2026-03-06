@@ -32,6 +32,15 @@ void main(List<String> args) async {
       print('  App ID: ${event.appId}');
     });
 
+    // Crashlytics regression alert
+    firebase.alerts.crashlytics.onRegressionAlertPublished((event) async {
+      final payload = event.data?.payload;
+      print('Crashlytics regression:');
+      print('  Type: ${payload?.type}');
+      print('  Issue: ${payload?.issue.title}');
+      print('  Resolved: ${payload?.resolveTime}');
+    });
+
     // Crashlytics new non-fatal issue alert
     firebase.alerts.crashlytics.onNewNonfatalIssuePublished((event) async {
       final issue = event.data?.payload.issue;
