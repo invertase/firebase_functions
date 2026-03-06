@@ -18,6 +18,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Scheduler** | ✅ Complete | `onSchedule` |
 | **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
+| **Eventarc** | ✅ Complete | `onCustomEventPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
 ## Table of Contents
@@ -577,6 +578,33 @@ firebase.alerts.appDistribution.onInAppFeedbackPublished(
     print('  App version: ${payload?.appVersion}');
     print('  Text: ${payload?.text}');
     print('  Console: ${payload?.feedbackConsoleUri}');
+  },
+);
+```
+
+## Eventarc
+
+```dart
+// Custom event (default Firebase channel)
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.myevent',
+  (event) async {
+    print('Event: ${event.type}');
+    print('Source: ${event.source}');
+    print('Data: ${event.data}');
+  },
+);
+
+// With channel and filters
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.filtered',
+  options: const EventarcTriggerOptions(
+    channel: 'my-channel',
+    filters: {'category': 'important'},
+  ),
+  (event) async {
+    print('Event: ${event.type}');
+    print('Data: ${event.data}');
   },
 );
 ```
