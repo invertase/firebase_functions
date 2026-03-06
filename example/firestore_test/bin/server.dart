@@ -104,6 +104,35 @@ void main(List<String> args) async {
       },
     );
 
+    // Test onDocumentUpdatedWithAuthContext
+    firebase.firestore.onDocumentUpdatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER UPDATED WITH AUTH CONTEXT ===');
+        print('Order updated: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+        if (event.data != null) {
+          print('Before: ${event.data!.before?.data()}');
+          print('After: ${event.data!.after?.data()}');
+        }
+      },
+    );
+
+    // Test onDocumentDeletedWithAuthContext
+    firebase.firestore.onDocumentDeletedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER DELETED WITH AUTH CONTEXT ===');
+        print('Order deleted: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+        if (event.data != null) {
+          print('Deleted data: ${event.data!.data()}');
+        }
+      },
+    );
+
     // Test onDocumentWrittenWithAuthContext
     firebase.firestore.onDocumentWrittenWithAuthContext(
       document: 'orders/{orderId}',

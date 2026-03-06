@@ -23,12 +23,30 @@ void main(List<String> args) async {
       print('  App ID: ${event.appId}');
     });
 
+    // Crashlytics velocity alert
+    firebase.alerts.crashlytics.onVelocityAlertPublished((event) async {
+      final payload = event.data?.payload;
+      print('Crashlytics velocity alert:');
+      print('  Issue: ${payload?.issue.title}');
+      print('  Crash count: ${payload?.crashCount}');
+      print('  Percentage: ${payload?.crashPercentage}%');
+      print('  First version: ${payload?.firstVersion}');
+    });
+
     // Billing plan update alert
     firebase.alerts.billing.onPlanUpdatePublished((event) async {
       final payload = event.data?.payload;
       print('Billing plan updated:');
       print('  New Plan: ${payload?.billingPlan}');
       print('  Updated By: ${payload?.principalEmail}');
+      print('  Type: ${payload?.notificationType}');
+    });
+
+    // Billing automated plan update alert
+    firebase.alerts.billing.onPlanAutomatedUpdatePublished((event) async {
+      final payload = event.data?.payload;
+      print('Billing automated plan update:');
+      print('  Plan: ${payload?.billingPlan}');
       print('  Type: ${payload?.notificationType}');
     });
 
@@ -46,5 +64,15 @@ void main(List<String> args) async {
         print('  Actual: ${payload?.violationValue} ${payload?.violationUnit}');
       },
     );
+
+    // App Distribution in-app feedback alert
+    firebase.alerts.appDistribution.onInAppFeedbackPublished((event) async {
+      final payload = event.data?.payload;
+      print('In-app feedback:');
+      print('  Tester: ${payload?.testerEmail}');
+      print('  App version: ${payload?.appVersion}');
+      print('  Text: ${payload?.text}');
+      print('  Console: ${payload?.feedbackConsoleUri}');
+    });
   });
 }
