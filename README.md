@@ -356,18 +356,6 @@ firebase.storage.onObjectMetadataUpdated(
 ## Firebase Alerts
 
 ```dart
-// App Distribution in-app feedback
-firebase.alerts.appDistribution.onInAppFeedbackPublished(
-  (event) async {
-    final payload = event.data?.payload;
-    print('In-app feedback:');
-    print('  Tester: ${payload?.testerEmail}');
-    print('  App version: ${payload?.appVersion}');
-    print('  Text: ${payload?.text}');
-    print('  Console: ${payload?.feedbackConsoleUri}');
-  },
-);
-
 // Crashlytics fatal issues
 firebase.alerts.crashlytics.onNewFatalIssuePublished(
   (event) async {
@@ -394,6 +382,18 @@ firebase.alerts.performance.onThresholdAlertPublished(
     print('Metric: ${payload?.metricType}');
     print('Threshold: ${payload?.thresholdValue}');
     print('Actual: ${payload?.violationValue}');
+  },
+);
+
+// App Distribution in-app feedback
+firebase.alerts.appDistribution.onInAppFeedbackPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('In-app feedback:');
+    print('  Tester: ${payload?.testerEmail}');
+    print('  App version: ${payload?.appVersion}');
+    print('  Text: ${payload?.text}');
+    print('  Console: ${payload?.feedbackConsoleUri}');
   },
 );
 ```
