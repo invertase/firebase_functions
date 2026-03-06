@@ -519,6 +519,16 @@ firebase.alerts.crashlytics.onNewFatalIssuePublished(
   },
 );
 
+// Crashlytics regression alerts
+firebase.alerts.crashlytics.onRegressionAlertPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Regression: ${payload?.type}');
+    print('Issue: ${payload?.issue.title}');
+    print('Resolved: ${payload?.resolveTime}');
+  },
+);
+
 // Crashlytics non-fatal issues
 firebase.alerts.crashlytics.onNewNonfatalIssuePublished(
   (event) async {
