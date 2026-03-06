@@ -17,7 +17,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Scheduler** | ✅ Complete | `onSchedule` |
-| **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
+| **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
 ## Table of Contents
@@ -524,6 +524,18 @@ firebase.alerts.performance.onThresholdAlertPublished(
     print('Metric: ${payload?.metricType}');
     print('Threshold: ${payload?.thresholdValue}');
     print('Actual: ${payload?.violationValue}');
+  },
+);
+
+// App Distribution in-app feedback
+firebase.alerts.appDistribution.onInAppFeedbackPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('In-app feedback:');
+    print('  Tester: ${payload?.testerEmail}');
+    print('  App version: ${payload?.appVersion}');
+    print('  Text: ${payload?.text}');
+    print('  Console: ${payload?.feedbackConsoleUri}');
   },
 );
 ```

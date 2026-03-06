@@ -35,5 +35,15 @@ void main(List<String> args) async {
         print('  Actual: ${payload?.violationValue} ${payload?.violationUnit}');
       },
     );
+
+    // App Distribution in-app feedback alert
+    firebase.alerts.appDistribution.onInAppFeedbackPublished((event) async {
+      final payload = event.data?.payload;
+      print('In-app feedback:');
+      print('  Tester: ${payload?.testerEmail}');
+      print('  App version: ${payload?.appVersion}');
+      print('  Text: ${payload?.text}');
+      print('  Console: ${payload?.feedbackConsoleUri}');
+    });
   });
 }
