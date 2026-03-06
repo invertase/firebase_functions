@@ -1,7 +1,7 @@
 # Firebase Functions for Dart
 
 [![Tests](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/test.yml)
-[![PR Checks](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml)
+[![PR Checks](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml)
 
 Write Firebase Cloud Functions in Dart with full type safety and performance.
 
@@ -16,8 +16,27 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
-| **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
+| **Scheduler** | ✅ Complete | `onSchedule` |
+| **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
+
+## Table of Contents
+
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [HTTPS Functions](#https-functions)
+- [Pub/Sub Triggers](#pubsub-triggers)
+- [Firestore Triggers](#firestore-triggers)
+- [Realtime Database Triggers](#realtime-database-triggers)
+- [Storage Triggers](#storage-triggers)
+- [Scheduler Triggers](#scheduler-triggers)
+- [Firebase Alerts](#firebase-alerts)
+- [Identity Platform (Auth Blocking)](#identity-platform-auth-blocking)
+- [Parameters & Configuration](#parameters--configuration)
+- [Project Configuration](#project-configuration)
+- [Development](#development)
 
 ## Features
 
@@ -264,6 +283,26 @@ firebase.firestore.onDocumentWrittenWithAuthContext(
 
 ## Realtime Database Triggers
 
+Respond to changes in Firebase Realtime Database. The `ref` parameter supports path wildcards (e.g., `{messageId}`) which are extracted into `event.params`.
+
+| Function | Triggers when | Event data |
+|----------|---------------|------------|
+| `onValueCreated` | Data is created | `DataSnapshot?` |
+| `onValueUpdated` | Data is updated | `Change<DataSnapshot>?` (before/after) |
+| `onValueDeleted` | Data is deleted | `DataSnapshot?` (deleted data) |
+| `onValueWritten` | Any write (create/update/delete) | `Change<DataSnapshot>?` (before/after) |
+
+### DataSnapshot API
+
+The `DataSnapshot` class provides methods to inspect the data:
+
+- `val()` — Returns the snapshot contents (Map, List, String, num, bool, or null)
+- `exists()` — Returns `true` if the snapshot contains data
+- `child(path)` — Gets a child snapshot at the given path
+- `hasChild(path)` / `hasChildren()` — Check for child data
+- `numChildren()` — Number of child properties
+- `key` — Last segment of the reference path
+
 ```dart
 // Value created
 firebase.database.onValueCreated(
@@ -276,7 +315,7 @@ firebase.database.onValueCreated(
   },
 );
 
-// Value updated
+// Value updated — access before/after states
 firebase.database.onValueUpdated(
   ref: 'messages/{messageId}',
   (event) async {
@@ -296,7 +335,7 @@ firebase.database.onValueDeleted(
   },
 );
 
-// All write operations
+// All write operations — determine operation type from before/after
 firebase.database.onValueWritten(
   ref: 'users/{userId}/status',
   (event) async {
@@ -309,7 +348,44 @@ firebase.database.onValueWritten(
 );
 ```
 
+### Database Instance Targeting
+
+Use `ReferenceOptions` to target a specific database instance:
+
+```dart
+firebase.database.onValueCreated(
+  ref: 'messages/{messageId}',
+  options: const ReferenceOptions(instance: 'my-project-default-rtdb'),
+  (event) async {
+    print('Instance: ${event.instance}');
+  },
+);
+```
+
 ## Storage Triggers
+
+Respond to changes in Cloud Storage objects. The `bucket` parameter specifies which storage bucket to watch.
+
+| Function | Triggers when |
+|----------|---------------|
+| `onObjectFinalized` | Object is created or overwritten |
+| `onObjectDeleted` | Object is permanently deleted |
+| `onObjectArchived` | Object is archived (versioned buckets) |
+| `onObjectMetadataUpdated` | Object metadata is updated |
+
+### StorageObjectData Properties
+
+The event data provides full object metadata:
+
+- `name` — Object path within the bucket
+- `bucket` — Bucket name
+- `contentType` — MIME type
+- `size` — Content length in bytes
+- `storageClass` — Storage class (STANDARD, NEARLINE, COLDLINE, etc.)
+- `metadata` — User-provided key-value metadata
+- `timeCreated` / `updated` / `timeDeleted` — Timestamps
+- `md5Hash` / `crc32c` — Checksums
+- `generation` / `metageneration` — Versioning info
 
 ```dart
 // Object finalized (created or overwritten)
@@ -323,7 +399,7 @@ firebase.storage.onObjectFinalized(
   },
 );
 
-// Object archived
+// Object archived (versioned buckets only)
 firebase.storage.onObjectArchived(
   bucket: 'my-bucket',
   (event) async {
@@ -353,6 +429,72 @@ firebase.storage.onObjectMetadataUpdated(
 );
 ```
 
+## Scheduler Triggers
+
+Run functions on a recurring schedule using Cloud Scheduler. The `schedule` parameter accepts standard Unix crontab expressions.
+
+### Cron Syntax
+
+```
+┌───────────── minute (0-59)
+│ ┌───────────── hour (0-23)
+│ │ ┌───────────── day of month (1-31)
+│ │ │ ┌───────────── month (1-12)
+│ │ │ │ ┌───────────── day of week (0-6, Sunday=0)
+│ │ │ │ │
+* * * * *
+```
+
+Common examples: `0 0 * * *` (daily midnight), `*/5 * * * *` (every 5 min), `0 9 * * 1-5` (weekdays 9 AM).
+
+### ScheduledEvent Properties
+
+- `jobName` — Cloud Scheduler job name (null if manually invoked)
+- `scheduleTime` — Scheduled execution time (RFC 3339 string)
+- `scheduleDateTime` — Parsed `DateTime` convenience getter
+
+```dart
+// Basic schedule — runs every day at midnight (UTC)
+firebase.scheduler.onSchedule(
+  schedule: '0 0 * * *',
+  (event) async {
+    print('Job: ${event.jobName}');
+    print('Schedule time: ${event.scheduleTime}');
+  },
+);
+```
+
+### Timezone and Retry Configuration
+
+Use `ScheduleOptions` to set a timezone and configure retry behavior for failed invocations:
+
+```dart
+firebase.scheduler.onSchedule(
+  schedule: '0 9 * * 1-5',
+  options: const ScheduleOptions(
+    timeZone: TimeZone('America/New_York'),
+    retryConfig: RetryConfig(
+      retryCount: RetryCount(3),
+      maxRetrySeconds: MaxRetrySeconds(60),
+      minBackoffSeconds: MinBackoffSeconds(5),
+      maxBackoffSeconds: MaxBackoffSeconds(30),
+    ),
+    memory: Memory(MemoryOption.mb256),
+  ),
+  (event) async {
+    print('Executed at: ${event.scheduleDateTime}');
+  },
+);
+```
+
+| RetryConfig field | Description |
+|---|---|
+| `retryCount` | Number of retry attempts |
+| `maxRetrySeconds` | Maximum total time for retries |
+| `minBackoffSeconds` | Minimum wait before retry (0-3600) |
+| `maxBackoffSeconds` | Maximum wait before retry (0-3600) |
+| `maxDoublings` | Times to double backoff before going linear |
+
 ## Firebase Alerts
 
 ```dart
@@ -374,12 +516,33 @@ firebase.alerts.crashlytics.onStabilityDigestPublished(
   },
 );
 
+// Crashlytics velocity alerts
+firebase.alerts.crashlytics.onVelocityAlertPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Velocity alert: ${payload?.issue.title}');
+    print('Crash count: ${payload?.crashCount}');
+    print('Percentage: ${payload?.crashPercentage}%');
+    print('First version: ${payload?.firstVersion}');
+  },
+);
+
 // Billing plan updates
 firebase.alerts.billing.onPlanUpdatePublished(
   (event) async {
     final payload = event.data?.payload;
     print('New Plan: ${payload?.billingPlan}');
     print('Updated By: ${payload?.principalEmail}');
+  },
+);
+
+// Billing automated plan updates
+firebase.alerts.billing.onPlanAutomatedUpdatePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Automated plan update:');
+    print('  Plan: ${payload?.billingPlan}');
+    print('  Type: ${payload?.notificationType}');
   },
 );
 
@@ -391,6 +554,18 @@ firebase.alerts.performance.onThresholdAlertPublished(
     print('Metric: ${payload?.metricType}');
     print('Threshold: ${payload?.thresholdValue}');
     print('Actual: ${payload?.violationValue}');
+  },
+);
+
+// App Distribution in-app feedback
+firebase.alerts.appDistribution.onInAppFeedbackPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('In-app feedback:');
+    print('  Tester: ${payload?.testerEmail}');
+    print('  App version: ${payload?.appVersion}');
+    print('  Text: ${payload?.text}');
+    print('  Console: ${payload?.feedbackConsoleUri}');
   },
 );
 ```
