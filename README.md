@@ -498,6 +498,17 @@ firebase.scheduler.onSchedule(
 ## Firebase Alerts
 
 ```dart
+// App Distribution new tester iOS device
+firebase.alerts.appDistribution.onNewTesterIosDevicePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('New tester iOS device:');
+    print('  Tester: ${payload?.testerName} (${payload?.testerEmail})');
+    print('  Device: ${payload?.testerDeviceModelName}');
+    print('  Identifier: ${payload?.testerDeviceIdentifier}');
+  },
+);
+
 // Crashlytics fatal issues
 firebase.alerts.crashlytics.onNewFatalIssuePublished(
   (event) async {
