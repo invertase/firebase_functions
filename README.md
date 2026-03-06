@@ -519,6 +519,15 @@ firebase.alerts.crashlytics.onNewFatalIssuePublished(
   },
 );
 
+// Crashlytics non-fatal issues
+firebase.alerts.crashlytics.onNewNonfatalIssuePublished(
+  (event) async {
+    final issue = event.data?.payload.issue;
+    print('Non-fatal issue: ${issue?.title}');
+    print('App: ${event.appId}');
+  },
+);
+
 // Crashlytics stability digest
 firebase.alerts.crashlytics.onStabilityDigestPublished(
   (event) async {
