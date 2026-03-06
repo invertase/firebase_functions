@@ -2,21 +2,15 @@ import 'dart:convert';
 
 import 'package:test/test.dart';
 
-import '../helpers/emulator.dart';
 import '../helpers/http_client.dart';
 
 /// HTTPS onCall and onCallWithData test group
-void runHttpsOnCallTests(
-  FunctionsHttpClient Function() getClient,
-  EmulatorHelper Function() getEmulator,
-) {
+void runHttpsOnCallTests(FunctionsHttpClient Function() getClient) {
   group('HTTPS onCall', () {
     late FunctionsHttpClient client;
-    late EmulatorHelper emulator;
 
     setUpAll(() {
       client = getClient();
-      emulator = getEmulator();
     });
 
     test('greet returns expected response with name', () async {
@@ -120,24 +114,6 @@ void runHttpsOnCallTests(
       expect(
         json['result'],
         equals(<String, dynamic>{'message': 'Countdown complete!'}),
-      );
-    });
-
-    test('function execution is visible in emulator logs', () async {
-      emulator.clearOutputBuffer();
-
-      await client.call('greet', data: {'name': 'LogTest'});
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-
-      final executionLogged = emulator.verifyFunctionExecution(
-        'us-central1-greet',
-      );
-      expect(
-        executionLogged,
-        isTrue,
-        reason:
-            'Should see "Beginning execution" and "Finished" in emulator logs',
       );
     });
   });

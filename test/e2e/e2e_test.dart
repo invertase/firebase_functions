@@ -120,7 +120,7 @@ void main() {
 
   // Run all test groups (pass closures to defer value access)
   runHttpsOnRequestTests(() => client, () => emulator);
-  runHttpsOnCallTests(() => client, () => emulator);
+  runHttpsOnCallTests(() => client);
   runIntegrationTests(() => examplePath);
   runPubSubTests(() => examplePath, () => pubsubClient, () => emulator);
   runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
