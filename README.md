@@ -518,6 +518,15 @@ firebase.alerts.crashlytics.onNewFatalIssuePublished(
   },
 );
 
+// Crashlytics stability digest
+firebase.alerts.crashlytics.onStabilityDigestPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Stability digest: ${payload?.digestDate}');
+    print('Trending issues: ${payload?.trendingIssues.length ?? 0}');
+  },
+);
+
 // Crashlytics velocity alerts
 firebase.alerts.crashlytics.onVelocityAlertPublished(
   (event) async {
