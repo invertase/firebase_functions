@@ -23,6 +23,15 @@ void main(List<String> args) async {
       print('  App ID: ${event.appId}');
     });
 
+    // Crashlytics new ANR issue alert
+    firebase.alerts.crashlytics.onNewAnrIssuePublished((event) async {
+      final issue = event.data?.payload.issue;
+      print('New ANR issue in Crashlytics:');
+      print('  Issue ID: ${issue?.id}');
+      print('  Title: ${issue?.title}');
+      print('  App ID: ${event.appId}');
+    });
+
     // Crashlytics regression alert
     firebase.alerts.crashlytics.onRegressionAlertPublished((event) async {
       final payload = event.data?.payload;
