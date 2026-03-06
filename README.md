@@ -18,6 +18,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Scheduler** | ✅ Complete | `onSchedule` |
 | **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
+| **Eventarc** | ✅ Complete | `onCustomEventPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
 ## Table of Contents
@@ -498,6 +499,17 @@ firebase.scheduler.onSchedule(
 ## Firebase Alerts
 
 ```dart
+// App Distribution new tester iOS device
+firebase.alerts.appDistribution.onNewTesterIosDevicePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('New tester iOS device:');
+    print('  Tester: ${payload?.testerName} (${payload?.testerEmail})');
+    print('  Device: ${payload?.testerDeviceModelName}');
+    print('  Identifier: ${payload?.testerDeviceIdentifier}');
+  },
+);
+
 // Crashlytics fatal issues
 firebase.alerts.crashlytics.onNewFatalIssuePublished(
   (event) async {
@@ -514,6 +526,15 @@ firebase.alerts.crashlytics.onRegressionAlertPublished(
     print('Regression: ${payload?.type}');
     print('Issue: ${payload?.issue.title}');
     print('Resolved: ${payload?.resolveTime}');
+  },
+);
+
+// Crashlytics stability digest
+firebase.alerts.crashlytics.onStabilityDigestPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Stability digest: ${payload?.digestDate}');
+    print('Trending issues: ${payload?.trendingIssues.length ?? 0}');
   },
 );
 
@@ -567,6 +588,33 @@ firebase.alerts.appDistribution.onInAppFeedbackPublished(
     print('  App version: ${payload?.appVersion}');
     print('  Text: ${payload?.text}');
     print('  Console: ${payload?.feedbackConsoleUri}');
+  },
+);
+```
+
+## Eventarc
+
+```dart
+// Custom event (default Firebase channel)
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.myevent',
+  (event) async {
+    print('Event: ${event.type}');
+    print('Source: ${event.source}');
+    print('Data: ${event.data}');
+  },
+);
+
+// With channel and filters
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.filtered',
+  options: const EventarcTriggerOptions(
+    channel: 'my-channel',
+    filters: {'category': 'important'},
+  ),
+  (event) async {
+    print('Event: ${event.type}');
+    print('Data: ${event.data}');
   },
 );
 ```
