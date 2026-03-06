@@ -1,5 +1,5 @@
 name: firebase_functions
-description: Firebase Functions runtime for Dart - Write serverless functions in Dart with type safety and performance
+description: Firebase SDK for Cloud Functions (Dart)
 version: 0.1.0
 repository: https://github.com/invertase/firebase-functions-dart
 publish_to: none
