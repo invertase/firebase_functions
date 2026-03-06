@@ -2,6 +2,17 @@ import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
   await fireUp(args, (firebase) {
+    // App Distribution new tester iOS device alert
+    firebase.alerts.appDistribution.onNewTesterIosDevicePublished((
+      event,
+    ) async {
+      final payload = event.data?.payload;
+      print('New tester iOS device:');
+      print('  Tester: ${payload?.testerName} (${payload?.testerEmail})');
+      print('  Device: ${payload?.testerDeviceModelName}');
+      print('  Identifier: ${payload?.testerDeviceIdentifier}');
+    });
+
     // Crashlytics new fatal issue alert
     firebase.alerts.crashlytics.onNewFatalIssuePublished((event) async {
       final issue = event.data?.payload.issue;
@@ -19,6 +30,13 @@ void main(List<String> args) async {
       print('  Issue ID: ${issue?.id}');
       print('  Title: ${issue?.title}');
       print('  App ID: ${event.appId}');
+    });
+
+    // Crashlytics stability digest alert
+    firebase.alerts.crashlytics.onStabilityDigestPublished((event) async {
+      final payload = event.data?.payload;
+      print('Stability digest: ${payload?.digestDate}');
+      print('Trending issues: ${payload?.trendingIssues.length ?? 0}');
     });
 
     // Crashlytics velocity alert
