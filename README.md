@@ -17,7 +17,7 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Scheduler** | ✅ Complete | `onSchedule` |
-| **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance, App Distribution alerts |
+| **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
 
 ## Table of Contents
