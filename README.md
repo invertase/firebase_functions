@@ -1,4 +1,4 @@
-# Firebase Functions for Dart
+# Firebase SDK for Dart Functions
 
 [![Tests](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/test.yml)
 [![PR Checks](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml)
