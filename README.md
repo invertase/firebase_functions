@@ -1,4 +1,4 @@
-# Firebase Functions for Dart
+# Firebase SDK for Dart Functions
 
 [![Tests](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/test.yml)
 [![PR Checks](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase_functions/actions/workflows/pr-checks.yml)
@@ -17,8 +17,11 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 | **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
 | **Scheduler** | ✅ Complete | `onSchedule` |
-| **Firebase Alerts** | ✅ Complete | Crashlytics, Billing, Performance alerts |
+| **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
+| **Eventarc** | ✅ Complete | `onCustomEventPublished` |
 | **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
+| **Remote Config** | ✅ Complete | `onConfigUpdated` |
+| **Test Lab** | ✅ Complete | `onTestMatrixCompleted` |
 
 ## Table of Contents
 
@@ -34,6 +37,8 @@ This package provides a complete Dart implementation of Firebase Cloud Functions
 - [Scheduler Triggers](#scheduler-triggers)
 - [Firebase Alerts](#firebase-alerts)
 - [Identity Platform (Auth Blocking)](#identity-platform-auth-blocking)
+- [Remote Config](#remote-config)
+- [Test Lab](#test-lab)
 - [Parameters & Configuration](#parameters--configuration)
 - [Project Configuration](#project-configuration)
 - [Development](#development)
@@ -498,12 +503,71 @@ firebase.scheduler.onSchedule(
 ## Firebase Alerts
 
 ```dart
+// App Distribution new tester iOS device
+firebase.alerts.appDistribution.onNewTesterIosDevicePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('New tester iOS device:');
+    print('  Tester: ${payload?.testerName} (${payload?.testerEmail})');
+    print('  Device: ${payload?.testerDeviceModelName}');
+    print('  Identifier: ${payload?.testerDeviceIdentifier}');
+  },
+);
+
 // Crashlytics fatal issues
 firebase.alerts.crashlytics.onNewFatalIssuePublished(
   (event) async {
     final issue = event.data?.payload.issue;
     print('Issue: ${issue?.title}');
     print('App: ${event.appId}');
+  },
+);
+
+// Crashlytics ANR (Application Not Responding) issues
+firebase.alerts.crashlytics.onNewAnrIssuePublished(
+  (event) async {
+    final issue = event.data?.payload.issue;
+    print('ANR issue: ${issue?.title}');
+    print('App: ${event.appId}');
+  },
+);
+
+// Crashlytics regression alerts
+firebase.alerts.crashlytics.onRegressionAlertPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Regression: ${payload?.type}');
+    print('Issue: ${payload?.issue.title}');
+    print('Resolved: ${payload?.resolveTime}');
+  },
+);
+
+// Crashlytics non-fatal issues
+firebase.alerts.crashlytics.onNewNonfatalIssuePublished(
+  (event) async {
+    final issue = event.data?.payload.issue;
+    print('Non-fatal issue: ${issue?.title}');
+    print('App: ${event.appId}');
+  },
+);
+
+// Crashlytics stability digest
+firebase.alerts.crashlytics.onStabilityDigestPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Stability digest: ${payload?.digestDate}');
+    print('Trending issues: ${payload?.trendingIssues.length ?? 0}');
+  },
+);
+
+// Crashlytics velocity alerts
+firebase.alerts.crashlytics.onVelocityAlertPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Velocity alert: ${payload?.issue.title}');
+    print('Crash count: ${payload?.crashCount}');
+    print('Percentage: ${payload?.crashPercentage}%');
+    print('First version: ${payload?.firstVersion}');
   },
 );
 
@@ -516,6 +580,16 @@ firebase.alerts.billing.onPlanUpdatePublished(
   },
 );
 
+// Billing automated plan updates
+firebase.alerts.billing.onPlanAutomatedUpdatePublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('Automated plan update:');
+    print('  Plan: ${payload?.billingPlan}');
+    print('  Type: ${payload?.notificationType}');
+  },
+);
+
 // Performance threshold alerts
 firebase.alerts.performance.onThresholdAlertPublished(
   options: const AlertOptions(appId: '1:123456789:ios:abcdef'),
@@ -524,6 +598,45 @@ firebase.alerts.performance.onThresholdAlertPublished(
     print('Metric: ${payload?.metricType}');
     print('Threshold: ${payload?.thresholdValue}');
     print('Actual: ${payload?.violationValue}');
+  },
+);
+
+// App Distribution in-app feedback
+firebase.alerts.appDistribution.onInAppFeedbackPublished(
+  (event) async {
+    final payload = event.data?.payload;
+    print('In-app feedback:');
+    print('  Tester: ${payload?.testerEmail}');
+    print('  App version: ${payload?.appVersion}');
+    print('  Text: ${payload?.text}');
+    print('  Console: ${payload?.feedbackConsoleUri}');
+  },
+);
+```
+
+## Eventarc
+
+```dart
+// Custom event (default Firebase channel)
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.myevent',
+  (event) async {
+    print('Event: ${event.type}');
+    print('Source: ${event.source}');
+    print('Data: ${event.data}');
+  },
+);
+
+// With channel and filters
+firebase.eventarc.onCustomEventPublished(
+  eventType: 'com.example.filtered',
+  options: const EventarcTriggerOptions(
+    channel: 'my-channel',
+    filters: {'category': 'important'},
+  ),
+  (event) async {
+    print('Event: ${event.type}');
+    print('Data: ${event.data}');
   },
 );
 ```
@@ -568,6 +681,38 @@ firebase.identity.beforeUserSignedIn(
 ```
 
 > **Note**: `beforeEmailSent` and `beforeSmsSent` are also available but cannot be tested with the Firebase Auth emulator (emulator only supports `beforeUserCreated` and `beforeUserSignedIn`). They work in production deployments.
+
+## Remote Config
+
+Trigger a function when Firebase Remote Config is updated.
+
+```dart
+firebase.remoteConfig.onConfigUpdated((event) async {
+  final data = event.data;
+  print('Remote Config updated:');
+  print('  Version: ${data?.versionNumber}');
+  print('  Description: ${data?.description}');
+  print('  Update Origin: ${data?.updateOrigin.value}');
+  print('  Update Type: ${data?.updateType.value}');
+  print('  Updated By: ${data?.updateUser.email}');
+});
+```
+
+## Test Lab
+
+Trigger a function when a Firebase Test Lab test matrix completes.
+
+```dart
+firebase.testLab.onTestMatrixCompleted((event) async {
+  final data = event.data;
+  print('Test matrix completed:');
+  print('  Matrix ID: ${data?.testMatrixId}');
+  print('  State: ${data?.state.value}');
+  print('  Outcome: ${data?.outcomeSummary.value}');
+  print('  Client: ${data?.clientInfo.client}');
+  print('  Results URI: ${data?.resultStorage.resultsUri}');
+});
+```
 
 ## Parameters & Configuration
 
