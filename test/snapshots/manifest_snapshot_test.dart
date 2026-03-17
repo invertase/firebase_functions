@@ -1,3 +1,7 @@
+// Copyright 2026, the Firebase project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// MIT-style license that can be found in the LICENSE file.
+
 /// Snapshot test comparing Dart-generated manifest with Node.js reference.
 ///
 /// This test ensures that the Dart builder generates manifests compatible

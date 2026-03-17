@@ -1,3 +1,7 @@
+// Copyright 2026, the Firebase project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// MIT-style license that can be found in the LICENSE file.
+
 /// Possible test states for a test matrix.
 enum TestState {
   /// The default value. This value is used if the state is omitted.

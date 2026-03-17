@@ -99,6 +99,47 @@ dart format .
 dart analyze --fatal-infos
 ```
 
+### License Headers
+
+All source files must include a license header. The project uses [addlicense](https://github.com/google/addlicense) to manage this automatically.
+
+**Install addlicense:**
+
+Download the binary for your platform from the [v1.2.0 release](https://github.com/google/addlicense/releases/tag/v1.2.0) and place it on your `PATH`. For example, on macOS ARM64:
+
+```bash
+curl -sL https://github.com/google/addlicense/releases/download/v1.2.0/addlicense_v1.2.0_macOS_arm64.tar.gz | tar xz
+sudo mv addlicense /usr/local/bin/
+```
+
+**Add headers to new files:**
+
+```bash
+addlicense -f header_template.txt \
+  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
+  --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
+  --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
+  --ignore "**/.dart_tool/**" \
+  --ignore "**/test/fixtures/nodejs_reference/**" \
+  --ignore "**/test/fixtures/with_options_nodejs/**" \
+  .
+```
+
+**Check headers (dry run, same as CI):**
+
+```bash
+addlicense -f header_template.txt --check \
+  --ignore "**/*.yml" --ignore "**/*.yaml" --ignore "**/*.xml" \
+  --ignore "**/*.g.dart" --ignore "**/*.sh" --ignore "**/*.html" \
+  --ignore "**/*.js" --ignore "**/*.ts" --ignore "**/*.txt" \
+  --ignore "**/.dart_tool/**" \
+  --ignore "**/test/fixtures/nodejs_reference/**" \
+  --ignore "**/test/fixtures/with_options_nodejs/**" \
+  .
+```
+
+CI will fail if any source file is missing its license header.
+
 ### Local Validation
 
 You can run the full CI check suite locally before pushing:
@@ -175,4 +216,4 @@ See `.github/workflows/README.md` for full details on each job and how to debug 
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
+By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).

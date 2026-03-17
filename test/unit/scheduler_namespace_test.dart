@@ -1,3 +1,7 @@
+// Copyright 2026, the Firebase project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// MIT-style license that can be found in the LICENSE file.
+
 import 'package:firebase_functions/src/common/options.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/scheduler/options.dart';

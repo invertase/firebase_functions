@@ -1,3 +1,7 @@
+// Copyright 2026, the Firebase project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// MIT-style license that can be found in the LICENSE file.
+
 /// Converts a function name to a valid Cloud Run service ID.
 ///
 /// Cloud Run service IDs must:

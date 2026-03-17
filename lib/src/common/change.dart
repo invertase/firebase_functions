@@ -1,3 +1,7 @@
+// Copyright 2026, the Firebase project authors. Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// MIT-style license that can be found in the LICENSE file.
+
 /// Represents a change to a data structure with before and after states.
 ///
 /// This is used by both Firestore and Realtime Database triggers for
