@@ -7,6 +7,7 @@ import 'dart:io';
 
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:google_cloud_firestore/google_cloud_firestore.dart' as gfs;
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
@@ -81,36 +82,80 @@ class Firebase {
   HttpsNamespace get https => HttpsNamespace(this);
 
   /// Pub/Sub triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   PubSubNamespace get pubsub => PubSubNamespace(this);
 
   /// Firestore triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is only supported in the Firebase
+  /// emulator and is not yet available for production deployments.
+  @experimental
   FirestoreNamespace get firestore => FirestoreNamespace(this);
 
   /// Eventarc triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   EventarcNamespace get eventarc => EventarcNamespace(this);
 
   /// Realtime Database triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is only supported in the Firebase
+  /// emulator and is not yet available for production deployments.
+  @experimental
   DatabaseNamespace get database => DatabaseNamespace(this);
 
   /// Firebase Alerts namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   AlertsNamespace get alerts => AlertsNamespace(this);
 
   /// Identity Platform namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   IdentityNamespace get identity => IdentityNamespace(this);
 
   /// Remote Config namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   RemoteConfigNamespace get remoteConfig => RemoteConfigNamespace(this);
 
   /// Scheduler namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   SchedulerNamespace get scheduler => SchedulerNamespace(this);
 
   /// Cloud Storage triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is only supported in the Firebase
+  /// emulator and is not yet available for production deployments.
+  @experimental
   StorageNamespace get storage => StorageNamespace(this);
 
   /// Task queue triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   TasksNamespace get tasks => TasksNamespace(this);
 
   /// Test Lab triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   TestLabNamespace get testLab => TestLabNamespace(this);
 }
 

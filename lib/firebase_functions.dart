@@ -52,20 +52,28 @@
 /// );
 /// ```
 ///
+/// ## Trigger Support
+///
+/// Only HTTPS triggers (`onRequest`, `onCall`, `onCallWithData`) are
+/// production-ready. All other trigger types are marked `@experimental`:
+///
+/// - **Emulator only**: Firestore, Realtime Database, Storage
+/// - **Not yet supported**: Pub/Sub, Alerts, Eventarc, Identity, Remote Config,
+///   Scheduler, Tasks, Test Lab
+///
 /// See also:
 /// - [params.dart] for the full params API
 /// - [onInit] for safe initialization with secrets
 library;
 
-// Re-export Firestore types for convenience
+// Package re-exports
 export 'package:google_cloud_firestore/google_cloud_firestore.dart'
     show DocumentData, DocumentSnapshot, QueryDocumentSnapshot;
-// Re-export Shelf types for convenience
 export 'package:shelf/shelf.dart' show Request, Response;
 
-// Re-export built-in params from params.dart for convenience
+// Built-in params
 export 'params.dart' show databaseURL, gcloudProject, projectID, storageBucket;
-// Alerts triggers
+// Experimental: Alerts triggers (not yet supported in production or emulator)
 export 'src/alerts/alerts.dart';
 // Common types
 export 'src/common/cloud_event.dart';
@@ -73,31 +81,31 @@ export 'src/common/expression.dart';
 export 'src/common/on_init.dart' show onInit;
 export 'src/common/options.dart';
 export 'src/common/params.dart';
-// Database triggers
+// Experimental: Realtime Database triggers (emulator only)
 export 'src/database/database.dart';
-// Eventarc triggers
+// Experimental: Eventarc triggers (not yet supported in production or emulator)
 export 'src/eventarc/eventarc.dart';
 // Core firebase instance
 export 'src/firebase.dart' show Firebase;
-// Firestore triggers
+// Experimental: Firestore triggers (emulator only)
 export 'src/firestore/firestore.dart';
-// HTTPS triggers
+// HTTPS triggers (production-ready)
 export 'src/https/https.dart';
-// Identity triggers
+// Experimental: Identity triggers (not yet supported in production or emulator)
 export 'src/identity/identity.dart';
 // Logger
 export 'src/logger/logger.dart' show Logger, LogEntry, LogSeverity, logger;
-// Pub/Sub triggers
+// Experimental: Pub/Sub triggers (not yet supported in production or emulator)
 export 'src/pubsub/pubsub.dart';
-// Remote Config triggers
+// Experimental: Remote Config triggers (not yet supported in production or emulator)
 export 'src/remote_config/remote_config.dart';
-// Scheduler triggers
+// Experimental: Scheduler triggers (not yet supported in production or emulator)
 export 'src/scheduler/scheduler.dart';
 // Core runtime
 export 'src/server.dart' show fireUp;
-// Storage triggers
+// Experimental: Storage triggers (emulator only)
 export 'src/storage/storage.dart';
-// Task queue triggers
+// Experimental: Task queue triggers (not yet supported in production or emulator)
 export 'src/tasks/tasks.dart';
-// Test Lab triggers
+// Experimental: Test Lab triggers (not yet supported in production or emulator)
 export 'src/test_lab/test_lab.dart';

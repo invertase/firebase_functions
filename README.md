@@ -7,21 +7,24 @@ Write Firebase Cloud Functions in Dart with full type safety and performance.
 
 ## Status: Alpha (v0.1.0)
 
-This package provides a complete Dart implementation of Firebase Cloud Functions with support for:
+This package provides a Dart implementation of Firebase Cloud Functions. Only HTTPS triggers are currently supported in production. Other trigger types are experimental and have varying levels of support.
 
 | Trigger Type | Status | Functions |
 |-------------|--------|-----------|
-| **HTTPS** | ✅ Complete | `onRequest`, `onCall`, `onCallWithData` |
-| **Pub/Sub** | ✅ Complete | `onMessagePublished` |
-| **Firestore** | ✅ Complete | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
-| **Realtime Database** | ✅ Complete | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
-| **Storage** | ✅ Complete | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
-| **Scheduler** | ✅ Complete | `onSchedule` |
-| **Firebase Alerts** | ✅ Complete | `onInAppFeedbackPublished`, `onNewAnrIssuePublished`, `onNewFatalIssuePublished`, `onNewNonfatalIssuePublished`, `onNewTesterIosDevicePublished`, `onPlanAutomatedUpdatePublished`, `onPlanUpdatePublished`, `onRegressionAlertPublished`, `onStabilityDigestPublished`, `onThresholdAlertPublished`, `onVelocityAlertPublished` |
-| **Eventarc** | ✅ Complete | `onCustomEventPublished` |
-| **Identity Platform** | ✅ Complete | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`*) |
-| **Remote Config** | ✅ Complete | `onConfigUpdated` |
-| **Test Lab** | ✅ Complete | `onTestMatrixCompleted` |
+| **HTTPS** | ✅ Production | `onRequest`, `onCall`, `onCallWithData` |
+| **Firestore** | ⚠️ Emulator only | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
+| **Realtime Database** | ⚠️ Emulator only | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
+| **Storage** | ⚠️ Emulator only | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
+| **Pub/Sub** | 🚧 Experimental | `onMessagePublished` |
+| **Scheduler** | 🚧 Experimental | `onSchedule` |
+| **Firebase Alerts** | 🚧 Experimental | `onAlertPublished` and sub-namespace triggers |
+| **Eventarc** | 🚧 Experimental | `onCustomEventPublished` |
+| **Identity Platform** | 🚧 Experimental | `beforeUserCreated`, `beforeUserSignedIn` (+ `beforeEmailSent`, `beforeSmsSent`) |
+| **Remote Config** | 🚧 Experimental | `onConfigUpdated` |
+| **Test Lab** | 🚧 Experimental | `onTestMatrixCompleted` |
+| **Task Queues** | 🚧 Experimental | `onTaskDispatched` |
+
+> **Legend**: ✅ Production — works in production and emulator. ⚠️ Emulator only — works with the Firebase emulator but not yet in production. 🚧 Experimental — implemented but not currently supported by the emulator or production; APIs may change.
 
 ## Table of Contents
 
