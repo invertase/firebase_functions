@@ -82,9 +82,11 @@ class AuthBlockingTokenVerifier {
       throw UnauthenticatedError('Invalid JWT format: $e');
     }
 
-    final kid = decoded.header?['kid'] as String?;
-    if (kid == null) {
-      throw UnauthenticatedError('Invalid JWT: missing "kid" header');
+    final kid = decoded.header?['kid'];
+    if (kid is! String) {
+      throw UnauthenticatedError(
+        'Invalid JWT: missing "kid" header or not String',
+      );
     }
 
     // Get the keys from Google
