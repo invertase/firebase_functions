@@ -117,7 +117,7 @@ Add to CI pipeline:
 - name: Run Snapshot Tests
   run: |
     cd firebase-functions-dart
-    dart pub get
+    dart pub upgrade
     dart run build_runner build
     dart test test/snapshots/
 ```

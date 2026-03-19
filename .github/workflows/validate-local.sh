@@ -60,7 +60,7 @@ echo "========================================="
 echo ""
 
 echo "Installing dependencies..."
-dart pub get
+dart pub upgrade
 
 echo "Checking formatting..."
 if dart format --output=none --set-exit-if-changed .; then
@@ -104,7 +104,7 @@ echo ""
 
 echo "Installing fixture dependencies..."
 cd test/fixtures/dart_reference
-dart pub get
+dart pub upgrade
 
 echo "Running build_runner..."
 if dart run build_runner build --delete-conflicting-outputs; then

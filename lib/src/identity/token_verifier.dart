@@ -17,9 +17,8 @@ library;
 
 import 'dart:convert';
 
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:http/http.dart' as http;
-import 'package:jose/jose.dart'
-    show JoseException, JsonWebKey, JsonWebKeyStore, JsonWebToken;
 
 import '../https/error.dart';
 
@@ -48,8 +47,8 @@ class AuthBlockingTokenVerifier {
   final bool isEmulator;
   final http.Client _httpClient;
 
-  /// Cached JsonWebKeyStore with Google's public keys.
-  static JsonWebKeyStore? _cachedKeyStore;
+  /// Cached public keys.
+  static Map<String, JWTKey>? _cachedKeys;
 
   /// When the cached keys expire.
   static DateTime? _keysExpireAt;
@@ -75,21 +74,40 @@ class AuthBlockingTokenVerifier {
       return _unsafeDecode(token);
     }
 
-    // Get the key store with Google's keys
-    final keyStore = await _getGoogleKeyStore();
-
-    // Verify the token using jose
-    JsonWebToken jwt;
+    // Decode the token first to get the header
+    JWT decoded;
     try {
-      jwt = await JsonWebToken.decodeAndVerify(token, keyStore);
-    } on JoseException catch (e) {
+      decoded = JWT.decode(token);
+    } catch (e) {
+      throw UnauthenticatedError('Invalid JWT format: $e');
+    }
+
+    final kid = decoded.header?['kid'];
+    if (kid is! String) {
+      throw UnauthenticatedError(
+        'Invalid JWT: missing "kid" header or not String',
+      );
+    }
+
+    // Get the keys from Google
+    final keys = await _getGoogleKeys();
+    final key = keys[kid];
+
+    if (key == null) {
+      throw UnauthenticatedError('Invalid JWT: unknown "kid"');
+    }
+
+    // Verify the token using dart_jsonwebtoken
+    try {
+      JWT.verify(token, key);
+    } on JWTException catch (e) {
       throw UnauthenticatedError('Invalid JWT: ${e.message}');
     } catch (e) {
       throw UnauthenticatedError('Invalid JWT: $e');
     }
 
     // Extract the payload as a map
-    final payload = jwt.claims.toJson();
+    final payload = decoded.payload as Map<String, dynamic>;
 
     // Validate Firebase-specific claims
     _validateClaims(payload, audience);
@@ -99,31 +117,24 @@ class AuthBlockingTokenVerifier {
 
   /// Decodes a JWT without verification (for emulator mode only).
   Map<String, dynamic> _unsafeDecode(String token) {
-    final parts = token.split('.');
-    if (parts.length != 3) {
+    try {
+      final decoded = JWT.decode(token);
+      return decoded.payload as Map<String, dynamic>;
+    } catch (e) {
       throw InvalidArgumentError('Invalid JWT format');
     }
-
-    final payloadJson = _decodeBase64Url(parts[1]);
-    return jsonDecode(payloadJson) as Map<String, dynamic>;
   }
 
-  /// Decodes a base64url string to a UTF-8 string.
-  String _decodeBase64Url(String input) {
-    final normalized = base64Url.normalize(input);
-    return utf8.decode(base64Url.decode(normalized));
-  }
-
-  /// Fetches Google's public keys and creates a JsonWebKeyStore.
+  /// Fetches Google's public keys and returns a map of kid to JWTKey.
   ///
   /// Uses the JWK endpoint which returns keys directly in JSON Web Key format,
   /// so no manual certificate parsing is needed.
-  Future<JsonWebKeyStore> _getGoogleKeyStore() async {
-    // Return cached key store if still valid
-    if (_cachedKeyStore != null &&
+  Future<Map<String, JWTKey>> _getGoogleKeys() async {
+    // Return cached keys if still valid
+    if (_cachedKeys != null &&
         _keysExpireAt != null &&
         DateTime.now().isBefore(_keysExpireAt!)) {
-      return _cachedKeyStore!;
+      return _cachedKeys!;
     }
 
     // Fetch keys from Google's JWK endpoint
@@ -137,15 +148,18 @@ class AuthBlockingTokenVerifier {
 
     // Parse the JWK Set response
     final jwksJson = jsonDecode(response.body) as Map<String, dynamic>;
-    final keyStore = JsonWebKeyStore();
+    final newKeys = <String, JWTKey>{};
 
     // The response contains a "keys" array with JWK objects
     final keys = jwksJson['keys'] as List<dynamic>?;
     if (keys != null) {
       for (final keyJson in keys) {
         try {
-          final jwk = JsonWebKey.fromJson(keyJson as Map<String, dynamic>);
-          keyStore.addKey(jwk);
+          final jwk = keyJson as Map<String, dynamic>;
+          final kid = jwk['kid'] as String?;
+          if (kid != null) {
+            newKeys[kid] = JWTKey.fromJWK(jwk);
+          }
         } catch (e) {
           // Skip keys that fail to parse
           continue;
@@ -164,10 +178,10 @@ class AuthBlockingTokenVerifier {
       }
     }
 
-    _cachedKeyStore = keyStore;
+    _cachedKeys = newKeys;
     _keysExpireAt = DateTime.now().add(cacheDuration);
 
-    return keyStore;
+    return newKeys;
   }
 
   /// Validates JWT claims.
@@ -238,7 +252,7 @@ class AuthBlockingTokenVerifier {
 
   /// Clears the key cache (useful for testing).
   static void clearCertificateCache() {
-    _cachedKeyStore = null;
+    _cachedKeys = null;
     _keysExpireAt = null;
   }
 }
