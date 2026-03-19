@@ -8,7 +8,7 @@ A simple web client demonstrating how to call Firebase Functions (both `onReques
 
 ```bash
 cd ../basic
-dart pub get
+dart pub upgrade
 dart run build_runner build --delete-conflicting-outputs
 firebase emulators:start --only functions,auth
 ```

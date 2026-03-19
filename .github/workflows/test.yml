@@ -67,7 +67,7 @@ jobs:
         run: dart --version
 
       - name: Install dependencies
-        run: dart pub get
+        run: dart pub upgrade
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
@@ -103,11 +103,11 @@ jobs:
           sdk: stable
 
       - name: Install dependencies (root)
-        run: dart pub get
+        run: dart pub upgrade
 
       - name: Install dependencies (fixture)
         working-directory: test/fixtures/dart_reference
-        run: dart pub get
+        run: dart pub upgrade
 
       - name: Run build_runner
         working-directory: test/fixtures/dart_reference
@@ -156,7 +156,7 @@ jobs:
           cache-dependency-path: test/fixtures/nodejs_reference/package-lock.json
 
       - name: Install Dart dependencies
-        run: dart pub get
+        run: dart pub upgrade
 
       - name: Download Dart manifest from builder-tests
         uses: actions/download-artifact@v4
@@ -267,7 +267,7 @@ jobs:
         run: firebase --version
 
       - name: Install dependencies (root)
-        run: dart pub get
+        run: dart pub upgrade
 
       - name: Download Dart manifest from builder-tests
         uses: actions/download-artifact@v4

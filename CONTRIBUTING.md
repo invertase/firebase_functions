@@ -29,7 +29,7 @@ All submissions, including submissions by project members, require review. We us
 
    ```bash
    cd firebase-functions-dart
-   dart pub get
+   dart pub upgrade
    ```
 
 3. Verify your setup by running the analyzer and tests:

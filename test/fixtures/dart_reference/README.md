@@ -31,7 +31,7 @@ This example demonstrates the core functionality of Firebase Functions for Dart.
 ### Install Dependencies
 
 ```bash
-dart pub get
+dart pub upgrade
 ```
 
 ### Run Locally
