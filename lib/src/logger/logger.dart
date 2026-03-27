@@ -276,17 +276,10 @@ final logger = Logger._();
 @internal
 const cloudTraceContextHeader = 'x-cloud-trace-context';
 
-/// Zone key for propagating trace IDs through async operations.
-///
-/// Set this in a [Zone] to automatically include trace context in log entries:
-/// ```dart
-/// runZoned(
-///   () { logger.info('traced!'); },
-///   zoneValues: {traceIdKey: 'abc123'},
-/// );
-/// ```
+/// Zone key for propagating trace IDs.
 @internal
 final Object traceIdZoneKey = Object();
 
+/// Zone key for propagating project ID.
 @internal
 final Object projectIdZoneKey = Object();
