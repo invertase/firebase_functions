@@ -180,6 +180,8 @@ final class Logger {
     final traceId = Zone.current[traceIdZoneKey] as String?;
 
     if (projectId != null && traceId != null) {
+      assert(projectId.isNotEmpty, 'projectIdZoneKey value must not be empty');
+      assert(traceId.isNotEmpty, 'traceIdZoneKey value must not be empty');
       entry['logging.googleapis.com/trace'] =
           'projects/$projectId/traces/$traceId';
     }

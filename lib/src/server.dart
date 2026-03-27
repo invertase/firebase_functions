@@ -16,6 +16,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:stack_trace/stack_trace.dart' show Trace;
@@ -57,11 +58,9 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
     final handler = const Pipeline()
         .addMiddleware(_corsMiddleware(env))
         .addHandler((request) {
-          final traceHeader = request.headers[cloudTraceContextHeader];
-          String? traceId;
-          if (traceHeader != null) {
-            traceId = traceHeader.split('/')[0];
-          }
+          final traceId = extractTraceId(
+            request.headers[cloudTraceContextHeader],
+          );
 
           if (traceId == null) {
             return _routeRequest(request, firebase, env);
@@ -673,4 +672,22 @@ bool _matchesRefPattern(String refPath, String pattern) {
   }
 
   return true;
+}
+
+final _traceIdRegExp = RegExp(r'^[a-f0-9]{32}$', caseSensitive: false);
+
+/// Extracts the 32-character hexadecimal trace ID from an [x-cloud-trace-context] header.
+///
+/// Expected format: `TRACE_ID/SPAN_ID;o=TRACE_TRUE`
+@visibleForTesting
+String? extractTraceId(String? header) {
+  if (header == null || header.isEmpty) return null;
+  final parts = header.split('/');
+  if (parts.isNotEmpty) {
+    final traceId = parts[0];
+    if (_traceIdRegExp.hasMatch(traceId)) {
+      return traceId;
+    }
+  }
+  return null;
 }
