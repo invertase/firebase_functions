@@ -27,10 +27,10 @@ void main() {
       test('rejects malformed traces', () {
         // Too short
         expect(extractTraceId('1234/567;o=1'), isNull);
-        
+
         // Too long
         expect(extractTraceId('1234567890abcdef1234567890abcdef0/5'), isNull);
-        
+
         // Invalid hex
         expect(extractTraceId('1234567890xyzdef1234567890abcdef/5'), isNull);
       });
