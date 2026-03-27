@@ -46,7 +46,7 @@ typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
 /// ```
 Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
   final firebase = Firebase();
-  final env = firebase.envInternal;
+  final env = firebase.$env;
   final projectId = env.projectId;
 
   await runZoned(zoneValues: {projectIdZoneKey: projectId}, () async {
@@ -60,7 +60,7 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
           final traceHeader = request.headers[cloudTraceContextHeader];
           String? traceId;
           if (traceHeader != null) {
-            traceId = 'projects/$projectId/traces/${traceHeader.split('/')[0]}';
+            traceId = traceHeader.split('/')[0];
           }
 
           if (traceId == null) {
@@ -127,15 +127,14 @@ FutureOr<Response> _routeRequest(
     return _handleQuitQuitQuit(request);
   }
 
-  if (requestPath == '__/functions.yaml' &&
-      env.environment['FUNCTIONS_CONTROL_API'] == 'true') {
+  if (requestPath == '__/functions.yaml' && env.functionsControlApi) {
     // Manifest endpoint for function discovery
     return _handleFunctionsManifest(request, firebase);
   }
 
   // FUNCTION_TARGET mode (production): Serve only the specified function
   // This matches Node.js behavior where each Cloud Run service runs one function
-  final functionTarget = env.environment['FUNCTION_TARGET'];
+  final functionTarget = env.functionTarget;
   if (functionTarget != null && functionTarget.isNotEmpty) {
     return _routeToTargetFunction(request, firebase, env, functionTarget);
   }

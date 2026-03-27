@@ -100,7 +100,7 @@ class HttpsNamespace extends FunctionsNamespace {
       }
 
       // Extract auth and app check tokens
-      final skipVerification = firebase.envInternal.skipTokenVerification;
+      final skipVerification = firebase.$env.skipTokenVerification;
       final tokens = await checkTokens(
         request,
         skipTokenVerification: skipVerification,
@@ -180,7 +180,7 @@ class HttpsNamespace extends FunctionsNamespace {
       final body = await request.json as Map<String, dynamic>?;
 
       // Extract auth and app check tokens
-      final skipVerification = firebase.envInternal.skipTokenVerification;
+      final skipVerification = firebase.$env.skipTokenVerification;
       final tokens = await checkTokens(
         request,
         skipTokenVerification: skipVerification,

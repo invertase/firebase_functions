@@ -255,5 +255,5 @@ abstract class FunctionsNamespace {
 /// Internal extension to access private members of Firebase.
 @internal
 extension FirebaseInternal on Firebase {
-  FirebaseEnv get envInternal => _env;
+  FirebaseEnv get $env => _env;
 }

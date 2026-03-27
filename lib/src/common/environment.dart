@@ -87,6 +87,28 @@ class FirebaseEnv {
   ///
   /// Uses the [PORT] environment variable, defaulting to 8080.
   int get port => int.tryParse(environment['PORT'] ?? '8080') ?? 8080;
+
+  /// The name of the Cloud Run service.
+  ///
+  /// Uses the `K_SERVICE` environment variable.
+  ///
+  /// See https://cloud.google.com/run/docs/container-contract#env-vars
+  String? get kService => environment['K_SERVICE'];
+
+  /// The name of the target function.
+  ///
+  /// Uses the `FUNCTION_TARGET` environment variable.
+  ///
+  /// See https://docs.cloud.google.com/run/docs/configuring/services/environment-variables#additional_reserved_environment_variables_when_deploying_functions
+  String? get functionTarget => environment['FUNCTION_TARGET'];
+
+  /// Whether the functions control API is enabled.
+  ///
+  /// Uses the `FUNCTIONS_CONTROL_API` environment variable.
+  ///
+  /// This is part of the contract with `firebase-tools`.
+  bool get functionsControlApi =>
+      environment['FUNCTIONS_CONTROL_API'] == 'true';
 }
 
 /// Common project ID environment variables checked in order.

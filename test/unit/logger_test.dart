@@ -293,7 +293,7 @@ void main() {
 
     group('trace context', () {
       test(
-        'should add trace header when traceId is in Zone',
+        'should add trace header when both projectId and traceId are in Zone',
         () {
           runZoned(
             () {
@@ -306,12 +306,47 @@ void main() {
               });
             },
             zoneValues: {
+              projectIdZoneKey: 'test-project',
               traceIdZoneKey: 'abc123',
-              // Simulate GCLOUD_PROJECT env var via a zone-aware override
             },
           );
         },
-        skip: 'Requires GCLOUD_PROJECT env var to be set',
+      );
+
+      test(
+        'should not add trace header when projectId is missing in Zone',
+        () {
+          runZoned(
+            () {
+              testLogger.write({'severity': 'INFO', 'message': 'traced'});
+              expect(parseStdout(), {
+                'severity': 'INFO',
+                'message': 'traced',
+              });
+            },
+            zoneValues: {
+              traceIdZoneKey: 'abc123',
+            },
+          );
+        },
+      );
+
+      test(
+        'should not add trace header when traceId is missing in Zone',
+        () {
+          runZoned(
+            () {
+              testLogger.write({'severity': 'INFO', 'message': 'traced'});
+              expect(parseStdout(), {
+                'severity': 'INFO',
+                'message': 'traced',
+              });
+            },
+            zoneValues: {
+              projectIdZoneKey: 'test-project',
+            },
+          );
+        },
       );
     });
   });

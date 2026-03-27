@@ -276,20 +276,18 @@ class IdentityNamespace extends FunctionsNamespace {
   /// skipTokenVerification debug feature is enabled), verification is skipped.
   Future<Map<String, dynamic>> _decodeAndVerifyJwt(String jwt) async {
     // Get project ID
-    final projectId = firebase.envInternal.projectId;
+    final projectId = firebase.$env.projectId;
 
     // Create verifier
     final verifier = AuthBlockingTokenVerifier(
       projectId: projectId,
       isEmulator:
-          firebase.envInternal.isEmulator ||
-          firebase.envInternal.skipTokenVerification,
+          firebase.$env.isEmulator || firebase.$env.skipTokenVerification,
     );
 
     // Determine audience based on platform
     // Cloud Run uses "run.app", GCF v1 uses default
-    final kService =
-        firebase.envInternal.environment['K_SERVICE']; // Cloud Run service name
+    final kService = firebase.$env.kService; // Cloud Run service name
     final audience = kService != null ? 'run.app' : null;
 
     return verifier.verifyToken(jwt, audience: audience);
