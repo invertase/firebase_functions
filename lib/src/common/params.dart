@@ -800,11 +800,10 @@ class InternalExpression extends Param<String> {
   String runtimeValue() {
     if (Platform.environment['FIREBASE_CONFIG'] case final String config) {
       try {
-        if (jsonDecode(config) case final Map<String, dynamic> m) {
-          return switch (m[_configKey]) {
-            final String value => value,
-            _ => '',
-          };
+        if (jsonDecode(config) case final Map<String, dynamic> map) {
+          if (map[_configKey] case final String value) {
+            return value;
+          }
         }
       } on FormatException {
         // ignore
