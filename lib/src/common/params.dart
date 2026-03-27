@@ -792,11 +792,26 @@ class _EnumSelectParamInput<T extends Enum> extends ParamInput<List<T>> {
 /// These are special expressions that read from Firebase environment
 /// variables and are always available without being defined by the user.
 class InternalExpression extends Param<String> {
-  const InternalExpression._(String name, this.getter) : super(name, null);
-  final String Function(Map<String, String>) getter;
+  const InternalExpression._(String name, this._configKey) : super(name, null);
+
+  final String _configKey;
 
   @override
-  String runtimeValue() => getter(Platform.environment);
+  String runtimeValue() {
+    if (Platform.environment['FIREBASE_CONFIG'] case final String config) {
+      try {
+        if (jsonDecode(config) case final Map<String, dynamic> m) {
+          return switch (m[_configKey]) {
+            final String value => value,
+            _ => '',
+          };
+        }
+      } on FormatException {
+        // ignore
+      }
+    }
+    return '';
+  }
 
   @override
   WireParamSpec<String> toSpec() {
@@ -820,45 +835,22 @@ sealed class ParamInput<T extends Object> {
 
   // Internal Firebase expressions
 
-  static final databaseURL = InternalExpression._('DATABASE_URL', (env) {
-    if (!env.containsKey('FIREBASE_CONFIG')) return '';
-    try {
-      final config = jsonDecode(env['FIREBASE_CONFIG']!);
-      return config['databaseURL'] as String? ?? '';
-    } on FormatException {
-      return '';
-    }
-  });
+  static const databaseURL = InternalExpression._(
+    'DATABASE_URL',
+    'databaseURL',
+  );
 
-  static final projectId = InternalExpression._('PROJECT_ID', (env) {
-    if (!env.containsKey('FIREBASE_CONFIG')) return '';
-    try {
-      final config = jsonDecode(env['FIREBASE_CONFIG']!);
-      return config['projectId'] as String? ?? '';
-    } on FormatException {
-      return '';
-    }
-  });
+  static const projectId = InternalExpression._('PROJECT_ID', 'projectId');
 
-  static final gcloudProject = InternalExpression._('GCLOUD_PROJECT', (env) {
-    if (!env.containsKey('FIREBASE_CONFIG')) return '';
-    try {
-      final config = jsonDecode(env['FIREBASE_CONFIG']!);
-      return config['projectId'] as String? ?? '';
-    } on FormatException {
-      return '';
-    }
-  });
+  static const gcloudProject = InternalExpression._(
+    'GCLOUD_PROJECT',
+    'projectId',
+  );
 
-  static final storageBucket = InternalExpression._('STORAGE_BUCKET', (env) {
-    if (!env.containsKey('FIREBASE_CONFIG')) return '';
-    try {
-      final config = jsonDecode(env['FIREBASE_CONFIG']!);
-      return config['storageBucket'] as String? ?? '';
-    } on FormatException {
-      return '';
-    }
-  });
+  static const storageBucket = InternalExpression._(
+    'STORAGE_BUCKET',
+    'storageBucket',
+  );
 
   // Factory methods for creating input types
 
