@@ -313,41 +313,19 @@ void main() {
         },
       );
 
-      test(
-        'should not add trace header when projectId is missing in Zone',
-        () {
-          runZoned(
-            () {
-              testLogger.write({'severity': 'INFO', 'message': 'traced'});
-              expect(parseStdout(), {
-                'severity': 'INFO',
-                'message': 'traced',
-              });
-            },
-            zoneValues: {
-              traceIdZoneKey: 'abc123',
-            },
-          );
-        },
-      );
+      test('should not add trace header when projectId is missing in Zone', () {
+        runZoned(() {
+          testLogger.write({'severity': 'INFO', 'message': 'traced'});
+          expect(parseStdout(), {'severity': 'INFO', 'message': 'traced'});
+        }, zoneValues: {traceIdZoneKey: 'abc123'});
+      });
 
-      test(
-        'should not add trace header when traceId is missing in Zone',
-        () {
-          runZoned(
-            () {
-              testLogger.write({'severity': 'INFO', 'message': 'traced'});
-              expect(parseStdout(), {
-                'severity': 'INFO',
-                'message': 'traced',
-              });
-            },
-            zoneValues: {
-              projectIdZoneKey: 'test-project',
-            },
-          );
-        },
-      );
+      test('should not add trace header when traceId is missing in Zone', () {
+        runZoned(() {
+          testLogger.write({'severity': 'INFO', 'message': 'traced'});
+          expect(parseStdout(), {'severity': 'INFO', 'message': 'traced'});
+        }, zoneValues: {projectIdZoneKey: 'test-project'});
+      });
     });
   });
 
