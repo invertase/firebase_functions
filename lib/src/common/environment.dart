@@ -75,7 +75,7 @@ class FirebaseEnv {
   String get projectId {
     for (final option in _projectIdEnvKeyOptions) {
       final value = environment[option];
-      if (value != null) return value;
+      if (value != null && value.isNotEmpty) return value;
     }
 
     throw StateError(
