@@ -15,15 +15,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
+import 'test_client_base.dart';
 
 /// Helper client for interacting with the Firebase Storage emulator.
-class StorageClient {
-  StorageClient(this.baseUrl, this.bucket);
+final class StorageClient extends TestClientBase {
+  StorageClient(super.baseUrl, this.bucket);
 
-  final String baseUrl;
   final String bucket;
-  final http.Client _client = http.Client();
 
   /// Uploads a file to the storage emulator.
   ///
@@ -39,7 +37,7 @@ class StorageClient {
       '?uploadType=media&name=${Uri.encodeComponent(objectPath)}',
     );
 
-    final response = await _client.post(
+    final response = await client.post(
       url,
       headers: {'Content-Type': contentType},
       body: bytes,
@@ -60,7 +58,7 @@ class StorageClient {
       '$baseUrl/storage/v1/b/$bucket/o/${Uri.encodeComponent(objectPath)}',
     );
 
-    final response = await _client.delete(url);
+    final response = await client.delete(url);
 
     if (response.statusCode != 204 && response.statusCode != 200) {
       throw StorageException(
@@ -75,7 +73,7 @@ class StorageClient {
       '$baseUrl/storage/v1/b/$bucket/o/${Uri.encodeComponent(objectPath)}',
     );
 
-    final response = await _client.get(url);
+    final response = await client.get(url);
 
     if (response.statusCode == 404) {
       return null;
@@ -88,11 +86,6 @@ class StorageClient {
     }
 
     return jsonDecode(response.body) as Map<String, dynamic>;
-  }
-
-  /// Closes the HTTP client.
-  void close() {
-    _client.close();
   }
 }
 

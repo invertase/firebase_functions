@@ -28,6 +28,7 @@ import 'helpers/firestore_client.dart';
 import 'helpers/http_client.dart';
 import 'helpers/pubsub_client.dart';
 import 'helpers/storage_client.dart';
+import 'helpers/test_client_base.dart';
 import 'tests/database_tests.dart';
 import 'tests/firestore_tests.dart';
 import 'tests/https_oncall_tests.dart';
@@ -124,12 +125,20 @@ void main() {
     print('');
 
     try {
-      client?.close();
-      pubsubClient?.close();
-      firestoreClient?.close();
-      databaseClient?.close();
-      authClient?.close();
-      storageClient?.close();
+      for (final client in <TestClientBase>[
+        ?client,
+        ?pubsubClient,
+        ?firestoreClient,
+        ?databaseClient,
+        ?authClient,
+        ?storageClient,
+      ]) {
+        try {
+          client.close();
+        } catch (e, s) {
+          print('Error closing client in tearDownAll: $e\n$s');
+        }
+      }
     } finally {
       await emulator?.stop();
     }

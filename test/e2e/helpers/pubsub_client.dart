@@ -14,15 +14,13 @@
 
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'test_client_base.dart';
 
 /// Helper for publishing messages to the Pub/Sub emulator.
-class PubSubClient {
-  PubSubClient(this.baseUrl, this.projectId);
+final class PubSubClient extends TestClientBase {
+  PubSubClient(super.baseUrl, this.projectId);
 
-  final String baseUrl;
   final String projectId;
-  final http.Client _client = http.Client();
 
   /// Publishes a message to a topic in the Pub/Sub emulator.
   ///
@@ -54,7 +52,7 @@ class PubSubClient {
       '$baseUrl/v1/projects/$projectId/topics/$topic:publish',
     );
 
-    final response = await _client.post(
+    final response = await client.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
@@ -92,7 +90,7 @@ class PubSubClient {
       };
     }).toList();
 
-    final response = await _client.post(
+    final response = await client.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'messages': encodedMessages}),
@@ -110,11 +108,6 @@ class PubSubClient {
         .toList();
 
     return PubSubPublishResponse(messageIds);
-  }
-
-  /// Closes the HTTP client.
-  void close() {
-    _client.close();
   }
 }
 
