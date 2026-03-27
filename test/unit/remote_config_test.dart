@@ -15,6 +15,7 @@
 import 'dart:convert';
 
 import 'package:firebase_functions/src/common/cloud_event.dart';
+import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/remote_config/config_update_data.dart';
 import 'package:firebase_functions/src/remote_config/remote_config_namespace.dart';
@@ -71,6 +72,10 @@ Request _createRemoteConfigRequest({
 }
 
 void main() {
+  setUpAll(() {
+    FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
+  });
+
   group('RemoteConfigNamespace', () {
     late Firebase firebase;
     late RemoteConfigNamespace remoteConfig;

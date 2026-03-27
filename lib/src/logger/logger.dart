@@ -16,6 +16,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
+import 'package:meta/meta.dart';
+
 /// Log severity levels for Cloud Logging.
 ///
 /// See [LogSeverity](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity).
@@ -41,17 +43,6 @@ enum LogSeverity {
 /// Cloud Logging fields. All other keys are included in the `jsonPayload`
 /// of the logged entry.
 typedef LogEntry = Map<String, Object?>;
-
-/// Zone key for propagating trace IDs through async operations.
-///
-/// Set this in a [Zone] to automatically include trace context in log entries:
-/// ```dart
-/// runZoned(
-///   () { logger.info('traced!'); },
-///   zoneValues: {traceIdKey: 'abc123'},
-/// );
-/// ```
-const Symbol traceIdKey = #firebaseTraceId;
 
 /// Removes circular references from an object graph for safe JSON
 /// serialization.
@@ -128,6 +119,15 @@ bool _isStderrSeverity(String severity) => switch (severity) {
   _ => false,
 };
 
+/// Creates a new [Logger] instance.
+///
+/// [stdoutWriter] and [stderrWriter] can be provided for testing.
+@internal
+Logger createLogger({
+  void Function(String line)? stdoutWriter,
+  void Function(String line)? stderrWriter,
+}) => Logger._(stdoutWriter: stdoutWriter, stderrWriter: stderrWriter);
+
 /// Structured logger for Cloud Logging, compatible with the Firebase
 /// Functions Node.js SDK `logger` namespace.
 ///
@@ -152,11 +152,11 @@ bool _isStderrSeverity(String severity) => switch (severity) {
 /// // Low-level structured entry
 /// logger.write({'severity': 'NOTICE', 'message': 'Custom', 'code': 42});
 /// ```
-class Logger {
+final class Logger {
   /// Creates a [Logger] instance.
   ///
   /// Custom [stdoutWriter] and [stderrWriter] can be provided for testing.
-  Logger({
+  Logger._({
     void Function(String line)? stdoutWriter,
     void Function(String line)? stderrWriter,
   }) : _stdoutWriter = stdoutWriter ?? _defaultStdoutWriter,
@@ -171,17 +171,17 @@ class Logger {
   /// Writes a [LogEntry] to stdout or stderr depending on severity.
   ///
   /// The entry must contain a `severity` key. If a trace ID is available
-  /// in the current [Zone] (via [traceIdKey]), it is automatically added
+  /// in the current [Zone] (via [traceIdZoneKey]), it is automatically added
   /// to the entry.
   void write(LogEntry entry) {
     // Add trace context if available.
-    final traceId = Zone.current[traceIdKey] as String?;
-    if (traceId != null) {
-      final project = io.Platform.environment['GCLOUD_PROJECT'];
-      if (project != null) {
-        entry['logging.googleapis.com/trace'] =
-            'projects/$project/traces/$traceId';
-      }
+
+    final projectId = Zone.current[projectIdZoneKey] as String?;
+    final traceId = Zone.current[traceIdZoneKey] as String?;
+
+    if (projectId != null && traceId != null) {
+      entry['logging.googleapis.com/trace'] =
+          'projects/$projectId/traces/$traceId';
     }
 
     final sanitized = removeCircular(entry);
@@ -269,4 +269,24 @@ LogEntry _entryFromArgs(
 /// logger.info('Hello');
 /// logger.warn('Something is off', {'requestId': 'abc'});
 /// ```
-final logger = Logger();
+final logger = Logger._();
+
+/// Standard HTTP header used by
+/// [Cloud Trace](https://cloud.google.com/trace/docs/setup).
+@internal
+const cloudTraceContextHeader = 'x-cloud-trace-context';
+
+/// Zone key for propagating trace IDs through async operations.
+///
+/// Set this in a [Zone] to automatically include trace context in log entries:
+/// ```dart
+/// runZoned(
+///   () { logger.info('traced!'); },
+///   zoneValues: {traceIdKey: 'abc123'},
+/// );
+/// ```
+@internal
+final Object traceIdZoneKey = Object();
+
+@internal
+final Object projectIdZoneKey = Object();

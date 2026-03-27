@@ -27,7 +27,7 @@ void main() {
     setUp(() {
       lastStdout = '';
       lastStderr = '';
-      testLogger = Logger(
+      testLogger = createLogger(
         stdoutWriter: (line) => lastStdout = line,
         stderrWriter: (line) => lastStderr = line,
       );
@@ -306,7 +306,7 @@ void main() {
               });
             },
             zoneValues: {
-              traceIdKey: 'abc123',
+              traceIdZoneKey: 'abc123',
               // Simulate GCLOUD_PROJECT env var via a zone-aware override
             },
           );
