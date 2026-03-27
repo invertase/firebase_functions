@@ -1,0 +1,7 @@
+# https://github.com/dart-lang/test/blob/master/pkgs/test/doc/configuration.md
+tags:
+  e2e:
+    # Designates integration tests that require the Firebase Local Emulator Suite.
+    # These tests spin up external processes (like Node.js and Java emulators)
+    # and execute full end-to-end request pipelines.
+    timeout: 2x
