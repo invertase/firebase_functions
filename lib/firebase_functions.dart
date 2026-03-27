@@ -72,8 +72,11 @@
 ///   Scheduler, Tasks, Test Lab
 ///
 /// See also:
-/// - [params.dart] for the full params API
+// ignore: comment_references (analyzer doesn't know about library links)
+/// - [params] for the full params API
 /// - [onInit] for safe initialization with secrets
+///
+/// @docImport 'src/common/on_init.dart';
 library;
 
 // Package re-exports
@@ -104,7 +107,7 @@ export 'src/https/https.dart';
 // Experimental: Identity triggers (not yet supported in production or emulator)
 export 'src/identity/identity.dart';
 // Logger
-export 'src/logger/logger.dart' show Logger, LogEntry, LogSeverity, logger;
+export 'src/logger/logger.dart' show LogEntry, LogSeverity, Logger, logger;
 // Experimental: Pub/Sub triggers (not yet supported in production or emulator)
 export 'src/pubsub/pubsub.dart';
 // Experimental: Remote Config triggers (not yet supported in production or emulator)

@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// @docImport 'params.dart';
+library;
+
 import 'dart:async';
 
 /// Callback registered via [onInit].

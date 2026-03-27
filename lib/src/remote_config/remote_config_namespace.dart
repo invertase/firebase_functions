@@ -66,7 +66,7 @@ class RemoteConfigNamespace extends FunctionsNamespace {
         // Parse CloudEvent with ConfigUpdateData
         final event = CloudEvent<ConfigUpdateData>.fromJson(
           json,
-          (data) => ConfigUpdateData.fromJson(data),
+          ConfigUpdateData.fromJson,
         );
 
         // Execute handler

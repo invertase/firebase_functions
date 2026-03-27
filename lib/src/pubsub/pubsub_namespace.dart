@@ -70,7 +70,7 @@ class PubSubNamespace extends FunctionsNamespace {
         // Parse CloudEvent with PubsubMessage data
         final event = CloudEvent<PubsubMessage>.fromJson(
           json,
-          (data) => PubsubMessage.fromJson(data),
+          PubsubMessage.fromJson,
         );
 
         // Execute handler
