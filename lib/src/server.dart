@@ -16,59 +16,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
-
 import 'package:stack_trace/stack_trace.dart' show Trace;
 
 import 'common/cloud_run_id.dart';
+import 'common/environment.dart';
 import 'common/on_init.dart';
 import 'firebase.dart';
 import 'logger/logger.dart';
 
 /// Callback type for the user's function registration code.
 typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
-
-/// Firebase emulator environment detection and configuration.
-class EmulatorEnvironment {
-  EmulatorEnvironment(this.environment);
-  final Map<String, String> environment;
-
-  /// Whether running in the Firebase emulator.
-  bool get isEmulator => environment['FUNCTIONS_EMULATOR'] == 'true';
-
-  /// Timezone setting.
-  String get tz => environment['TZ'] ?? 'UTC';
-
-  /// Whether debug mode is enabled.
-  bool get debugMode => environment['FIREBASE_DEBUG_MODE'] == 'true';
-
-  /// Whether to skip token verification (emulator only).
-  bool get skipTokenVerification {
-    if (!environment.containsKey('FIREBASE_DEBUG_FEATURES')) {
-      return false;
-    }
-    try {
-      final features = jsonDecode(environment['FIREBASE_DEBUG_FEATURES']!);
-      return features['skipTokenVerification'] as bool? ?? false;
-    } on FormatException {
-      return false;
-    }
-  }
-
-  /// Whether CORS is enabled (emulator only).
-  bool get enableCors {
-    if (!environment.containsKey('FIREBASE_DEBUG_FEATURES')) {
-      return false;
-    }
-    try {
-      final features = jsonDecode(environment['FIREBASE_DEBUG_FEATURES']!);
-      return features['enableCors'] as bool? ?? false;
-    } on FormatException {
-      return false;
-    }
-  }
-}
 
 /// Starts the Firebase Functions runtime.
 ///
@@ -87,23 +47,37 @@ class EmulatorEnvironment {
 /// ```
 Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
   final firebase = Firebase();
-  final emulatorEnv = EmulatorEnvironment(Platform.environment);
+  final env = firebase.$env;
+  final projectId = env.projectId;
 
-  // Run user's function registration code
-  await runner(firebase);
+  await runZoned(zoneValues: {projectIdZoneKey: projectId}, () async {
+    // Run user's function registration code
+    await runner(firebase);
 
-  // Build request handler with middleware pipeline
-  final handler = const Pipeline()
-      .addMiddleware(_corsMiddleware(emulatorEnv))
-      .addHandler((request) => _routeRequest(request, firebase, emulatorEnv));
+    // Build request handler with middleware pipeline
+    final handler = const Pipeline()
+        .addMiddleware(_corsMiddleware(env))
+        .addHandler((request) {
+          final traceId = extractTraceId(
+            request.headers[cloudTraceContextHeader],
+          );
 
-  // Start HTTP server
-  final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
-  await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
+          if (traceId == null) {
+            return _routeRequest(request, firebase, env);
+          }
+
+          return runZoned(zoneValues: {traceIdZoneKey: traceId}, () {
+            return _routeRequest(request, firebase, env);
+          });
+        });
+
+    // Start HTTP server
+    await shelf_io.serve(handler, InternetAddress.anyIPv4, env.port);
+  });
 }
 
 /// CORS middleware for emulator mode.
-Middleware _corsMiddleware(EmulatorEnvironment env) =>
+Middleware _corsMiddleware(FirebaseEnv env) =>
     (innerHandler) => (request) {
       // Handle preflight OPTIONS requests
       if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
@@ -136,7 +110,7 @@ Middleware _corsMiddleware(EmulatorEnvironment env) =>
 FutureOr<Response> _routeRequest(
   Request request,
   Firebase firebase,
-  EmulatorEnvironment env,
+  FirebaseEnv env,
 ) {
   final functions = firebase.functions;
   final requestPath = request.url.path;
@@ -152,15 +126,14 @@ FutureOr<Response> _routeRequest(
     return _handleQuitQuitQuit(request);
   }
 
-  if (requestPath == '__/functions.yaml' &&
-      env.environment['FUNCTIONS_CONTROL_API'] == 'true') {
+  if (requestPath == '__/functions.yaml' && env.functionsControlApi) {
     // Manifest endpoint for function discovery
     return _handleFunctionsManifest(request, firebase);
   }
 
   // FUNCTION_TARGET mode (production): Serve only the specified function
   // This matches Node.js behavior where each Cloud Run service runs one function
-  final functionTarget = env.environment['FUNCTION_TARGET'];
+  final functionTarget = env.functionTarget;
   if (functionTarget != null && functionTarget.isNotEmpty) {
     return _routeToTargetFunction(request, firebase, env, functionTarget);
   }
@@ -176,7 +149,7 @@ FutureOr<Response> _routeRequest(
 FutureOr<Response> _routeToTargetFunction(
   Request request,
   Firebase firebase,
-  EmulatorEnvironment env,
+  FirebaseEnv env,
   String functionTarget,
 ) {
   final functions = firebase.functions;
@@ -699,4 +672,22 @@ bool _matchesRefPattern(String refPath, String pattern) {
   }
 
   return true;
+}
+
+final _traceIdRegExp = RegExp(r'^[a-f0-9]{32}$', caseSensitive: false);
+
+/// Extracts the 32-character hexadecimal trace ID from an [x-cloud-trace-context] header.
+///
+/// Expected format: `TRACE_ID/SPAN_ID;o=TRACE_TRUE`
+@visibleForTesting
+String? extractTraceId(String? header) {
+  if (header == null || header.isEmpty) return null;
+  final parts = header.split('/');
+  if (parts.isNotEmpty) {
+    final traceId = parts[0];
+    if (_traceIdRegExp.hasMatch(traceId)) {
+      return traceId;
+    }
+  }
+  return null;
 }

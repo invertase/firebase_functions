@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/common/options.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/scheduler/options.dart';
@@ -30,6 +31,10 @@ FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
 }
 
 void main() {
+  setUpAll(() {
+    FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
+  });
+
   group('SchedulerNamespace', () {
     late Firebase firebase;
     late SchedulerNamespace scheduler;

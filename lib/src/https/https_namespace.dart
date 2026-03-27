@@ -14,7 +14,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
@@ -25,20 +24,6 @@ import 'auth.dart';
 import 'callable.dart';
 import 'error.dart';
 import 'options.dart';
-
-/// Checks if token verification should be skipped (emulator mode).
-bool _shouldSkipTokenVerification() {
-  final debugFeatures = Platform.environment['FIREBASE_DEBUG_FEATURES'];
-  if (debugFeatures == null) {
-    return false;
-  }
-  try {
-    final features = jsonDecode(debugFeatures);
-    return features['skipTokenVerification'] as bool? ?? false;
-  } catch (_) {
-    return false;
-  }
-}
 
 /// HTTPS triggers namespace.
 ///
@@ -115,7 +100,7 @@ class HttpsNamespace extends FunctionsNamespace {
       }
 
       // Extract auth and app check tokens
-      final skipVerification = _shouldSkipTokenVerification();
+      final skipVerification = firebase.$env.skipTokenVerification;
       final tokens = await checkTokens(
         request,
         skipTokenVerification: skipVerification,
@@ -195,7 +180,7 @@ class HttpsNamespace extends FunctionsNamespace {
       final body = await request.json as Map<String, dynamic>?;
 
       // Extract auth and app check tokens
-      final skipVerification = _shouldSkipTokenVerification();
+      final skipVerification = firebase.$env.skipTokenVerification;
       final tokens = await checkTokens(
         request,
         skipTokenVerification: skipVerification,

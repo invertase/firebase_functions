@@ -128,9 +128,11 @@ List<Map<String, String>> _buildRequiredAPIs(
 }
 
 /// The base image URI template for Cloud Run deployment.
+///
 /// The region prefix is substituted at generation time.
+/// See: https://cloud.google.com/run/docs/runtime-support#support_schedule
 const _baseImageUriSuffix =
-    '-docker.pkg.dev/serverless-runtimes/google-24/osonly24';
+    '-docker.pkg.dev/serverless-runtimes/google-24/runtimes/osonly24';
 
 /// Builds a single endpoint entry as a map.
 Map<String, dynamic> _buildEndpointMap(EndpointSpec endpoint) {

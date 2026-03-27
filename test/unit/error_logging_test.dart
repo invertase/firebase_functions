@@ -14,6 +14,7 @@
 
 import 'dart:convert';
 
+import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/common/utilities.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/https/error.dart';
@@ -24,6 +25,10 @@ import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 void main() {
+  setUpAll(() {
+    FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
+  });
+
   group('Error logging utilities', () {
     group('logInternalError', () {
       test('returns InternalError', () {
