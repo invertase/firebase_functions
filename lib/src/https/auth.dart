@@ -17,6 +17,8 @@ library;
 
 import 'dart:convert';
 
+import 'package:dart_firebase_admin/app_check.dart';
+import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:shelf/shelf.dart';
 
@@ -59,8 +61,7 @@ final _jwtRegex = RegExp(
 /// Returns a tuple of (TokenStatus, AuthData?).
 Future<(TokenStatus, AuthData?)> extractAuthToken(
   Request request, {
-  required bool skipTokenVerification,
-  FirebaseApp? adminApp,
+  Auth? auth,
 }) async {
   final authorization = request.headers['authorization'];
   if (authorization == null || authorization.isEmpty) {
@@ -82,7 +83,7 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
     String uid;
     Map<String, dynamic>? decodedToken;
 
-    if (skipTokenVerification) {
+    if (auth == null) {
       // In emulator mode, just decode without verification
       decodedToken = _unsafeDecodeIdToken(idToken);
 
@@ -93,12 +94,6 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
           '';
     } else {
       // In production, verify the token using Firebase Admin SDK
-      if (adminApp == null) {
-        // Can't verify without admin app
-        return (TokenStatus.invalid, null);
-      }
-
-      final auth = adminApp.auth();
       final decoded = await auth.verifyIdToken(idToken);
       uid = decoded.uid;
       decodedToken = {
@@ -140,8 +135,7 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
 /// Returns a tuple of (TokenStatus, AppCheckData?).
 Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
   Request request, {
-  required bool skipTokenVerification,
-  FirebaseApp? adminApp,
+  AppCheck? appCheck,
 }) async {
   final appCheckToken = request.headers['x-firebase-appcheck'];
   if (appCheckToken == null || appCheckToken.isEmpty) {
@@ -151,7 +145,7 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
   try {
     String appId;
 
-    if (skipTokenVerification) {
+    if (appCheck == null) {
       // In emulator mode, just decode without verification
       final decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
 
@@ -161,12 +155,6 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
           '';
     } else {
       // In production, verify the token using Firebase Admin SDK
-      if (adminApp == null) {
-        // Can't verify without admin app
-        return (TokenStatus.invalid, null);
-      }
-
-      final appCheck = adminApp.appCheck();
       final decoded = await appCheck.verifyToken(appCheckToken);
       appId = decoded.appId;
     }
@@ -194,21 +182,15 @@ Future<
     AppCheckData? appCheckData,
   })
 >
-checkTokens(
-  Request request, {
-  required bool skipTokenVerification,
-  FirebaseApp? adminApp,
-}) async {
+checkTokens(Request request, {FirebaseApp? adminApp}) async {
   final (authStatus, authData) = await extractAuthToken(
     request,
-    skipTokenVerification: skipTokenVerification,
-    adminApp: adminApp,
+    auth: adminApp?.auth(),
   );
 
   final (appStatus, appCheckData) = await extractAppCheckToken(
     request,
-    skipTokenVerification: skipTokenVerification,
-    adminApp: adminApp,
+    appCheck: adminApp?.appCheck(),
   );
 
   return (

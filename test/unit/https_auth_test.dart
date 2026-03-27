@@ -28,10 +28,7 @@ void main() {
     test('returns missing when no Authorization header', () async {
       final request = _createRequest();
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.missing);
       expect(auth, isNull);
@@ -44,10 +41,7 @@ void main() {
           headers: {'authorization': 'Basic abc123'},
         );
 
-        final (status, auth) = await extractAuthToken(
-          request,
-          skipTokenVerification: true,
-        );
+        final (status, auth) = await extractAuthToken(request);
 
         expect(status, TokenStatus.invalid);
         expect(auth, isNull);
@@ -58,10 +52,7 @@ void main() {
       final jwt = _createJwt({'email': 'test@example.com'});
       final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.invalid);
       expect(auth, isNull);
@@ -75,10 +66,7 @@ void main() {
       });
       final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.valid);
       expect(auth, isNotNull);
@@ -92,10 +80,7 @@ void main() {
       final jwt = _createJwt({'user_id': 'user456'});
       final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.valid);
       expect(auth?.uid, 'user456');
@@ -105,10 +90,7 @@ void main() {
       final jwt = _createJwt({'sub': 'user123'});
       final request = _createRequest(headers: {'authorization': 'bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.valid);
       expect(auth?.uid, 'user123');
@@ -119,10 +101,7 @@ void main() {
         headers: {'authorization': 'Bearer not-a-valid-jwt'},
       );
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.invalid);
       expect(auth, isNull);
@@ -132,10 +111,7 @@ void main() {
       final jwt = _createJwt({});
       final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken(request);
 
       expect(status, TokenStatus.invalid);
       expect(auth, isNull);
@@ -146,10 +122,7 @@ void main() {
     test('returns missing when no X-Firebase-AppCheck header', () async {
       final request = _createRequest();
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken(request);
 
       expect(status, TokenStatus.missing);
       expect(appCheck, isNull);
@@ -159,10 +132,7 @@ void main() {
       final jwt = _createJwt({'other': 'value'});
       final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken(request);
 
       expect(status, TokenStatus.invalid);
       expect(appCheck, isNull);
@@ -172,10 +142,7 @@ void main() {
       final jwt = _createJwt({'sub': 'app123'});
       final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken(request);
 
       expect(status, TokenStatus.valid);
       expect(appCheck, isNotNull);
@@ -187,10 +154,7 @@ void main() {
       final jwt = _createJwt({'sub': 'sub-value', 'app_id': 'explicit-app-id'});
       final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken(request);
 
       expect(status, TokenStatus.valid);
       expect(appCheck?.appId, 'explicit-app-id');
@@ -208,7 +172,7 @@ void main() {
         },
       );
 
-      final result = await checkTokens(request, skipTokenVerification: true);
+      final result = await checkTokens(request);
 
       expect(result.result.auth, TokenStatus.valid);
       expect(result.result.app, TokenStatus.valid);
@@ -219,7 +183,7 @@ void main() {
     test('returns missing status when headers are absent', () async {
       final request = _createRequest();
 
-      final result = await checkTokens(request, skipTokenVerification: true);
+      final result = await checkTokens(request);
 
       expect(result.result.auth, TokenStatus.missing);
       expect(result.result.app, TokenStatus.missing);
@@ -237,7 +201,7 @@ void main() {
         },
       );
 
-      final result = await checkTokens(request, skipTokenVerification: true);
+      final result = await checkTokens(request);
 
       expect(result.result.auth, TokenStatus.valid);
       expect(result.result.app, TokenStatus.invalid);

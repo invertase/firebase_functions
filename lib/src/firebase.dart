@@ -27,7 +27,6 @@ import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'identity/identity_namespace.dart';
-import 'logger/logger.dart';
 import 'pubsub/pubsub_namespace.dart';
 import 'remote_config/remote_config_namespace.dart';
 import 'scheduler/scheduler_namespace.dart';
@@ -39,45 +38,42 @@ import 'test_lab/test_lab_namespace.dart';
 ///
 /// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
-  Firebase() : _env = FirebaseEnv() {
-    _initializeAdminSDK();
+  factory Firebase() {
+    final env = FirebaseEnv();
+
+    // Initialize Admin SDK
+    final adminApp = FirebaseApp.initializeApp(
+      options: AppOptions(
+        credential: Credential.fromApplicationDefaultCredentials(),
+        projectId: env.projectId,
+      ),
+    );
+
+    return Firebase._(
+      adminApp: adminApp,
+      firestoreAdmin: adminApp.firestore(),
+      env: env,
+    );
   }
 
-  FirebaseApp? _adminApp;
-  gfs.Firestore? _firestoreInstance;
-
-  /// Initialize the Firebase Admin SDK
-  void _initializeAdminSDK() {
-    if (_env.isEmulator) {
-      // TODO: Implement direct REST API calls to emulator
-      // For now, we'll skip document fetching in emulator mode
-      return;
-    }
-
-    // Production mode only
-    try {
-      // Initialize Admin SDK
-      _adminApp = FirebaseApp.initializeApp(
-        options: AppOptions(
-          credential: Credential.fromApplicationDefaultCredentials(),
-          projectId: _env.projectId,
-        ),
-      );
-
-      // Create Firestore instance
-      _firestoreInstance = _adminApp!.firestore();
-    } catch (e) {
-      logger.warn('Failed to initialize Firebase Admin SDK: $e');
-    }
-  }
+  Firebase._({
+    required this.adminApp,
+    required this.firestoreAdmin,
+    required FirebaseEnv env,
+  }) : _env = env;
 
   final FirebaseEnv _env;
 
-  /// Get the Firestore instance
-  gfs.Firestore? get firestoreAdmin => _firestoreInstance;
+  /// The initialized Firebase Admin SDK application instance.
+  ///
+  /// This app represents the server-side SDK and has elevated privileges
+  /// corresponding to the environment's credentials.
+  final FirebaseApp adminApp;
 
-  /// Get the Firebase Admin App instance
-  FirebaseApp? get adminApp => _adminApp;
+  /// The Firestore admin client instance.
+  ///
+  /// Provides elevated server-side access to the Firestore database.
+  final gfs.Firestore firestoreAdmin;
 
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
