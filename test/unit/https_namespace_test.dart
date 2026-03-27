@@ -14,6 +14,7 @@
 
 import 'dart:convert';
 
+import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/https/callable.dart';
 import 'package:firebase_functions/src/https/error.dart';
@@ -32,6 +33,10 @@ FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
 }
 
 void main() {
+  setUpAll(() {
+    FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
+  });
+
   group('HttpsNamespace', () {
     late Firebase firebase;
     late HttpsNamespace https;

@@ -17,7 +17,6 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
@@ -276,43 +275,22 @@ class IdentityNamespace extends FunctionsNamespace {
   /// certificates. In emulator mode (when FUNCTIONS_EMULATOR=true or
   /// skipTokenVerification debug feature is enabled), verification is skipped.
   Future<Map<String, dynamic>> _decodeAndVerifyJwt(String jwt) async {
-    // Get environment configuration
-    final env = Platform.environment;
-    final isEmulator = env['FUNCTIONS_EMULATOR'] == 'true';
-    final skipVerification = _shouldSkipTokenVerification(env);
-
     // Get project ID
-    final projectId =
-        env['GCLOUD_PROJECT'] ??
-        env['GCP_PROJECT'] ??
-        env['FIREBASE_PROJECT'] ??
-        'demo-test';
+    final projectId = firebase.$env.projectId;
 
     // Create verifier
     final verifier = AuthBlockingTokenVerifier(
       projectId: projectId,
-      isEmulator: isEmulator || skipVerification,
+      isEmulator:
+          firebase.$env.isEmulator || firebase.$env.skipTokenVerification,
     );
 
     // Determine audience based on platform
     // Cloud Run uses "run.app", GCF v1 uses default
-    final kService = env['K_SERVICE']; // Cloud Run service name
+    final kService = firebase.$env.kService; // Cloud Run service name
     final audience = kService != null ? 'run.app' : null;
 
     return verifier.verifyToken(jwt, audience: audience);
-  }
-
-  /// Checks if token verification should be skipped based on debug features.
-  bool _shouldSkipTokenVerification(Map<String, String> env) {
-    final debugFeatures = env['FIREBASE_DEBUG_FEATURES'];
-    if (debugFeatures == null) return false;
-
-    try {
-      final features = jsonDecode(debugFeatures) as Map<String, dynamic>;
-      return features['skipTokenVerification'] as bool? ?? false;
-    } on FormatException {
-      return false;
-    }
   }
 
   /// Validates the auth response for invalid claims.

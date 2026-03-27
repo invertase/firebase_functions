@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
 import 'package:google_cloud_firestore/google_cloud_firestore.dart' as gfs;
@@ -22,6 +21,7 @@ import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
 import 'common/cloud_run_id.dart';
+import 'common/environment.dart';
 import 'database/database_namespace.dart';
 import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
@@ -39,7 +39,7 @@ import 'test_lab/test_lab_namespace.dart';
 ///
 /// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
-  Firebase() {
+  Firebase() : _env = FirebaseEnv() {
     _initializeAdminSDK();
   }
 
@@ -48,18 +48,7 @@ class Firebase {
 
   /// Initialize the Firebase Admin SDK
   void _initializeAdminSDK() {
-    // Get project ID from environment
-    final projectId =
-        Platform.environment['GCLOUD_PROJECT'] ??
-        Platform.environment['GCP_PROJECT'] ??
-        'demo-test'; // Fallback for emulator
-
-    // Check if running in emulator
-    final firestoreEmulatorHost =
-        Platform.environment['FIRESTORE_EMULATOR_HOST'];
-    final isEmulator = firestoreEmulatorHost != null;
-
-    if (isEmulator) {
+    if (_env.isEmulator) {
       // TODO: Implement direct REST API calls to emulator
       // For now, we'll skip document fetching in emulator mode
       return;
@@ -71,7 +60,7 @@ class Firebase {
       _adminApp = FirebaseApp.initializeApp(
         options: AppOptions(
           credential: Credential.fromApplicationDefaultCredentials(),
-          projectId: projectId,
+          projectId: _env.projectId,
         ),
       );
 
@@ -81,6 +70,8 @@ class Firebase {
       logger.warn('Failed to initialize Firebase Admin SDK: $e');
     }
   }
+
+  final FirebaseEnv _env;
 
   /// Get the Firestore instance
   gfs.Firestore? get firestoreAdmin => _firestoreInstance;
@@ -259,4 +250,10 @@ final class FirebaseFunctionDeclaration {
 abstract class FunctionsNamespace {
   const FunctionsNamespace(this.firebase);
   final Firebase firebase;
+}
+
+/// Internal extension to access private members of Firebase.
+@internal
+extension FirebaseInternal on Firebase {
+  FirebaseEnv get $env => _env;
 }

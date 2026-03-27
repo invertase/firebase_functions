@@ -49,4 +49,5 @@
 /// - **stderr**: WARNING, ERROR, CRITICAL, ALERT, EMERGENCY
 library;
 
-export 'src/logger/logger.dart';
+export 'src/logger/logger.dart'
+    hide createLogger, projectIdZoneKey, traceIdZoneKey;

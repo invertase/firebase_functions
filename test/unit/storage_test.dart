@@ -14,6 +14,7 @@
 
 import 'dart:convert';
 
+import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/storage/storage_event.dart';
 import 'package:firebase_functions/src/storage/storage_namespace.dart';
@@ -72,6 +73,10 @@ Request _createStorageRequest({
 }
 
 void main() {
+  setUpAll(() {
+    FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
+  });
+
   group('StorageNamespace', () {
     late Firebase firebase;
     late StorageNamespace storage;
