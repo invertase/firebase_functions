@@ -116,14 +116,20 @@ class EmulatorHelper {
         });
 
     // Wait for emulator to be ready
-    print('Waiting for emulator to be ready...');
-    await _waitForReady();
+    try {
+      print('Waiting for emulator to be ready...');
+      await _waitForReady();
 
-    // Additional wait to ensure Dart runtime is fully initialized
-    // The first request triggers Dart process startup which takes ~2-3 seconds
-    print('Waiting for Dart runtime to stabilize...');
-    await Future<void>.delayed(const Duration(seconds: 2));
-    print('✓ Emulator is ready');
+      // Additional wait to ensure Dart runtime is fully initialized
+      // The first request triggers Dart process startup which takes ~2-3 seconds
+      print('Waiting for Dart runtime to stabilize...');
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ Emulator is ready');
+    } catch (e) {
+      print('Error starting emulator: $e');
+      await stop();
+      rethrow;
+    }
   }
 
   /// Stops the Firebase emulator.

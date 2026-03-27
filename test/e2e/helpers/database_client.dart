@@ -14,15 +14,13 @@
 
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'test_client_base.dart';
 
 /// Helper client for interacting with Firebase Realtime Database emulator REST API.
-class DatabaseClient {
-  DatabaseClient(this.baseUrl, this.projectId);
+final class DatabaseClient extends TestClientBase {
+  DatabaseClient(super.baseUrl, this.projectId);
 
-  final String baseUrl;
   final String projectId;
-  final http.Client _client = http.Client();
 
   /// Gets the full URL for a database path.
   String _getUrl(String path) {
@@ -41,7 +39,7 @@ class DatabaseClient {
   /// ```
   Future<void> setValue(String path, dynamic data) async {
     final url = _getUrl(path);
-    final response = await _client.put(
+    final response = await client.put(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
@@ -64,7 +62,7 @@ class DatabaseClient {
   /// ```
   Future<void> updateValue(String path, Map<String, dynamic> data) async {
     final url = _getUrl(path);
-    final response = await _client.patch(
+    final response = await client.patch(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
@@ -90,7 +88,7 @@ class DatabaseClient {
   /// ```
   Future<String> pushValue(String path, dynamic data) async {
     final url = _getUrl(path);
-    final response = await _client.post(
+    final response = await client.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
@@ -111,7 +109,7 @@ class DatabaseClient {
   /// Returns null if the path doesn't exist.
   Future<dynamic> getValue(String path) async {
     final url = _getUrl(path);
-    final response = await _client.get(Uri.parse(url));
+    final response = await client.get(Uri.parse(url));
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -130,17 +128,12 @@ class DatabaseClient {
   /// Deletes a value at the specified path.
   Future<void> deleteValue(String path) async {
     final url = _getUrl(path);
-    final response = await _client.delete(Uri.parse(url));
+    final response = await client.delete(Uri.parse(url));
 
     if (response.statusCode != 200) {
       throw Exception(
         'Failed to delete value at $path: ${response.statusCode} ${response.body}',
       );
     }
-  }
-
-  /// Closes the HTTP client.
-  void close() {
-    _client.close();
   }
 }

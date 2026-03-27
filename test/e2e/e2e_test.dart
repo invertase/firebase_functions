@@ -28,6 +28,7 @@ import 'helpers/firestore_client.dart';
 import 'helpers/http_client.dart';
 import 'helpers/pubsub_client.dart';
 import 'helpers/storage_client.dart';
+import 'helpers/test_client_base.dart';
 import 'tests/database_tests.dart';
 import 'tests/firestore_tests.dart';
 import 'tests/https_oncall_tests.dart';
@@ -39,13 +40,13 @@ import 'tests/scheduler_tests.dart';
 import 'tests/storage_tests.dart';
 
 void main() {
-  late EmulatorHelper emulator;
-  late FunctionsHttpClient client;
-  late PubSubClient pubsubClient;
-  late FirestoreClient firestoreClient;
-  late DatabaseClient databaseClient;
-  late AuthClient authClient;
-  late StorageClient storageClient;
+  EmulatorHelper? emulator;
+  FunctionsHttpClient? client;
+  PubSubClient? pubsubClient;
+  FirestoreClient? firestoreClient;
+  DatabaseClient? databaseClient;
+  AuthClient? authClient;
+  StorageClient? storageClient;
 
   // Debug: Show Directory.current.path at module load time
   print('DEBUG e2e_test: Directory.current.path = ${Directory.current.path}');
@@ -89,26 +90,26 @@ void main() {
 
     // Start the emulator
     emulator = EmulatorHelper(projectPath: examplePath);
-    await emulator.start();
+    await emulator!.start();
 
     // Create HTTP client
-    client = FunctionsHttpClient(emulator.functionsUrl);
+    client = FunctionsHttpClient(emulator!.functionsUrl);
 
     // Create Pub/Sub client
-    pubsubClient = PubSubClient(emulator.pubsubUrl, 'demo-test');
+    pubsubClient = PubSubClient(emulator!.pubsubUrl, 'demo-test');
 
     // Create Firestore client
-    firestoreClient = FirestoreClient(emulator.firestoreUrl);
+    firestoreClient = FirestoreClient(emulator!.firestoreUrl);
 
     // Create Database client
-    databaseClient = DatabaseClient(emulator.databaseUrl, 'demo-test');
+    databaseClient = DatabaseClient(emulator!.databaseUrl, 'demo-test');
 
     // Create Auth client
-    authClient = AuthClient(emulator.authUrl, 'demo-test');
+    authClient = AuthClient(emulator!.authUrl, 'demo-test');
 
     // Create Storage client
     storageClient = StorageClient(
-      emulator.storageUrl,
+      emulator!.storageUrl,
       'demo-test.firebasestorage.app',
     );
 
@@ -123,27 +124,38 @@ void main() {
     print('========================================');
     print('');
 
-    client.close();
-    pubsubClient.close();
-    firestoreClient.close();
-    databaseClient.close();
-    authClient.close();
-    storageClient.close();
-    await emulator.stop();
+    try {
+      for (final client in <TestClientBase>[
+        ?client,
+        ?pubsubClient,
+        ?firestoreClient,
+        ?databaseClient,
+        ?authClient,
+        ?storageClient,
+      ]) {
+        try {
+          client.close();
+        } catch (e, s) {
+          print('Error closing client in tearDownAll: $e\n$s');
+        }
+      }
+    } finally {
+      await emulator?.stop();
+    }
   });
 
   // Run all test groups (pass closures to defer value access)
-  runHttpsOnRequestTests(() => client, () => emulator);
-  runHttpsOnCallTests(() => client);
+  runHttpsOnRequestTests(() => client!, () => emulator!);
+  runHttpsOnCallTests(() => client!);
   runIntegrationTests(() => examplePath);
-  runPubSubTests(() => examplePath, () => pubsubClient, () => emulator);
-  runFirestoreTests(() => examplePath, () => firestoreClient, () => emulator);
-  runDatabaseTests(() => examplePath, () => databaseClient, () => emulator);
-  runIdentityTests(() => examplePath, () => authClient, () => emulator);
-  runStorageTests(() => examplePath, () => storageClient, () => emulator);
+  runPubSubTests(() => examplePath, () => pubsubClient!, () => emulator!);
+  runFirestoreTests(() => examplePath, () => firestoreClient!, () => emulator!);
+  runDatabaseTests(() => examplePath, () => databaseClient!, () => emulator!);
+  runIdentityTests(() => examplePath, () => authClient!, () => emulator!);
+  runStorageTests(() => examplePath, () => storageClient!, () => emulator!);
   runSchedulerTests(
     () => examplePath,
-    () => emulator,
-    () => emulator.functionsPort,
+    () => emulator!,
+    () => emulator!.functionsPort,
   );
 }
