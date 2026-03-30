@@ -87,7 +87,7 @@ void runHttpsOnRequestTests(
 
         await Future.wait(futures);
       },
-      timeout: Timeout(Duration(seconds: 60)),
+      timeout: const Timeout(Duration(seconds: 60)),
     );
 
     test('function is discoverable via emulator', () async {

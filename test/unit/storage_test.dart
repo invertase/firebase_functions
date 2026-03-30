@@ -440,7 +440,7 @@ void main() {
     });
 
     test('converts to JSON', () {
-      final data = StorageObjectData(
+      final data = const StorageObjectData(
         bucket: 'test-bucket',
         name: 'file.txt',
         generation: '1',

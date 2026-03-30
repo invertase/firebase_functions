@@ -125,7 +125,7 @@ void main() {
     test('StringParam generates correct spec', () {
       final param = defineString(
         'MY_STRING',
-        ParamOptions(
+        const ParamOptions(
           defaultValue: 'hello',
           label: 'My String',
           description: 'A test string',
@@ -141,7 +141,7 @@ void main() {
     });
 
     test('IntParam generates correct spec', () {
-      final param = defineInt('MY_INT', ParamOptions(defaultValue: 42));
+      final param = defineInt('MY_INT', const ParamOptions(defaultValue: 42));
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_INT');
@@ -150,7 +150,10 @@ void main() {
     });
 
     test('BooleanParam generates correct spec', () {
-      final param = defineBoolean('MY_BOOL', ParamOptions(defaultValue: true));
+      final param = defineBoolean(
+        'MY_BOOL',
+        const ParamOptions(defaultValue: true),
+      );
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_BOOL');
@@ -265,7 +268,7 @@ void main() {
     });
 
     test('can be used in SelectParamInput directly', () {
-      final input = SelectParamInput<String>(
+      final input = const SelectParamInput<String>(
         options: [
           SelectOption(value: 'us-central1', label: 'US Central'),
           SelectOption(value: 'europe-west1', label: 'Europe West'),
@@ -277,7 +280,7 @@ void main() {
     });
 
     test('can be used in MultiSelectParamInput directly', () {
-      final input = MultiSelectParamInput(
+      final input = const MultiSelectParamInput(
         options: [
           SelectOption(value: 'read', label: 'Read Access'),
           SelectOption(value: 'write', label: 'Write Access'),
@@ -380,7 +383,10 @@ void main() {
     });
 
     test('generates correct spec', () {
-      final param = defineFloat('MY_FLOAT', ParamOptions(defaultValue: 3.14));
+      final param = defineFloat(
+        'MY_FLOAT',
+        const ParamOptions(defaultValue: 3.14),
+      );
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_FLOAT');
@@ -406,7 +412,7 @@ void main() {
     test('accepts ParamOptions with default values', () {
       final param = defineEnumList(
         TestRegion.values,
-        ParamOptions(
+        const ParamOptions(
           defaultValue: [TestRegion.usCentral1],
           label: 'Regions',
           description: 'Select deployment regions',
@@ -421,7 +427,7 @@ void main() {
     test('generates correct spec', () {
       final param = defineEnumList(
         TestRegion.values,
-        ParamOptions(
+        const ParamOptions(
           defaultValue: [TestRegion.europeWest1],
           label: 'Deployment Regions',
         ),
@@ -474,8 +480,8 @@ void main() {
       final param = defineInt('MEMORY_MB');
       final needsMoreCpu = param.greaterThan(2048);
       final cpuCount = needsMoreCpu.when(
-        then: LiteralExpression(4),
-        otherwise: LiteralExpression(1),
+        then: const LiteralExpression(4),
+        otherwise: const LiteralExpression(1),
       );
 
       expect(cpuCount, isA<If<int>>());

@@ -23,7 +23,6 @@ analyzer:
     lines_longer_than_80_chars: ignore
     missing_required_param: error
     missing_return: error
-    prefer_const_constructors: ignore
     unnecessary_lambdas: ignore
 
 linter:

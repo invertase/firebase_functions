@@ -84,7 +84,7 @@ class PubsubMessage {
     try {
       return utf8.decode(base64.decode(data));
     } on FormatException {
-      throw FormatException('Message data is not valid base64');
+      throw const FormatException('Message data is not valid base64');
     }
   }
 
@@ -93,7 +93,7 @@ class PubsubMessage {
     try {
       return base64.decode(data);
     } on FormatException {
-      throw FormatException('Message data is not valid base64');
+      throw const FormatException('Message data is not valid base64');
     }
   }
 
@@ -102,7 +102,7 @@ class PubsubMessage {
     try {
       return jsonDecode(textData);
     } on FormatException {
-      throw FormatException('Message data is not valid JSON');
+      throw const FormatException('Message data is not valid JSON');
     }
   }
 }
