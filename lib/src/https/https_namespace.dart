@@ -100,11 +100,12 @@ class HttpsNamespace extends FunctionsNamespace {
       }
 
       // Extract auth and app check tokens
-      final skipVerification = firebase.$env.skipTokenVerification;
+
       final tokens = await checkTokens(
         request,
-        skipTokenVerification: skipVerification,
-        adminApp: firebase.adminApp,
+        adminApp: firebase.$env.skipTokenVerification
+            ? null
+            : firebase.adminApp,
       );
 
       // Check for invalid auth token
@@ -180,11 +181,12 @@ class HttpsNamespace extends FunctionsNamespace {
       final body = await request.json as Map<String, dynamic>?;
 
       // Extract auth and app check tokens
-      final skipVerification = firebase.$env.skipTokenVerification;
+
       final tokens = await checkTokens(
         request,
-        skipTokenVerification: skipVerification,
-        adminApp: firebase.adminApp,
+        adminApp: firebase.$env.skipTokenVerification
+            ? null
+            : firebase.adminApp,
       );
 
       // Check for invalid auth token
