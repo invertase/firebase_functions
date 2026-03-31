@@ -156,8 +156,8 @@ FutureOr<Response> _routeToTargetFunction(
 
   // Find the function with matching name
   final targetFunction = functions
-      .cast<FirebaseFunctionDeclaration?>()
-      .firstWhere((f) => f?.name == functionTarget, orElse: () => null);
+      .where((f) => f.name == functionTarget)
+      .firstOrNull;
 
   if (targetFunction == null) {
     return Response.notFound(
