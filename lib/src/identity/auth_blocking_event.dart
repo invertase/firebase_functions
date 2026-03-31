@@ -56,10 +56,7 @@ enum EmailType {
   /// Creates an EmailType from a string value.
   static EmailType? fromString(String? value) {
     if (value == null) return null;
-    return EmailType.values.cast<EmailType?>().firstWhere(
-      (e) => e!.value == value,
-      orElse: () => null,
-    );
+    return EmailType.values.where((e) => e.value == value).firstOrNull;
   }
 }
 
@@ -82,10 +79,7 @@ enum SmsType {
   /// Creates an SmsType from a string value.
   static SmsType? fromString(String? value) {
     if (value == null) return null;
-    return SmsType.values.cast<SmsType?>().firstWhere(
-      (e) => e!.value == value,
-      orElse: () => null,
-    );
+    return SmsType.values.where((e) => e.value == value).firstOrNull;
   }
 }
 
