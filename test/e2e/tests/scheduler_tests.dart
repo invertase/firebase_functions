@@ -16,7 +16,6 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
-// ignore: unused_import
 import '../helpers/emulator.dart';
 
 /// Scheduler test group

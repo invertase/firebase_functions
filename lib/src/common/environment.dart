@@ -85,7 +85,7 @@ class FirebaseEnv {
 
   /// The port to listen on.
   ///
-  /// Uses the [PORT] environment variable, defaulting to 8080.
+  /// Uses the `PORT` environment variable, defaulting to 8080.
   int get port => int.tryParse(environment['PORT'] ?? '8080') ?? 8080;
 
   /// The name of the Cloud Run service.

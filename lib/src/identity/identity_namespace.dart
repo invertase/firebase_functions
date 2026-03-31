@@ -325,7 +325,7 @@ class IdentityNamespace extends FunctionsNamespace {
       final customClaims = authResponse.customClaims;
       if (customClaims != null) {
         final invalidClaims = disallowedClaims
-            .where((claim) => customClaims.containsKey(claim))
+            .where(customClaims.containsKey)
             .toList();
         if (invalidClaims.isNotEmpty) {
           throw InvalidArgumentError(
@@ -346,7 +346,7 @@ class IdentityNamespace extends FunctionsNamespace {
       final sessionClaims = authResponse.sessionClaims;
       if (sessionClaims != null) {
         final invalidClaims = disallowedClaims
-            .where((claim) => sessionClaims.containsKey(claim))
+            .where(sessionClaims.containsKey)
             .toList();
         if (invalidClaims.isNotEmpty) {
           throw InvalidArgumentError(

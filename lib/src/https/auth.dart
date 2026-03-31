@@ -52,11 +52,11 @@ final _jwtRegex = RegExp(
 
 /// Extracts and validates auth token from request.
 ///
-/// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
+/// In emulator mode (when [auth] is `null`), tokens are decoded
 /// but not verified. In production, tokens are verified using the Firebase
 /// Admin SDK.
 ///
-/// The [adminApp] is required for production token verification.
+/// The [auth] is required for production token verification.
 ///
 /// Returns a tuple of (TokenStatus, AuthData?).
 Future<(TokenStatus, AuthData?)> extractAuthToken(
@@ -126,11 +126,11 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
 
 /// Extracts and validates App Check token from request.
 ///
-/// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
+/// In emulator mode (when [appCheck] is `null`), tokens are decoded
 /// but not verified. In production, tokens are verified using the Firebase
 /// Admin SDK.
 ///
-/// The [adminApp] is required for production token verification.
+/// The [appCheck] is required for production token verification.
 ///
 /// Returns a tuple of (TokenStatus, AppCheckData?).
 Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(

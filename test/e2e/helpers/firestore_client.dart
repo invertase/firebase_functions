@@ -161,7 +161,7 @@ final class FirestoreClient extends TestClientBase {
   /// value([1, 2])   // {'arrayValue': {'values': [...]}}
   /// value({'key': 'value'})  // {'mapValue': {'fields': {...}}}
   /// ```
-  static Map<String, dynamic> value(dynamic val) {
+  static Map<String, dynamic> value(Object? val) {
     if (val is String) return stringValue(val);
     if (val is int) return intValue(val);
     if (val is double) return doubleValue(val);
@@ -169,7 +169,7 @@ final class FirestoreClient extends TestClientBase {
     if (val == null) return nullValue();
 
     if (val is List) {
-      return arrayValue(val.map((e) => value(e)).toList());
+      return arrayValue(val.map(value).toList());
     }
 
     if (val is Map) {

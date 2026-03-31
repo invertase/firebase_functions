@@ -31,6 +31,8 @@
 ///   },
 /// );
 /// ```
+///
+/// @docImport 'database.dart';
 library;
 
 export 'data_snapshot.dart'

@@ -332,7 +332,7 @@ class EmulatorHelper {
           RegExp.escape(path),
     );
 
-    return _outputLines.any((line) => pattern.hasMatch(line));
+    return _outputLines.any(pattern.hasMatch);
   }
 
   /// Gets all output lines captured from the emulator.

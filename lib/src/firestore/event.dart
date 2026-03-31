@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/// @docImport 'firestore_namespace.dart';
+library;
+
 import '../common/cloud_event.dart';
 
 /// The type of principal that triggered the event.

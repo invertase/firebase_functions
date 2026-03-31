@@ -455,7 +455,7 @@ void main() {
 
   group('AuthEventContext', () {
     test('toJson serializes all fields', () {
-      final context = AuthEventContext(
+      final context = const AuthEventContext(
         locale: 'en-US',
         ipAddress: '192.168.1.1',
         userAgent: 'Mozilla/5.0',

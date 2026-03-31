@@ -84,6 +84,8 @@
 ///   handler,
 /// );
 /// ```
+///
+/// @docImport 'params.dart';
 library;
 
 import 'src/common/params.dart' as internal;
@@ -105,14 +107,13 @@ export 'src/common/on_init.dart' show onInit;
 // Re-export factory functions
 export 'src/common/params.dart'
     show
-        // Classes
         BooleanParam,
         DoubleParam,
         EnumListParam,
         IntParam,
+        InternalExpression,
         JsonSecretParam,
         ListParam,
-        // Input types
         MultiSelectParamInput,
         Param,
         ParamInput,
@@ -124,10 +125,8 @@ export 'src/common/params.dart'
         StringParam,
         TextParamInput,
         WireParamSpec,
-        // Registry
         clearParams,
         declaredParams,
-        // Factory functions
         defineBoolean,
         defineDouble,
         defineEnumList,
@@ -136,9 +135,7 @@ export 'src/common/params.dart'
         defineJsonSecret,
         defineList,
         defineSecret,
-        defineString,
-        // Internal expression (for built-in params)
-        InternalExpression;
+        defineString;
 
 // ============================================================================
 // Built-in Parameters

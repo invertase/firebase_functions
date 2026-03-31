@@ -51,7 +51,7 @@ Map<String, dynamic> _storageCloudEvent({
       'contentType': contentType,
       'size': size,
       'storageClass': storageClass,
-      if (metadata != null) 'metadata': metadata,
+      'metadata': ?metadata,
       'timeCreated': '2024-01-01T12:00:00Z',
       'updated': '2024-01-01T12:00:00Z',
     },
@@ -71,7 +71,7 @@ const _cloudEventContentType = 'application/cloudevents+json; charset=UTF-8';
 
 /// Finds the actual function name from the manifest that starts with [prefix].
 ///
-/// Needed because long names get truncated with a hash suffix by [toCloudRunId].
+/// Needed because long names get truncated with a hash suffix by `toCloudRunId`.
 String? _findFunctionName(String manifestContent, String prefix) {
   // Match a line like "  on-object-archived-demotestfirebasestorageapp:"
   final pattern = RegExp('^\\s+($prefix[a-z0-9-]*):', multiLine: true);

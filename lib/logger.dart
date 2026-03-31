@@ -51,7 +51,7 @@ library;
 
 export 'src/logger/logger.dart'
     hide
+        cloudTraceContextHeader,
         createLogger,
         projectIdZoneKey,
-        traceIdZoneKey,
-        cloudTraceContextHeader;
+        traceIdZoneKey;

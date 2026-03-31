@@ -18,7 +18,7 @@ import 'package:firebase_functions/firebase_functions.dart';
 // and can be configured at deploy time via .env files or CLI prompts.
 final welcomeMessage = defineString(
   'WELCOME_MESSAGE',
-  ParamOptions(
+  const ParamOptions(
     defaultValue: 'Hello from Dart Functions!',
     label: 'Welcome Message',
     description: 'The greeting message returned by the helloWorld function',
@@ -27,7 +27,7 @@ final welcomeMessage = defineString(
 
 final minInstances = defineInt(
   'MIN_INSTANCES',
-  ParamOptions(
+  const ParamOptions(
     defaultValue: 0,
     label: 'Minimum Instances',
     description: 'Minimum number of instances to keep warm',
@@ -36,7 +36,7 @@ final minInstances = defineInt(
 
 final isProduction = defineBoolean(
   'IS_PRODUCTION',
-  ParamOptions(
+  const ParamOptions(
     defaultValue: false,
     description: 'Whether this is a production deployment',
   ),

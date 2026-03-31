@@ -243,7 +243,7 @@ void main() {
     });
 
     test('scheduleDateTime returns parsed DateTime', () {
-      final event = ScheduledEvent(
+      final event = const ScheduledEvent(
         jobName: 'test',
         scheduleTime: '2024-01-15T10:30:00Z',
       );
@@ -257,7 +257,7 @@ void main() {
     });
 
     test('toString returns readable format', () {
-      final event = ScheduledEvent(
+      final event = const ScheduledEvent(
         jobName: 'my-job',
         scheduleTime: '2024-01-01T00:00:00Z',
       );

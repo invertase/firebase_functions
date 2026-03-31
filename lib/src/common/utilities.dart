@@ -24,7 +24,7 @@ Future<Map<String, dynamic>> readAsJsonMap(Request request) async {
   final decoded = await _converter.bind(request.read()).first;
   return switch (decoded) {
     final Map<String, dynamic> m => m,
-    _ => throw FormatException('CloudEvent body must be a JSON object'),
+    _ => throw const FormatException('CloudEvent body must be a JSON object'),
   };
 }
 

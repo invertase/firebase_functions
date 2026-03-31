@@ -84,7 +84,7 @@ class ThresholdAlertPayload {
 
   /// The percentile of the alert condition.
   /// Can be null if percentile is not applicable to the alert condition.
-  /// Range: [1, 100].
+  /// Range: `[1, 100]`.
   final int? conditionPercentile;
 
   /// The app version this alert was triggered for.

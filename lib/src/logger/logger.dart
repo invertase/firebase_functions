@@ -249,10 +249,7 @@ LogEntry _entryFromArgs(
     return {...messageOrPayload, 'severity': severity};
   }
 
-  final entry = <String, Object?>{
-    if (jsonPayload != null) ...jsonPayload,
-    'severity': severity,
-  };
+  final entry = <String, Object?>{...?jsonPayload, 'severity': severity};
 
   final messageStr = '$messageOrPayload';
   if (messageStr.isNotEmpty) {

@@ -20,11 +20,11 @@ export '../common/change.dart';
 /// Parses Firestore REST API field format into Dart values.
 ///
 /// Firestore REST API uses typed wrappers like:
-/// - {stringValue: "text"} → "text"
-/// - {integerValue: "123"} → 123
-/// - {booleanValue: true} → true
-/// - {mapValue: {fields: {...}}} → Map
-/// - {arrayValue: {values: [...]}} → List
+/// - `{stringValue: "text"}` → `"text"`
+/// - `{integerValue: "123"}` → `123`
+/// - `{booleanValue: true}` → `true`
+/// - `{mapValue: {fields: {...}}}` → [Map]
+/// - `{arrayValue: {values: [...]}}` → [List]
 dynamic parseFirestoreValue(Map<String, dynamic> field) {
   if (field.containsKey('stringValue')) {
     return field['stringValue'] as String;
