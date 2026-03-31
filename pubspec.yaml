@@ -52,7 +52,6 @@ dependencies:
       url: https://github.com/firebase/firebase-admin-dart.git
       ref: main
       path: packages/google_cloud_firestore
-  google_cloud_storage: ^0.5.1
   http: ^1.6.0
   meta: ^1.18.0
   protobuf: ^6.0.0
