@@ -17,6 +17,8 @@ library;
 
 import 'dart:async';
 
+import 'package:google_cloud/google_cloud.dart';
+
 /// Callback registered via [onInit].
 FutureOr<void> Function()? _initCallback;
 
@@ -73,7 +75,7 @@ bool _didInit = false;
 /// - [defineJsonSecret] for JSON-encoded secrets
 void onInit(FutureOr<void> Function() callback) {
   if (_initCallback != null) {
-    print(
+    currentLogger.warning(
       'Warning: Setting onInit callback more than once. '
       'Only the most recent callback will be called.',
     );

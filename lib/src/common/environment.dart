@@ -15,6 +15,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:google_cloud/constants.dart';
 import 'package:meta/meta.dart';
 
 /// Provides unified access to environment variables, emulator checks, and
@@ -83,17 +84,12 @@ class FirebaseEnv {
     );
   }
 
-  /// The port to listen on.
-  ///
-  /// Uses the `PORT` environment variable, defaulting to 8080.
-  int get port => int.tryParse(environment['PORT'] ?? '8080') ?? 8080;
-
   /// The name of the Cloud Run service.
   ///
   /// Uses the `K_SERVICE` environment variable.
   ///
   /// See https://cloud.google.com/run/docs/container-contract#env-vars
-  String? get kService => environment['K_SERVICE'];
+  String? get kService => environment[serviceEnvironmentVariable];
 
   /// The name of the target function.
   ///
@@ -114,9 +110,7 @@ class FirebaseEnv {
 /// Common project ID environment variables checked in order.
 const _projectIdEnvKeyOptions = [
   'FIREBASE_PROJECT',
-  'GCLOUD_PROJECT',
-  'GOOGLE_CLOUD_PROJECT',
-  'GCP_PROJECT',
+  ...projectIdEnvironmentVariableOptions,
 ];
 
 /// Common emulator host keys used to detect emulator environment.

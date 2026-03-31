@@ -14,11 +14,10 @@
 
 import 'dart:convert';
 
+import 'package:google_cloud/google_cloud.dart';
 import 'package:shelf/shelf.dart' show Request, Response;
-import 'package:stack_trace/stack_trace.dart' show Trace;
 
 import '../https/error.dart';
-import '../logger/logger.dart';
 
 Future<Map<String, dynamic>> readAsJsonMap(Request request) async {
   final decoded = await _converter.bind(request.read()).first;
@@ -44,7 +43,7 @@ extension HttpErrorExtension on HttpsError {
 /// a structured JSON error. The actual error details are only logged
 /// server-side and never exposed to the client.
 InternalError logInternalError(Object error, StackTrace stackTrace) {
-  _logError(error, stackTrace);
+  currentLogger.error(error, stackTrace: stackTrace);
   return InternalError();
 }
 
@@ -55,12 +54,6 @@ InternalError logInternalError(Object error, StackTrace stackTrace) {
 /// where the caller is the Cloud Functions infrastructure rather than an
 /// end-user client.
 Response logEventHandlerError(Object error, StackTrace stackTrace) {
-  _logError(error, stackTrace);
+  currentLogger.error(error, stackTrace: stackTrace);
   return Response.internalServerError();
-}
-
-/// Formats and logs an error with a terse, readable stack trace.
-void _logError(Object error, StackTrace stackTrace) {
-  final terse = Trace.from(stackTrace).terse;
-  logger.error('$error\n$terse');
 }
