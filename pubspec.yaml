@@ -42,12 +42,12 @@ dependencies:
   meta: ^1.18.0
   dart_firebase_admin:
     git:
-      url: https://github.com/invertase/dart_firebase_admin.git
+      url: https://github.com/firebase/firebase-admin-dart.git
       ref: main
       path: packages/dart_firebase_admin
   google_cloud_firestore:
     git:
-      url: https://github.com/invertase/dart_firebase_admin.git
+      url: https://github.com/firebase/firebase-admin-dart.git
       ref: main
       path: packages/google_cloud_firestore
   stack_trace: ^1.12.1
@@ -72,6 +72,6 @@ dev_dependencies:
 dependency_overrides:
   google_cloud_firestore:
     git:
-      url: https://github.com/invertase/dart_firebase_admin.git
+      url: https://github.com/firebase/firebase-admin-dart.git
       ref: main
       path: packages/google_cloud_firestore
