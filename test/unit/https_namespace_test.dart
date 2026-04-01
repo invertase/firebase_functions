@@ -14,6 +14,7 @@
 
 // ignore_for_file: avoid_dynamic_calls
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_functions/src/common/environment.dart';
@@ -271,6 +272,133 @@ void main() {
 
         final body = jsonDecode(await response.readAsString());
         expect(body['result'], {'status': 'ok', 'count': 42});
+      });
+
+      group('streaming handling', () {
+        test('catches HttpsError and returns SSE error', () async {
+          https.onCall(name: 'streamErrorFunction', (request, response) async {
+            throw InvalidArgumentError('Invalid data');
+          });
+
+          final func = _findFunction(firebase, 'stream-error-function')!;
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func.handler(request);
+
+          expect(response.statusCode, 200);
+          expect(response.headers['content-type'], 'text/event-stream');
+
+          final body = await response.readAsString();
+          expect(body, startsWith('data: {'));
+          expect(body, contains('"status":"INVALID_ARGUMENT"'));
+          expect(body, contains('"message":"Invalid data"'));
+        });
+
+        test(
+          'catches unexpected exceptions and returns SSE internal error',
+          () async {
+            https.onCall(name: 'streamCrashFunction', (
+              request,
+              response,
+            ) async {
+              throw Exception('Unexpected crash');
+            });
+
+            final func = _findFunction(firebase, 'stream-crash-function')!;
+            final request = createCallableRequest(
+              headers: {'accept': 'text/event-stream'},
+            );
+            final response = await func.handler(request);
+
+            expect(response.statusCode, 200);
+            expect(response.headers['content-type'], 'text/event-stream');
+
+            final body = await response.readAsString();
+            expect(body, startsWith('data: {'));
+            expect(body, contains('"status":"INTERNAL"'));
+            expect(body, contains('"message":"An unexpected error occurred."'));
+          },
+        );
+
+        test('success streaming returns SSE data', () async {
+          https.onCall(name: 'streamSuccessFunction', (
+            request,
+            response,
+          ) async {
+            return CallableResult('success');
+          });
+
+          final func = _findFunction(firebase, 'stream-success-function')!;
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func.handler(request);
+
+          expect(response.statusCode, 200);
+          expect(response.headers['content-type'], 'text/event-stream');
+
+          final body = await response.readAsString();
+          expect(body, startsWith('data: {'));
+          expect(body, contains('"result":"success"'));
+        });
+
+        test('catches error emitted by stream and returns SSE error', () async {
+          https.onCall(name: 'streamStreamErrorFunction', (
+            request,
+            response,
+          ) async {
+            final controller = StreamController<CallableResult<String>>();
+            response.stream(controller.stream);
+
+            controller.add(CallableResult('part 1'));
+            controller.addError(InvalidArgumentError('Invalid part 2'));
+            unawaited(controller.close());
+
+            await Future<void>.delayed(const Duration(milliseconds: 100));
+            return CallableResult('done');
+          });
+
+          final func = _findFunction(firebase, 'stream-stream-error-function')!;
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func.handler(request);
+
+          expect(response.statusCode, 200);
+          final body = await response.readAsString();
+          expect(body, contains('"result":"part 1"'));
+          expect(body, contains('"status":"INVALID_ARGUMENT"'));
+          expect(body, contains('"message":"Invalid part 2"'));
+        });
+
+        test(
+          'true background streaming works with Stream.fromIterable',
+          () async {
+            https.onCall(name: 'bgStreamFunction', (request, response) async {
+              final source = Stream.fromIterable([
+                CallableResult('item 1'),
+                CallableResult('item 2'),
+              ]);
+              response.stream(source);
+
+              return CallableResult('done');
+            });
+
+            final func = _findFunction(firebase, 'bg-stream-function')!;
+            final request = createCallableRequest(
+              headers: {'accept': 'text/event-stream'},
+            );
+            final response = await func.handler(request);
+
+            expect(response.statusCode, 200);
+
+            final body = await response.readAsString();
+            expect(body, contains('"result":"item 1"'));
+            expect(body, contains('"result":"item 2"'));
+            expect(body, contains('"result":"done"'));
+          },
+        );
       });
     });
 
