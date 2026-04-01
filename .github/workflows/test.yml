@@ -16,9 +16,9 @@ name: Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -90,11 +90,9 @@ jobs:
       - name: Analyze all packages
         run: |
           dart analyze --fatal-infos
-          for dir in example/*/; do
-            if [ -f "$dir/pubspec.yaml" ]; then
-              echo "Analyzing $dir..."
-              dart analyze --fatal-infos "$dir"
-            fi
+          find example -type f -name pubspec.yaml -not -path '*/.*' -exec dirname {} \; | while read -r dir; do
+            echo "Analyzing $dir..."
+            dart analyze --fatal-infos "$dir"
           done
           dart analyze --fatal-infos test/fixtures/dart_reference
 
@@ -183,41 +181,7 @@ jobs:
         run: npm ci
 
       - name: Generate Node.js manifest
-        working-directory: test/fixtures/nodejs_reference
-        run: |
-          echo "Starting firebase-functions server..."
-          GCLOUD_PROJECT="test-project" \
-          PORT="8080" \
-          FUNCTIONS_CONTROL_API="true" \
-          npx firebase-functions > /tmp/ff.log 2>&1 &
-
-          FF_PID=$!
-          echo "Server PID: $FF_PID"
-
-          # Wait for server to be ready
-          echo "Waiting for server to start..."
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/__/functions.yaml > /dev/null 2>&1; then
-              echo "✓ Server is ready"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "Error: Server failed to start"
-              cat /tmp/ff.log
-              exit 1
-            fi
-            sleep 1
-          done
-
-          # Fetch manifest
-          echo "Fetching manifest..."
-          curl -s http://localhost:8080/__/functions.yaml | python3 -m json.tool > nodejs_manifest.json
-
-          # Stop server
-          kill $FF_PID 2>/dev/null || true
-
-          echo "Node.js manifest generated:"
-          cat nodejs_manifest.json
+        run: bash tool/run_snapshot_server.sh
 
       - name: Display all manifests
         run: |
@@ -322,24 +286,13 @@ jobs:
     steps:
       - name: Check test results
         run: |
-          if [ "${{ needs.check-license-header.result }}" != "success" ]; then
-            echo "❌ License header check failed"
+          results='${{ toJSON(needs) }}'
+          failed_jobs=$(echo "$results" | jq -r 'to_entries[] | select(.value.result != "success") | .key')
+
+          if [ -n "$failed_jobs" ]; then
+            echo "❌ The following jobs did not succeed:"
+            echo "$failed_jobs" | sed 's/^/- /'
             exit 1
+          else
+            echo "✅ All tests passed!"
           fi
-          if [ "${{ needs.lint-analyze.result }}" != "success" ]; then
-            echo "❌ Format & Analyze failed"
-            exit 1
-          fi
-          if [ "${{ needs.builder-tests.result }}" != "success" ]; then
-            echo "❌ Builder tests failed"
-            exit 1
-          fi
-          if [ "${{ needs.snapshot-tests.result }}" != "success" ]; then
-            echo "❌ Snapshot tests failed"
-            exit 1
-          fi
-          if [ "${{ needs.e2e-tests.result }}" != "success" ]; then
-            echo "❌ E2E tests failed"
-            exit 1
-          fi
-          echo "✅ All tests passed!"
