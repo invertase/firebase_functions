@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// ignore_for_file: comment_references (for the library link!)
+
 /// Firebase Functions for Dart
 ///
 /// Write Firebase Cloud Functions in Dart with full type safety.
@@ -72,7 +74,6 @@
 ///   Scheduler, Tasks, Test Lab
 ///
 /// See also:
-// ignore: comment_references (analyzer doesn't know about library links)
 /// - [params] for the full params API
 /// - [onInit] for safe initialization with secrets
 ///
