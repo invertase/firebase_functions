@@ -102,7 +102,7 @@ class HttpsNamespace extends FunctionsNamespace {
       // Extract auth and app check tokens
 
       final tokens = await checkTokens(
-        request,
+        request.headers,
         adminApp: firebase.$env.skipTokenVerification
             ? null
             : firebase.adminApp,
@@ -183,7 +183,7 @@ class HttpsNamespace extends FunctionsNamespace {
       // Extract auth and app check tokens
 
       final tokens = await checkTokens(
-        request,
+        request.headers,
         adminApp: firebase.$env.skipTokenVerification
             ? null
             : firebase.adminApp,
