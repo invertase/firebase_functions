@@ -385,7 +385,8 @@ void main() {
           (request) async => Response.ok('OK'),
         );
 
-        expect(_findFunction(firebase, 'options-function'), isNotNull);
+        final func = _findFunction(firebase, 'options-function')!;
+        expect(func.allowedOrigins, ['https://example.com']);
       });
 
       test('CallableOptions can be provided', () {
@@ -398,6 +399,20 @@ void main() {
         );
 
         expect(_findFunction(firebase, 'callable-options-function'), isNotNull);
+      });
+
+      test('CallableOptions can be provided passing allowedOrigins', () {
+        https.onCall(
+          name: 'callableOptionsFunctionWithOrigins',
+          options: const CallableOptions(cors: Cors(['https://example.com'])),
+          (request, response) async => CallableResult('OK'),
+        );
+
+        final func = _findFunction(
+          firebase,
+          'callable-options-function-with-origins',
+        )!;
+        expect(func.allowedOrigins, ['https://example.com']);
       });
     });
   });
