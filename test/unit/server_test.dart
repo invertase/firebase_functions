@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import 'package:firebase_functions/src/server.dart';
+import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -47,6 +48,34 @@ void main() {
 
         // Invalid hex
         expect(extractTraceId('1234567890xyzdef1234567890abcdef/5'), isNull);
+      });
+    });
+
+    group('corsHeadersFor', () {
+      test('returns asterisk when allowedOrigins contains asterisk', () {
+        final request = Request('GET', Uri.parse('http://localhost/test'));
+        final headers = corsHeadersFor(request, ['*']);
+        expect(headers['Access-Control-Allow-Origin'], '*');
+      });
+
+      test('echoes the Origin header if it matches allowedOrigins', () {
+        final request = Request(
+          'GET',
+          Uri.parse('http://localhost/test'),
+          headers: {'origin': 'https://example.com'},
+        );
+        final headers = corsHeadersFor(request, ['https://example.com']);
+        expect(headers['Access-Control-Allow-Origin'], 'https://example.com');
+      });
+
+      test('returns empty map if no match is found', () {
+        final request = Request(
+          'GET',
+          Uri.parse('http://localhost/test'),
+          headers: {'origin': 'https://evil.com'},
+        );
+        final headers = corsHeadersFor(request, ['https://example.com']);
+        expect(headers, isEmpty);
       });
     });
   });

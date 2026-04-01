@@ -180,6 +180,7 @@ extension FirebaseX on Firebase {
     bool external = false,
     String? documentPattern,
     String? refPattern,
+    List<String>? allowedOrigins,
   }) {
     // Check for duplicate function names
     if (functions.any((f) => f.name == name)) {
@@ -195,6 +196,7 @@ extension FirebaseX on Firebase {
         name: transformedName,
         handler: handler,
         external: external,
+        allowedOrigins: allowedOrigins,
         documentPattern: documentPattern,
         refPattern: refPattern,
       ),
@@ -214,6 +216,7 @@ final class FirebaseFunctionDeclaration {
     required this.name,
     required this.handler,
     required this.external,
+    this.allowedOrigins,
     this.documentPattern,
     this.refPattern,
   }) : path = name;
@@ -237,6 +240,9 @@ final class FirebaseFunctionDeclaration {
   /// HTTPS functions are external (true).
   /// Event-driven functions are internal (false, POST only).
   final bool external;
+
+  /// Allowed origins for CORS (if specified).
+  final List<String>? allowedOrigins;
 
   /// The function handler.
   final FirebaseFunctionHandler handler;
