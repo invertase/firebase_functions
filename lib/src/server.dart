@@ -55,21 +55,25 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
     await runner(firebase);
 
     // Build request handler with middleware pipeline
-    final handler = const Pipeline()
-        .addMiddleware(_corsMiddleware(env))
-        .addHandler((request) {
-          final traceId = extractTraceId(
-            request.headers[cloudTraceContextHeader],
-          );
+    var middleware = const Pipeline().middleware;
 
-          if (traceId == null) {
-            return _routeRequest(request, firebase, env);
-          }
+    final env = firebase.$env;
+    if (env.enableCors) {
+      middleware = middleware.addMiddleware(_corsMiddleware);
+    }
 
-          return runZoned(zoneValues: {traceIdZoneKey: traceId}, () {
-            return _routeRequest(request, firebase, env);
-          });
-        });
+    // Build request handler with middleware pipeline
+    final handler = middleware.addHandler((request) {
+      final traceId = extractTraceId(request.headers[cloudTraceContextHeader]);
+
+      if (traceId == null) {
+        return _routeRequest(request, firebase, env);
+      }
+
+      return runZoned(zoneValues: {traceIdZoneKey: traceId}, () {
+        return _routeRequest(request, firebase, env);
+      });
+    });
 
     // Start HTTP server
     await shelf_io.serve(handler, InternetAddress.anyIPv4, env.port);
@@ -77,34 +81,23 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 }
 
 /// CORS middleware for emulator mode.
-Middleware _corsMiddleware(FirebaseEnv env) =>
-    (innerHandler) => (request) {
-      // Handle preflight OPTIONS requests
-      if (env.enableCors && request.method.toUpperCase() == 'OPTIONS') {
-        return Response.ok(
-          '',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': '*',
-            'Access-Control-Allow-Headers': '*',
-          },
-        );
-      }
+Handler _corsMiddleware(Handler innerHandler) => (request) {
+  // Handle preflight OPTIONS requests
+  if (request.method.toUpperCase() == 'OPTIONS') {
+    return Response.ok('', headers: _corsAnyOriginHeaders);
+  }
 
-      return Future.sync(() => innerHandler(request)).then((response) {
-        // Add CORS headers to all responses if enabled
-        if (env.enableCors) {
-          return response.change(
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': '*',
-              'Access-Control-Allow-Headers': '*',
-            },
-          );
-        }
-        return response;
-      });
-    };
+  return Future.sync(() => innerHandler(request)).then((response) {
+    // Add CORS headers to all responses if enabled
+    return response.change(headers: _corsAnyOriginHeaders);
+  });
+};
+
+const _corsAnyOriginHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': '*',
+  'Access-Control-Allow-Headers': '*',
+};
 
 /// Routes incoming requests to the appropriate function handler.
 FutureOr<Response> _routeRequest(
