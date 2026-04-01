@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// ignore_for_file: comment_references (for the library link!)
-
 /// Firebase Functions for Dart
 ///
 /// Write Firebase Cloud Functions in Dart with full type safety.
@@ -79,6 +77,9 @@
 ///
 /// @docImport 'src/common/on_init.dart';
 library;
+
+// Used for the `params` import in the docs!
+import 'params.dart' as params;
 
 // Package re-exports
 export 'package:google_cloud_firestore/google_cloud_firestore.dart'
