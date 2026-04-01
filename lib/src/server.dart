@@ -99,6 +99,38 @@ const _corsAnyOriginHeaders = {
   'Access-Control-Allow-Headers': '*',
 };
 
+Response _buildOptionsCorsResponse(
+  Request request,
+  List<String> allowedOrigins,
+) => Response.ok('', headers: corsHeadersFor(request, allowedOrigins));
+
+Response _applyCorsHeaders(
+  Request request,
+  Response response,
+  List<String> allowedOrigins,
+) => response.change(headers: corsHeadersFor(request, allowedOrigins));
+
+@visibleForTesting
+Map<String, String> corsHeadersFor(
+  Request request,
+  List<String> allowedOrigins,
+) {
+  if (allowedOrigins.contains('*')) {
+    return _corsAnyOriginHeaders;
+  }
+
+  final origin = request.headers['origin'];
+  if (origin != null && allowedOrigins.contains(origin)) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Headers': '*',
+    };
+  }
+
+  return const {};
+}
+
 /// Routes incoming requests to the appropriate function handler.
 FutureOr<Response> _routeRequest(
   Request request,
@@ -144,7 +176,7 @@ FutureOr<Response> _routeToTargetFunction(
   Firebase firebase,
   FirebaseEnv env,
   String functionTarget,
-) {
+) async {
   final functions = firebase.functions;
 
   // Find the function with matching name
@@ -165,6 +197,11 @@ FutureOr<Response> _routeToTargetFunction(
   // from the Node.js model does not apply here.
 
   // Validate HTTP method for event functions
+  if (request.method.toUpperCase() == 'OPTIONS' &&
+      targetFunction.allowedOrigins != null) {
+    return _buildOptionsCorsResponse(request, targetFunction.allowedOrigins!);
+  }
+
   if (!targetFunction.external && request.method.toUpperCase() != 'POST') {
     return Response(
       405,
@@ -173,10 +210,12 @@ FutureOr<Response> _routeToTargetFunction(
     );
   }
 
-  // Execute the target function (all requests go to this function)
-  // Wrap with onInit to ensure initialization callback runs before first execution
   final wrappedHandler = withInit(targetFunction.handler);
-  return wrappedHandler(request);
+  final response = await wrappedHandler(request);
+  if (targetFunction.allowedOrigins != null) {
+    return _applyCorsHeaders(request, response, targetFunction.allowedOrigins!);
+  }
+  return response;
 }
 
 /// Routes request by path matching (development/shared process mode).
@@ -215,16 +254,29 @@ FutureOr<Response> _routeByPath(
 
   // Try to find a matching function by name
   for (final function in functions) {
-    // Internal functions (events) only accept POST requests
-    if (!function.external && currentRequest.method.toUpperCase() != 'POST') {
-      continue;
-    }
-
-    // Match by function name
     if (functionName == function.name) {
-      // Wrap with onInit to ensure initialization callback runs before first execution
+      if (currentRequest.method.toUpperCase() == 'OPTIONS' &&
+          function.allowedOrigins != null) {
+        return _buildOptionsCorsResponse(
+          currentRequest,
+          function.allowedOrigins!,
+        );
+      }
+
+      if (!function.external && currentRequest.method.toUpperCase() != 'POST') {
+        continue;
+      }
+
       final wrappedHandler = withInit(function.handler);
-      return wrappedHandler(currentRequest);
+      final response = await wrappedHandler(currentRequest);
+      if (function.allowedOrigins != null) {
+        return _applyCorsHeaders(
+          currentRequest,
+          response,
+          function.allowedOrigins!,
+        );
+      }
+      return response;
     }
   }
 

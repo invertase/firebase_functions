@@ -51,15 +51,20 @@ class HttpsNamespace extends FunctionsNamespace {
     // ignore: experimental_member_use
     @mustBeConst HttpsOptions? options = const HttpsOptions(),
   }) {
-    firebase.registerFunction(name, (request) async {
-      try {
-        return await handler(request);
-      } on HttpsError catch (e) {
-        return e.toShelfResponse();
-      } catch (e, stackTrace) {
-        return logInternalError(e, stackTrace).toShelfResponse();
-      }
-    }, external: true);
+    firebase.registerFunction(
+      name,
+      (request) async {
+        try {
+          return await handler(request);
+        } on HttpsError catch (e) {
+          return e.toShelfResponse();
+        } catch (e, stackTrace) {
+          return logInternalError(e, stackTrace).toShelfResponse();
+        }
+      },
+      external: true,
+      allowedOrigins: options?.cors?.runtimeValue(),
+    );
   }
 
   /// Creates an HTTPS callable function (untyped data).
@@ -141,7 +146,7 @@ class HttpsNamespace extends FunctionsNamespace {
         (result) => result.data,
         (result) => result.toResponse(),
       );
-    });
+    }, allowedOrigins: options?.cors?.runtimeValue());
   }
 
   /// Creates an HTTPS callable function with typed data.
@@ -225,7 +230,7 @@ class HttpsNamespace extends FunctionsNamespace {
           headers: {'Content-Type': 'application/json'},
         ),
       );
-    });
+    }, allowedOrigins: options?.cors?.runtimeValue());
   }
 
   /// Internal handler for callable functions.
