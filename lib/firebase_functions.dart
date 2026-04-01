@@ -80,6 +80,8 @@
 library;
 
 // Package re-exports
+export 'package:google_cloud/google_cloud.dart'
+    show CloudLogger, LogSeverity, currentLogger;
 export 'package:google_cloud_firestore/google_cloud_firestore.dart'
     show DocumentData, DocumentSnapshot, QueryDocumentSnapshot;
 export 'package:shelf/shelf.dart' show Request, Response;
@@ -106,8 +108,6 @@ export 'src/firestore/firestore.dart';
 export 'src/https/https.dart';
 // Experimental: Identity triggers (not yet supported in production or emulator)
 export 'src/identity/identity.dart';
-// Logger
-export 'src/logger/logger.dart' show LogEntry, LogSeverity, Logger, logger;
 // Experimental: Pub/Sub triggers (not yet supported in production or emulator)
 export 'src/pubsub/pubsub.dart';
 // Experimental: Remote Config triggers (not yet supported in production or emulator)
