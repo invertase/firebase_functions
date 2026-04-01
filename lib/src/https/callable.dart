@@ -196,7 +196,7 @@ class CallableResponse<T extends Object> {
   final bool acceptsStreaming;
   final int? heartbeatSeconds;
 
-  StreamController<String>? _streamController;
+  StreamController<List<int>>? _streamController;
   Response? _streamingResponse;
   Timer? _heartbeatTimer;
   StreamSubscription<CallableResult<T>>? _streamSubscription;
@@ -204,7 +204,7 @@ class CallableResponse<T extends Object> {
 
   /// Initializes SSE streaming.
   void initializeStreaming() {
-    _streamController = StreamController<String>();
+    _streamController = StreamController<List<int>>();
     _streamingResponse = Response.ok(
       _streamController!.stream,
       headers: {
@@ -270,7 +270,7 @@ class CallableResponse<T extends Object> {
 
     try {
       final formattedData = _encodeSSE({'message': chunk});
-      _streamController!.add(formattedData);
+      _streamController!.add(utf8.encode(formattedData));
 
       // Reset heartbeat timer after successful write
       if (heartbeatSeconds != null && heartbeatSeconds! > 0) {
@@ -288,7 +288,7 @@ class CallableResponse<T extends Object> {
     if (_streamController == null || _streamController!.isClosed) {
       return;
     }
-    _streamController!.add(_encodeSSE(data));
+    _streamController!.add(utf8.encode(_encodeSSE(data)));
   }
 
   /// Closes the streaming response.
@@ -333,7 +333,7 @@ class CallableResponse<T extends Object> {
       if (!_aborted &&
           _streamController != null &&
           !_streamController!.isClosed) {
-        _streamController!.add(': ping\n\n');
+        _streamController!.add(utf8.encode(': ping\n\n'));
         _scheduleHeartbeat();
       }
     });

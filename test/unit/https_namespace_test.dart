@@ -19,20 +19,13 @@ import 'dart:convert';
 import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/https/callable.dart';
-import 'package:firebase_functions/src/https/error.dart';
 import 'package:firebase_functions/src/https/https_namespace.dart';
 import 'package:firebase_functions/src/https/options.dart';
+import 'package:google_cloud/http_serving.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-// Helper to find function by name (uses kebab-case Cloud Run ID)
-FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
-  try {
-    return firebase.functions.firstWhere((f) => f.name == name);
-  } catch (e) {
-    return null;
-  }
-}
+import 'shared_utils.dart';
 
 void main() {
   setUpAll(() {
@@ -55,7 +48,7 @@ void main() {
           (request) async => Response.ok('Hello'),
         );
 
-        expect(_findFunction(firebase, 'test-function'), isNotNull);
+        expect(findHandler(firebase, 'test-function'), isNotNull);
       });
 
       test('handler receives request and returns response', () async {
@@ -64,12 +57,12 @@ void main() {
           (request) async => Response.ok('Hello, World!'),
         );
 
-        final func = _findFunction(firebase, 'test-function')!;
+        final func = findHandler(firebase, 'test-function');
         final request = Request(
           'GET',
           Uri.parse('http://localhost/test-function'),
         );
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 200);
         expect(await response.readAsString(), 'Hello, World!');
@@ -77,22 +70,23 @@ void main() {
 
       test('catches HttpsError and returns proper error response', () async {
         https.onRequest(name: 'errorFunction', (request) async {
-          throw NotFoundError('Resource not found');
+          throw HttpResponseException.notFound(message: 'Resource not found');
         });
 
-        final func = _findFunction(firebase, 'error-function')!;
+        final func = findHandler(firebase, 'error-function');
         final request = Request(
           'GET',
           Uri.parse('http://localhost/error-function'),
+          headers: {'content-type': 'application/json'},
         );
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 404);
         expect(response.headers['Content-Type'], 'application/json');
 
         final body = jsonDecode(await response.readAsString());
-        expect(body['error']['status'], 'NOT_FOUND');
-        expect(body['error']['message'], 'Resource not found');
+        expect(body['error'], containsPair('status', 'NOT_FOUND'));
+        expect(body['error'], containsPair('message', 'Resource not found'));
       });
 
       test('catches unexpected errors and returns internal error', () async {
@@ -100,18 +94,19 @@ void main() {
           throw Exception('Unexpected crash');
         });
 
-        final func = _findFunction(firebase, 'crash-function')!;
+        final func = findHandler(firebase, 'crash-function');
         final request = Request(
           'GET',
           Uri.parse('http://localhost/crash-function'),
+          headers: {'content-type': 'application/json'},
         );
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 500);
         expect(response.headers['Content-Type'], 'application/json');
 
         final body = jsonDecode(await response.readAsString());
-        expect(body['error']['status'], 'INTERNAL');
+        expect(body['error'], containsPair('status', 'INTERNAL'));
       });
 
       test('marks function as external', () {
@@ -120,18 +115,18 @@ void main() {
           (request) async => Response.ok('OK'),
         );
 
-        final func = _findFunction(firebase, 'external-function')!;
+        final func = findFunction(firebase, 'external-function');
         expect(func.external, isTrue);
       });
 
       test('uses correct HTTP status codes for different errors', () async {
         https.onRequest(name: 'unauthorizedFunction', (request) async {
-          throw UnauthenticatedError('Not logged in');
+          throw HttpResponseException.unauthorized(message: 'Not logged in');
         });
 
-        final func = _findFunction(firebase, 'unauthorized-function')!;
+        final func = findHandler(firebase, 'unauthorized-function');
         final request = Request('GET', Uri.parse('http://localhost/test'));
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 401);
       });
@@ -157,7 +152,7 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        expect(_findFunction(firebase, 'callable-function'), isNotNull);
+        expect(findHandler(firebase, 'callable-function'), isNotNull);
       });
 
       test('handler returns wrapped result', () async {
@@ -167,9 +162,9 @@ void main() {
           return CallableResult({'message': 'Hello, $name!'});
         });
 
-        final func = _findFunction(firebase, 'greet-function')!;
+        final func = findHandler(firebase, 'greet-function');
         final request = createCallableRequest(data: {'name': 'World'});
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 200);
         expect(response.headers['content-type'], 'application/json');
@@ -184,17 +179,17 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        final func = _findFunction(firebase, 'post-only-function')!;
+        final func = findHandler(firebase, 'post-only-function');
         final request = Request(
           'GET',
           Uri.parse('http://localhost/post-only-function'),
           headers: {'content-type': 'application/json'},
         );
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 400);
         final body = jsonDecode(await response.readAsString());
-        expect(body['error']['status'], 'INVALID_ARGUMENT');
+        expect(body['error'], containsPair('status', 'INVALID_ARGUMENT'));
       });
 
       test('validates content-type is application/json', () async {
@@ -203,31 +198,31 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        final func = _findFunction(firebase, 'json-only-function')!;
+        final func = findHandler(firebase, 'json-only-function');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/json-only-function'),
           headers: {'content-type': 'text/plain'},
           body: '{"data": "test"}',
         );
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 400);
       });
 
       test('catches HttpsError and returns proper status', () async {
         https.onCall(name: 'errorFunction', (request, response) async {
-          throw PermissionDeniedError('Not authorized');
+          throw HttpResponseException.forbidden(message: 'Not authorized');
         });
 
-        final func = _findFunction(firebase, 'error-function')!;
+        final func = findHandler(firebase, 'error-function');
         final request = createCallableRequest();
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 403);
         final body = jsonDecode(await response.readAsString());
-        expect(body['error']['status'], 'PERMISSION_DENIED');
-        expect(body['error']['message'], 'Not authorized');
+        expect(body['error'], containsPair('status', 'PERMISSION_DENIED'));
+        expect(body['error'], containsPair('message', 'Not authorized'));
       });
 
       test('catches unexpected errors as internal errors', () async {
@@ -235,13 +230,13 @@ void main() {
           throw StateError('Something broke');
         });
 
-        final func = _findFunction(firebase, 'crash-function')!;
+        final func = findHandler(firebase, 'crash-function');
         final request = createCallableRequest();
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 500);
         final body = jsonDecode(await response.readAsString());
-        expect(body['error']['status'], 'INTERNAL');
+        expect(body['error'], containsPair('status', 'INTERNAL'));
       });
 
       test('returns JSON when client does not accept SSE', () async {
@@ -249,9 +244,9 @@ void main() {
           return CallableResult('result');
         });
 
-        final func = _findFunction(firebase, 'non-stream-function')!;
+        final func = findHandler(firebase, 'non-stream-function');
         final request = createCallableRequest();
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 200);
         expect(response.headers['content-type'], 'application/json');
@@ -265,12 +260,89 @@ void main() {
           return JsonResult({'status': 'ok', 'count': 42});
         });
 
-        final func = _findFunction(firebase, 'json-result-function')!;
+        final func = findHandler(firebase, 'json-result-function');
         final request = createCallableRequest();
-        final response = await func.handler(request);
+        final response = await func(request);
 
         final body = jsonDecode(await response.readAsString());
         expect(body['result'], {'status': 'ok', 'count': 42});
+      });
+      group('streaming handling', () {
+        test('catches BadRequestException and returns SSE error', () async {
+          https.onCall(name: 'streamErrorFunction', (request, response) async {
+            throw HttpResponseException.badRequest(message: 'Invalid data');
+          });
+
+          final func = findHandler(firebase, 'stream-error-function');
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func(request);
+
+          expect(response.statusCode, 200);
+          expect(response.headers['content-type'], 'text/event-stream');
+
+          final body = await response.readAsString();
+          expect(body, startsWith('data: {'));
+
+          final jsonString = body.trim().substring('data: '.length);
+          final payload = jsonDecode(jsonString);
+          expect(payload['error'], containsPair('status', 'INVALID_ARGUMENT'));
+          expect(payload['error'], containsPair('message', 'Invalid data'));
+        });
+
+        test(
+          'catches unexpected exceptions and returns SSE internal error',
+          () async {
+            https.onCall(name: 'streamCrashFunction', (
+              request,
+              response,
+            ) async {
+              throw Exception('Unexpected crash');
+            });
+
+            final func = findHandler(firebase, 'stream-crash-function');
+            final request = createCallableRequest(
+              headers: {'accept': 'text/event-stream'},
+            );
+            final response = await func(request);
+
+            expect(response.statusCode, 200);
+            expect(response.headers['content-type'], 'text/event-stream');
+
+            final body = await response.readAsString();
+            expect(body, startsWith('data: {'));
+
+            final jsonString = body.trim().substring('data: '.length);
+            final payload = jsonDecode(jsonString);
+            expect(payload['error'], containsPair('status', 'INTERNAL'));
+            expect(payload['error'], containsPair('message', 'Internal error'));
+          },
+        );
+        test('success streaming returns SSE data', () async {
+          https.onCall(name: 'streamSuccessFunction', (
+            request,
+            response,
+          ) async {
+            return CallableResult('success');
+          });
+
+          final func = findHandler(firebase, 'stream-success-function');
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func(request);
+
+          expect(response.statusCode, 200);
+          expect(response.headers['content-type'], 'text/event-stream');
+
+          final body = await response.readAsString();
+          expect(body, startsWith('data: {'));
+
+          final jsonString = body.trim().substring('data: '.length);
+          final payload = jsonDecode(jsonString);
+          expect(payload, containsPair('result', 'success'));
+        });
       });
     });
 
@@ -297,7 +369,7 @@ void main() {
           },
         );
 
-        expect(_findFunction(firebase, 'typed-function'), isNotNull);
+        expect(findHandler(firebase, 'typed-function'), isNotNull);
       });
 
       test('deserializes input using fromJson', () async {
@@ -311,9 +383,9 @@ void main() {
           },
         );
 
-        final func = _findFunction(firebase, 'typed-function')!;
+        final func = findHandler(firebase, 'typed-function');
         final request = createCallableRequest(data: {'name': 'World'});
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 200);
         final body = jsonDecode(await response.readAsString());
@@ -329,9 +401,9 @@ void main() {
           },
         );
 
-        final func = _findFunction(firebase, 'typed-output-function')!;
+        final func = findHandler(firebase, 'typed-output-function');
         final request = createCallableRequest(data: {'name': 'World'});
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 200);
         final body = jsonDecode(await response.readAsString());
@@ -346,13 +418,13 @@ void main() {
           (request, response) async => 'OK',
         );
 
-        final func = _findFunction(firebase, 'post-only-typed-function')!;
+        final func = findHandler(firebase, 'post-only-typed-function');
         final request = Request(
           'GET',
           Uri.parse('http://localhost/post-only-typed-function'),
           headers: {'content-type': 'application/json'},
         );
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 400);
       });
@@ -362,18 +434,20 @@ void main() {
           name: 'errorTypedFunction',
           fromJson: _GreetRequest.fromJson,
           (request, response) async {
-            throw InvalidArgumentError('Name cannot be empty');
+            throw HttpResponseException.badRequest(
+              message: 'Name cannot be empty',
+            );
           },
         );
 
-        final func = _findFunction(firebase, 'error-typed-function')!;
+        final func = findHandler(firebase, 'error-typed-function');
         final request = createCallableRequest(data: {'name': ''});
-        final response = await func.handler(request);
+        final response = await func(request);
 
         expect(response.statusCode, 400);
         final body = jsonDecode(await response.readAsString());
-        expect(body['error']['status'], 'INVALID_ARGUMENT');
-        expect(body['error']['message'], 'Name cannot be empty');
+        expect(body['error'], containsPair('status', 'INVALID_ARGUMENT'));
+        expect(body['error'], containsPair('message', 'Name cannot be empty'));
       });
     });
 
@@ -385,7 +459,7 @@ void main() {
           (request) async => Response.ok('OK'),
         );
 
-        final func = _findFunction(firebase, 'options-function')!;
+        final func = findFunction(firebase, 'options-function');
         expect(func.allowedOrigins, ['https://example.com']);
       });
 
@@ -398,7 +472,7 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        expect(_findFunction(firebase, 'callable-options-function'), isNotNull);
+        expect(findHandler(firebase, 'callable-options-function'), isNotNull);
       });
 
       test('CallableOptions can be provided passing allowedOrigins', () {
@@ -408,10 +482,10 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        final func = _findFunction(
+        final func = findFunction(
           firebase,
           'callable-options-function-with-origins',
-        )!;
+        );
         expect(func.allowedOrigins, ['https://example.com']);
       });
     });

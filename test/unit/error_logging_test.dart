@@ -16,80 +16,16 @@
 
 import 'dart:convert';
 
+import 'package:firebase_functions/firebase_functions.dart';
 import 'package:firebase_functions/src/common/environment.dart';
-import 'package:firebase_functions/src/common/utilities.dart';
 import 'package:firebase_functions/src/firebase.dart';
-import 'package:firebase_functions/src/https/error.dart';
-import 'package:firebase_functions/src/https/https_namespace.dart';
-import 'package:firebase_functions/src/pubsub/pubsub_namespace.dart';
-import 'package:firebase_functions/src/scheduler/scheduler_namespace.dart';
-import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
+
+import 'shared_utils.dart';
 
 void main() {
   setUpAll(() {
     FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
-  });
-
-  group('Error logging utilities', () {
-    group('logInternalError', () {
-      test('returns InternalError', () {
-        final result = logInternalError(
-          Exception('secret db password: abc123'),
-          StackTrace.current,
-        );
-        expect(result, isA<InternalError>());
-        expect(result.code, FunctionsErrorCode.internal);
-      });
-
-      test('does not include error details in the HTTP response', () {
-        final error = logInternalError(
-          Exception('secret db password: abc123'),
-          StackTrace.current,
-        );
-        final response = error.toShelfResponse();
-        // Synchronously read the body from the response
-        // The response wraps the body as a shelf body
-        expect(response.statusCode, 500);
-
-        // Verify the JSON body contains generic message, not the secret
-        return response.readAsString().then((body) {
-          final json = jsonDecode(body) as Map<String, dynamic>;
-          expect(json['error']['status'], 'INTERNAL');
-          expect(json['error']['message'], 'An unexpected error occurred.');
-          expect(body, isNot(contains('secret db password')));
-          expect(body, isNot(contains('abc123')));
-        });
-      });
-    });
-
-    group('logEventHandlerError', () {
-      test('returns 500 response', () {
-        final response = logEventHandlerError(
-          Exception('secret api key: xyz789'),
-          StackTrace.current,
-        );
-        expect(response.statusCode, 500);
-      });
-
-      test('does not include error details in the response body', () async {
-        final response = logEventHandlerError(
-          Exception('secret api key: xyz789'),
-          StackTrace.current,
-        );
-        final body = await response.readAsString();
-        expect(body, isNot(contains('secret api key')));
-        expect(body, isNot(contains('xyz789')));
-      });
-    });
-
-    group('_logError (via logInternalError)', () {
-      test('logs error and terse stack trace to stderr', () {
-        // We can't directly test the global logger, but we can test
-        // Trace.terse formatting indirectly by verifying our utility logic.
-        // The actual logging is tested via integration below.
-      });
-    });
   });
 
   group('HTTPS handler error logging integration', () {
@@ -115,32 +51,22 @@ void main() {
           'GET',
           Uri.parse('http://localhost/crash-endpoint'),
         );
-        final response = await func.handler(request);
-
-        expect(response.statusCode, 500);
-        final body = await response.readAsString();
-        final json = jsonDecode(body) as Map<String, dynamic>;
-
-        // Error response is generic
-        expect(json['error']['status'], 'INTERNAL');
-        expect(json['error']['message'], 'An unexpected error occurred.');
-
-        // Sensitive details are NOT in the response
-        expect(body, isNot(contains('postgres://')));
-        expect(body, isNot(contains('connection string')));
+        expect(() => func.handler(request), throwsA(isA<StateError>()));
       },
     );
 
     test('onRequest: HttpsError is passed through to client', () async {
       https.onRequest(name: 'knownError', (request) async {
-        throw NotFoundError('User 42 not found');
+        throw HttpResponseException.notFound(message: 'User 42 not found');
       });
 
-      final func = firebase.functions.firstWhere(
-        (f) => f.name == 'known-error',
+      final handler = findHandler(firebase, 'known-error');
+      final request = Request(
+        'GET',
+        Uri.parse('http://localhost/known-error'),
+        headers: {'accept': 'application/json'},
       );
-      final request = Request('GET', Uri.parse('http://localhost/known-error'));
-      final response = await func.handler(request);
+      final response = await handler(request);
 
       expect(response.statusCode, 404);
       final body = await response.readAsString();
@@ -194,14 +120,7 @@ void main() {
         body: jsonEncode(cloudEvent),
         headers: {'content-type': 'application/json'},
       );
-      final response = await func.handler(request);
-
-      expect(response.statusCode, 500);
-      final body = await response.readAsString();
-
-      // Sensitive details are NOT in the response
-      expect(body, isNot(contains('api key')));
-      expect(body, isNot(contains('sk-12345')));
+      expect(() => func.handler(request), throwsA(isA<Exception>()));
     });
 
     test('Scheduler: unexpected error returns 500 without details', () async {
@@ -219,14 +138,7 @@ void main() {
         Uri.parse('http://localhost/on-schedule-0-0'),
         headers: {'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z'},
       );
-      final response = await func.handler(request);
-
-      expect(response.statusCode, 500);
-      final body = await response.readAsString();
-
-      // Sensitive details are NOT in the response
-      expect(body, isNot(contains('db password')));
-      expect(body, isNot(contains('hunter2')));
+      expect(() => func.handler(request), throwsA(isA<Exception>()));
     });
   });
 }

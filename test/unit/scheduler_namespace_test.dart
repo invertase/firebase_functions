@@ -21,14 +21,7 @@ import 'package:firebase_functions/src/scheduler/scheduler_namespace.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-// Helper to find function by name
-FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
-  try {
-    return firebase.functions.firstWhere((f) => f.name == name.toLowerCase());
-  } catch (e) {
-    return null;
-  }
-}
+import 'shared_utils.dart';
 
 void main() {
   setUpAll(() {
@@ -49,14 +42,14 @@ void main() {
         scheduler.onSchedule(schedule: '0 0 * * *', (event) async {});
 
         // Function name: schedule '0 0 * * *' becomes 'on-schedule-0-0' (kebab-case Cloud Run ID)
-        expect(_findFunction(firebase, 'on-schedule-0-0'), isNotNull);
+        expect(findFunction(firebase, 'on-schedule-0-0'), isNotNull);
       });
 
       test('generates correct function name from schedule', () {
         scheduler.onSchedule(schedule: '*/5 * * * *', (event) async {});
 
         // '*/5 * * * *' -> 'on-schedule-5' (removes *, /, converts to kebab-case)
-        expect(_findFunction(firebase, 'on-schedule-5'), isNotNull);
+        expect(findFunction(firebase, 'on-schedule-5'), isNotNull);
       });
 
       test('handler receives scheduled event', () async {
@@ -66,7 +59,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'on-schedule-0-0')!;
+        final func = findFunction(firebase, 'on-schedule-0-0');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/on-schedule-0-0'),
@@ -94,7 +87,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'on-schedule-0-0')!;
+        final func = findFunction(firebase, 'on-schedule-0-0');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/on-schedule-0-0'),
@@ -115,7 +108,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'on-schedule-0-0')!;
+        final func = findFunction(firebase, 'on-schedule-0-0');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/on-schedule-0-0'),
@@ -138,7 +131,7 @@ void main() {
           // Success - do nothing
         });
 
-        final func = _findFunction(firebase, 'on-schedule-0-0')!;
+        final func = findFunction(firebase, 'on-schedule-0-0');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/on-schedule-0-0'),
@@ -154,13 +147,13 @@ void main() {
           throw Exception('Handler error');
         });
 
-        final func = _findFunction(firebase, 'on-schedule-0-0')!;
+        final handler = findHandler(firebase, 'on-schedule-0-0');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/on-schedule-0-0'),
           headers: {'x-cloudscheduler-scheduletime': '2024-01-01T00:00:00Z'},
         );
-        final response = await func.handler(request);
+        final response = await handler(request);
 
         expect(response.statusCode, 500);
         final body = await response.readAsString();
@@ -180,7 +173,7 @@ void main() {
           (event) async {},
         );
 
-        expect(_findFunction(firebase, 'on-schedule-0-0'), isNotNull);
+        expect(findFunction(firebase, 'on-schedule-0-0'), isNotNull);
       });
 
       test('handles case-insensitive headers', () async {
@@ -190,7 +183,7 @@ void main() {
           receivedEvent = event;
         });
 
-        final func = _findFunction(firebase, 'on-schedule-0-0')!;
+        final func = findFunction(firebase, 'on-schedule-0-0');
         final request = Request(
           'POST',
           Uri.parse('http://localhost/on-schedule-0-0'),

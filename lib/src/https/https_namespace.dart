@@ -15,14 +15,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:google_cloud/http_serving.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
-import '../common/utilities.dart';
 import '../firebase.dart';
 import 'auth.dart';
 import 'callable.dart';
-import 'error.dart';
 import 'options.dart';
 
 /// HTTPS triggers namespace.
@@ -54,13 +53,7 @@ class HttpsNamespace extends FunctionsNamespace {
     firebase.registerFunction(
       name,
       (request) async {
-        try {
-          return await handler(request);
-        } on HttpsError catch (e) {
-          return e.toShelfResponse();
-        } catch (e, stackTrace) {
-          return logInternalError(e, stackTrace).toShelfResponse();
-        }
+        return await handler(request);
       },
       external: true,
       allowedOrigins: options?.cors?.runtimeValue(),
@@ -115,18 +108,22 @@ class HttpsNamespace extends FunctionsNamespace {
 
       // Check for invalid auth token
       if (tokens.result.auth == TokenStatus.invalid) {
-        return UnauthenticatedError().toShelfResponse();
+        throw HttpResponseException.unauthorized(message: 'Invalid auth token');
       }
 
       // Check for invalid or missing app check token if enforced
       final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
       if (tokens.result.app == TokenStatus.invalid) {
         if (enforceAppCheck) {
-          return UnauthenticatedError().toShelfResponse();
+          throw HttpResponseException.unauthorized(
+            message: 'Invalid app check token',
+          );
         }
       }
       if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
-        return UnauthenticatedError().toShelfResponse();
+        throw HttpResponseException.unauthorized(
+          message: 'Missing app check token',
+        );
       }
 
       final callableRequest = CallableRequest(
@@ -196,18 +193,22 @@ class HttpsNamespace extends FunctionsNamespace {
 
       // Check for invalid auth token
       if (tokens.result.auth == TokenStatus.invalid) {
-        return UnauthenticatedError().toShelfResponse();
+        throw HttpResponseException.unauthorized(message: 'Invalid auth token');
       }
 
       // Check for invalid or missing app check token if enforced
       final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
       if (tokens.result.app == TokenStatus.invalid) {
         if (enforceAppCheck) {
-          return UnauthenticatedError().toShelfResponse();
+          throw HttpResponseException.unauthorized(
+            message: 'Invalid app check token',
+          );
         }
       }
       if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
-        return UnauthenticatedError().toShelfResponse();
+        throw HttpResponseException.unauthorized(
+          message: 'Missing app check token',
+        );
       }
 
       final callableRequest = CallableRequest<Input>(
@@ -256,7 +257,9 @@ class HttpsNamespace extends FunctionsNamespace {
   ) async {
     // Validate request - pass empty map if body is null to avoid double-read
     if (!await request.isValidRequest(body ?? {})) {
-      return InvalidArgumentError('Invalid callable request').toShelfResponse();
+      throw HttpResponseException.badRequest(
+        message: 'Invalid callable request',
+      );
     }
 
     final heartbeatSeconds = options?.heartBeatIntervalSeconds?.runtimeValue();
@@ -278,34 +281,88 @@ class HttpsNamespace extends FunctionsNamespace {
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         final finalResult = {'result': extractResultData(result)};
         callableResponse.writeSSE(finalResult);
-        await callableResponse.closeStream();
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
       // Non-streaming response
       return createNonStreamingResponse(result);
-    } on HttpsError catch (e) {
+    } on HttpResponseException catch (e) {
+      final errorPayload = e.toJson();
+
       // Handle HttpsError - use SSE format if streaming
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
-        callableResponse.writeSSE(e.toErrorResponse());
-        await callableResponse.closeStream();
+        callableResponse.writeSSE(errorPayload);
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
-      return e.toShelfResponse();
-    } catch (e, stackTrace) {
-      // Unexpected error - don't expose details to client
-      final error = logInternalError(e, stackTrace);
+      return Response(
+        e.statusCode,
+        body: jsonEncode(errorPayload),
+        headers: {'content-type': 'application/json'},
+      );
+    } catch (e) {
+      final errorPayload = {
+        'error': {'status': 'INTERNAL', 'message': 'Internal error'},
+      };
 
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
-        callableResponse.writeSSE(error.toErrorResponse());
-        await callableResponse.closeStream();
+        callableResponse.writeSSE(errorPayload);
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
-      return error.toShelfResponse();
+      return Response(
+        500,
+        body: jsonEncode(errorPayload),
+        headers: {'content-type': 'application/json'},
+      );
     } finally {
       callableResponse.clearHeartbeat();
     }
+  }
+}
+
+enum FunctionsErrorCode {
+  // NOTE: These are ordered so that the first error code with a given HTTP
+  // status code is the one that is used when mapping from HTTP status codes.
+  ok('ok', 'OK', 200),
+  invalidArgument('invalid-argument', 'Invalid argument', 400),
+  failedPrecondition('failed-precondition', 'Failed precondition', 400),
+  outOfRange('out-of-range', 'Value out of range', 400),
+  unauthenticated('unauthenticated', 'Unauthenticated', 401),
+  permissionDenied('permission-denied', 'Permission denied', 403),
+  notFound('not-found', 'Resource not found', 404),
+  alreadyExists('already-exists', 'Resource already exists', 409),
+  aborted('aborted', 'Operation aborted', 409),
+  resourceExhausted('resource-exhausted', 'Resource exhausted', 429),
+  cancelled('cancelled', 'Request was cancelled', 499),
+  internal('internal', 'Internal error', 500),
+  unknown('unknown', 'Unknown error occurred', 500),
+  dataLoss('data-loss', 'Data loss', 500),
+  unimplemented('unimplemented', 'Operation not implemented', 501),
+  unavailable('unavailable', 'Service unavailable', 503),
+  deadlineExceeded('deadline-exceeded', 'Deadline exceeded', 504);
+
+  const FunctionsErrorCode(this.value, this.message, this.httpStatusCode);
+
+  /// The string value used in JSON serialization.
+  final String value;
+
+  /// The default human-readable message for this error code.
+  final String message;
+
+  /// The corresponding HTTP status code.
+  final int httpStatusCode;
+
+  /// Maps an error code value string to the corresponding enum.
+  static FunctionsErrorCode? fromValue(String value) {
+    for (final code in FunctionsErrorCode.values) {
+      if (code.value == value) {
+        return code;
+      }
+    }
+    return null;
   }
 }

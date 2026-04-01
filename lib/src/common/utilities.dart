@@ -14,10 +14,7 @@
 
 import 'dart:convert';
 
-import 'package:google_cloud/google_cloud.dart';
-import 'package:shelf/shelf.dart' show Request, Response;
-
-import '../https/error.dart';
+import 'package:shelf/shelf.dart' show Request;
 
 Future<Map<String, dynamic>> readAsJsonMap(Request request) async {
   final decoded = await _converter.bind(request.read()).first;
@@ -28,32 +25,3 @@ Future<Map<String, dynamic>> readAsJsonMap(Request request) async {
 }
 
 final _converter = const Utf8Decoder().fuse(const JsonDecoder());
-
-extension HttpErrorExtension on HttpsError {
-  Response toShelfResponse() => Response(
-    httpStatusCode,
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode(toErrorResponse()),
-  );
-}
-
-/// Logs an unexpected error with its stack trace and returns an [InternalError].
-///
-/// Use in HTTPS and callable function handlers where the response must be
-/// a structured JSON error. The actual error details are only logged
-/// server-side and never exposed to the client.
-InternalError logInternalError(Object error, StackTrace stackTrace) {
-  currentLogger.error(error, stackTrace: stackTrace);
-  return InternalError();
-}
-
-/// Logs an unexpected error with its stack trace and returns a generic 500
-/// response.
-///
-/// Use in event-triggered function handlers (Firestore, PubSub, Storage, etc.)
-/// where the caller is the Cloud Functions infrastructure rather than an
-/// end-user client.
-Response logEventHandlerError(Object error, StackTrace stackTrace) {
-  currentLogger.error(error, stackTrace: stackTrace);
-  return Response.internalServerError();
-}

@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export 'package:google_cloud/http_serving.dart' show HttpResponseException;
+
 export 'callable.dart';
-export 'error.dart';
 export 'https_namespace.dart';
 export 'options.dart';
