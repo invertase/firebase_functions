@@ -84,7 +84,7 @@ Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
 Handler _corsMiddleware(Handler innerHandler) => (request) {
   // Handle preflight OPTIONS requests
   if (request.method.toUpperCase() == 'OPTIONS') {
-    return Response.ok('', headers: _corsAnyOriginHeaders);
+    return Response(204, headers: _corsAnyOriginHeaders);
   }
 
   return Future.sync(() => innerHandler(request)).then((response) {
