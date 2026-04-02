@@ -1,6 +1,6 @@
 # Firebase SDK for Dart Functions
 
-[![Tests](https://github.com/invertase/firebase_functions/actions/workflows/test.yml/badge.svg)](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml)
+[![Tests](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml/badge.svg)](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml)
 [![pub package](https://img.shields.io/pub/v/firebase_functions.svg)](https://pub.dev/packages/firebase_functions) 
 
 Write Firebase Cloud Functions in Dart with full type safety and performance.
