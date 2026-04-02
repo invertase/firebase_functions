@@ -16,10 +16,12 @@ name: Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0" # weekly
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -66,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: [stable, beta]
+        sdk: [stable, dev]
 
     steps:
       - name: Checkout repository
@@ -98,11 +100,10 @@ jobs:
           done
           dart analyze --fatal-infos test/fixtures/dart_reference
 
-      # TODO: Re-enable when unit tests are added
-      # - name: Run unit tests
-      #   run: dart test --exclude-tags=snapshot,integration,e2e
+      - name: Run unit tests
+        run: dart test --exclude-tags=snapshot,integration,e2e
 
-  # Builder tests - generate and verify functions.yaml
+  # Builder tests - generate and display functions.yaml
   builder-tests:
     name: Builder Tests
     runs-on: ubuntu-latest
