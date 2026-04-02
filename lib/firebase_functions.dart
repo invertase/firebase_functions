@@ -72,12 +72,14 @@
 ///   Scheduler, Tasks, Test Lab
 ///
 /// See also:
-// ignore: comment_references (analyzer doesn't know about library links)
 /// - [params] for the full params API
 /// - [onInit] for safe initialization with secrets
 ///
 /// @docImport 'src/common/on_init.dart';
 library;
+
+// Used for the `params` import in the docs!
+import 'params.dart' as params;
 
 // Package re-exports
 export 'package:google_cloud_firestore/google_cloud_firestore.dart'

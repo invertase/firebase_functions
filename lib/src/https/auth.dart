@@ -20,7 +20,6 @@ import 'dart:convert';
 import 'package:dart_firebase_admin/app_check.dart';
 import 'package:dart_firebase_admin/auth.dart';
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:shelf/shelf.dart';
 
 import 'callable.dart';
 
@@ -60,10 +59,10 @@ final _jwtRegex = RegExp(
 ///
 /// Returns a tuple of (TokenStatus, AuthData?).
 Future<(TokenStatus, AuthData?)> extractAuthToken(
-  Request request, {
+  Map<String, String> headers, {
   Auth? auth,
 }) async {
-  final authorization = request.headers['authorization'];
+  final authorization = headers['authorization'];
   if (authorization == null || authorization.isEmpty) {
     return (TokenStatus.missing, null);
   }
@@ -134,10 +133,10 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
 ///
 /// Returns a tuple of (TokenStatus, AppCheckData?).
 Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
-  Request request, {
+  Map<String, String> headers, {
   AppCheck? appCheck,
 }) async {
-  final appCheckToken = request.headers['x-firebase-appcheck'];
+  final appCheckToken = headers['x-firebase-appcheck'];
   if (appCheckToken == null || appCheckToken.isEmpty) {
     return (TokenStatus.missing, null);
   }
@@ -182,14 +181,14 @@ Future<
     AppCheckData? appCheckData,
   })
 >
-checkTokens(Request request, {FirebaseApp? adminApp}) async {
+checkTokens(Map<String, String> headers, {FirebaseApp? adminApp}) async {
   final (authStatus, authData) = await extractAuthToken(
-    request,
+    headers,
     auth: adminApp?.auth(),
   );
 
   final (appStatus, appCheckData) = await extractAppCheckToken(
-    request,
+    headers,
     appCheck: adminApp?.appCheck(),
   );
 
