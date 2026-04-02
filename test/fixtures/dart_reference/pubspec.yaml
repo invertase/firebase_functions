@@ -19,7 +19,7 @@ publish_to: none
 resolution: workspace
 
 environment:
-  sdk: ^3.7.0
+  sdk: ^3.9.0
 
 dependencies:
   firebase_functions: any
