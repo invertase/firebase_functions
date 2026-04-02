@@ -214,12 +214,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Checkout custom firebase-tools
-        uses: actions/checkout@v4
-        with:
-          repository: invertase/firebase-tools
-          ref: '@invertase/dart'
-          path: custom-firebase-tools
 
       - name: Setup Dart SDK
         uses: dart-lang/setup-dart@v1
@@ -237,9 +231,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Link custom firebase-tools
-        working-directory: custom-firebase-tools
-        run: npm i && npm link
+      - name: Install firebase-tools
+        run: npm install -g firebase-tools
 
       - name: Verify Firebase CLI
         run: firebase --version
