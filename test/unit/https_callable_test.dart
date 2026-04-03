@@ -399,6 +399,36 @@ void main() {
       // Stream should not have been consumed
       expect(streamCompleted, isFalse);
     });
+
+    test('heartbeat sends ping when idle', () async {
+      final response = CallableResponse<String>(
+        acceptsStreaming: true,
+        heartbeatSeconds: 1,
+      );
+      response.initializeStreaming();
+
+      final stream = response.streamingResponse!.read();
+
+      // Wait for 1.5 seconds to ensure heartbeat fires
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+
+      final events = await stream.take(1).toList();
+      expect(events.first, utf8.encode(': ping\n\n'));
+
+      unawaited(response.closeStream());
+    });
+
+    test('client disconnect aborts stream', () async {
+      final response = CallableResponse<String>(acceptsStreaming: true);
+      response.initializeStreaming();
+
+      final stream = response.streamingResponse!.read();
+      final subscription = stream.listen((_) {});
+
+      await subscription.cancel();
+
+      expect(response.aborted, isTrue);
+    });
   });
 
   group('decode', () {
