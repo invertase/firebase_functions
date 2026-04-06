@@ -290,9 +290,10 @@ void main() {
           expect(response.headers['content-type'], 'text/event-stream');
 
           final body = await response.readAsString();
-          expect(body, startsWith('data: {'));
-          expect(body, contains('"status":"INVALID_ARGUMENT"'));
-          expect(body, contains('"message":"Invalid data"'));
+          final jsonStr = body.substring('data: '.length).trim();
+          expect(jsonDecode(jsonStr), {
+            'error': {'status': 'INVALID_ARGUMENT', 'message': 'Invalid data'},
+          });
         });
 
         test(
@@ -315,9 +316,13 @@ void main() {
             expect(response.headers['content-type'], 'text/event-stream');
 
             final body = await response.readAsString();
-            expect(body, startsWith('data: {'));
-            expect(body, contains('"status":"INTERNAL"'));
-            expect(body, contains('"message":"An unexpected error occurred."'));
+            final jsonStr = body.substring('data: '.length).trim();
+            expect(jsonDecode(jsonStr), {
+              'error': {
+                'status': 'INTERNAL',
+                'message': 'An unexpected error occurred.',
+              },
+            });
           },
         );
 
@@ -339,8 +344,8 @@ void main() {
           expect(response.headers['content-type'], 'text/event-stream');
 
           final body = await response.readAsString();
-          expect(body, startsWith('data: {'));
-          expect(body, contains('"result":"success"'));
+          final jsonStr = body.substring('data: '.length).trim();
+          expect(jsonDecode(jsonStr), {'result': 'success'});
         });
 
         test('catches error emitted by stream and returns SSE error', () async {
@@ -367,9 +372,26 @@ void main() {
 
           expect(response.statusCode, 200);
           final body = await response.readAsString();
-          expect(body, contains('"result":"part 1"'));
-          expect(body, contains('"status":"INVALID_ARGUMENT"'));
-          expect(body, contains('"message":"Invalid part 2"'));
+          final events = body
+              .split('\n\n')
+              .where((e) => e.trim().isNotEmpty)
+              .toList();
+          expect(events.length, 2);
+          final decodedEvents = events
+              .map((e) => jsonDecode(e.substring('data: '.length)))
+              .toList();
+          expect(decodedEvents, contains(equals({'result': 'part 1'})));
+          expect(
+            decodedEvents,
+            contains(
+              equals({
+                'error': {
+                  'status': 'INVALID_ARGUMENT',
+                  'message': 'Invalid part 2',
+                },
+              }),
+            ),
+          );
         });
 
         test(
@@ -394,9 +416,17 @@ void main() {
             expect(response.statusCode, 200);
 
             final body = await response.readAsString();
-            expect(body, contains('"result":"item 1"'));
-            expect(body, contains('"result":"item 2"'));
-            expect(body, contains('"result":"done"'));
+            final events = body
+                .split('\n\n')
+                .where((e) => e.trim().isNotEmpty)
+                .toList();
+            expect(events.length, 3);
+            final decodedEvents = events
+                .map((e) => jsonDecode(e.substring('data: '.length)))
+                .toList();
+            expect(decodedEvents, contains(equals({'result': 'item 1'})));
+            expect(decodedEvents, contains(equals({'result': 'item 2'})));
+            expect(decodedEvents, contains(equals({'result': 'done'})));
           },
         );
       });
