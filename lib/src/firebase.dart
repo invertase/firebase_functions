@@ -15,7 +15,6 @@
 import 'dart:async';
 
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:google_cloud_firestore/google_cloud_firestore.dart' as gfs;
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
@@ -49,18 +48,10 @@ class Firebase {
       ),
     );
 
-    return Firebase._(
-      adminApp: adminApp,
-      firestoreAdmin: adminApp.firestore(),
-      env: env,
-    );
+    return Firebase._(adminApp: adminApp, env: env);
   }
 
-  Firebase._({
-    required this.adminApp,
-    required this.firestoreAdmin,
-    required FirebaseEnv env,
-  }) : _env = env;
+  Firebase._({required this.adminApp, required FirebaseEnv env}) : _env = env;
 
   final FirebaseEnv _env;
 
@@ -69,11 +60,6 @@ class Firebase {
   /// This app represents the server-side SDK and has elevated privileges
   /// corresponding to the environment's credentials.
   final FirebaseApp adminApp;
-
-  /// The Firestore admin client instance.
-  ///
-  /// Provides elevated server-side access to the Firestore database.
-  final gfs.Firestore firestoreAdmin;
 
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
