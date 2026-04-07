@@ -44,7 +44,7 @@ void main() {
     late HttpsNamespace https;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
       https = HttpsNamespace(firebase);
     });
 

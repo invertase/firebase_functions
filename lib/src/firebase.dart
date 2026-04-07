@@ -37,20 +37,6 @@ import 'test_lab/test_lab_namespace.dart';
 ///
 /// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
-  factory Firebase() {
-    final env = FirebaseEnv();
-
-    // Initialize Admin SDK
-    final adminApp = FirebaseApp.initializeApp(
-      options: AppOptions(
-        credential: Credential.fromApplicationDefaultCredentials(),
-        projectId: env.projectId,
-      ),
-    );
-
-    return Firebase._(adminApp: adminApp, env: env);
-  }
-
   Firebase._({required this.adminApp, required FirebaseEnv env}) : _env = env;
 
   final FirebaseEnv _env;
@@ -244,4 +230,19 @@ abstract class FunctionsNamespace {
 @internal
 extension FirebaseInternal on Firebase {
   FirebaseEnv get $env => _env;
+}
+
+@internal
+Firebase createFirebaseInternal() {
+  final env = FirebaseEnv();
+
+  // Initialize Admin SDK
+  final adminApp = FirebaseApp.initializeApp(
+    options: AppOptions(
+      credential: Credential.fromApplicationDefaultCredentials(),
+      projectId: env.projectId,
+    ),
+  );
+
+  return Firebase._(adminApp: adminApp, env: env);
 }

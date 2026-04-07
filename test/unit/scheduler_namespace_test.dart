@@ -40,7 +40,7 @@ void main() {
     late SchedulerNamespace scheduler;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
       scheduler = SchedulerNamespace(firebase);
     });
 
