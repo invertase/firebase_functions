@@ -118,8 +118,7 @@ These enable the firebase-functions HTTP endpoint for manifest extraction.
 Add to README.md:
 
 ```markdown
-[![Tests](https://github.com/invertase/firebase-functions-dart/actions/workflows/test.yml/badge.svg)](https://github.com/invertase/firebase-functions-dart/actions/workflows/test.yml)
-[![PR Checks](https://github.com/invertase/firebase-functions-dart/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/invertase/firebase-functions-dart/actions/workflows/pr-checks.yml)
+[![Tests](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml/badge.svg)](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml)
 ```
 
 ## Debugging Failed Workflows
