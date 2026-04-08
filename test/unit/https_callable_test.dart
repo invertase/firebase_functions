@@ -402,10 +402,7 @@ void main() {
       // The second data item should not be sent because the stream should close on error.
       expect(decoded.length, 2);
       expect(decoded[0], 'data: {"message":1}\n\n');
-      expect(
-        decoded[1],
-        contains('"status":"INTERNAL"'),
-      );
+      expect(decoded[1], contains('"status":"INTERNAL"'));
     });
 
     test('stream method does nothing when not accepting streaming', () async {
