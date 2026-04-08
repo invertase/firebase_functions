@@ -1,6 +1,6 @@
 ---
 name: "⚠️ Report a Bug"
-about: Think you found a bug in the firebase_functions package for Dart? Report it here. Please do not use this form if your function is deployed successfully but not working as you expected.
+about: Report a bug in the firebase_functions package for Dart. For production issues or help with your own function's logic, please contact Firebase Support first.
 title: ""
 labels: ""
 assignees: ""
