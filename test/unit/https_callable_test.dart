@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:async' show unawaited;
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -379,6 +379,33 @@ void main() {
 
       // Clean up
       response.clearHeartbeat();
+    });
+
+    test('stream method stops forwarding after error', () async {
+      final response = CallableResponse<int>(acceptsStreaming: true);
+      response.initializeStreaming();
+
+      final controller = StreamController<CallableResult<int>>();
+      response.stream(controller.stream);
+
+      final stream = response.streamingResponse!.read();
+
+      controller.add(CallableResult(1));
+      controller.addError(Exception('test error'));
+      controller.add(CallableResult(2));
+      unawaited(controller.close());
+
+      final events = await stream.toList();
+      final decoded = events.map((e) => utf8.decode(e)).toList();
+
+      // We expect only 2 events: the first data and the error.
+      // The second data item should not be sent because the stream should close on error.
+      expect(decoded.length, 2);
+      expect(decoded[0], 'data: {"message":1}\n\n');
+      expect(
+        decoded[1],
+        contains('"status":"INTERNAL"'),
+      );
     });
 
     test('stream method does nothing when not accepting streaming', () async {

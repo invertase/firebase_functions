@@ -270,11 +270,12 @@ class CallableResponse<T extends Object> {
         } else {
           writeSSE(InternalError().toErrorResponse());
         }
+        unawaited(closeStream());
       },
       onDone: () async {
         await closeStream();
       },
-      cancelOnError: false,
+      cancelOnError: true,
     );
   }
 
