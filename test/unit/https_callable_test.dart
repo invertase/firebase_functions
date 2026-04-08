@@ -288,22 +288,20 @@ void main() {
       expect(success, isFalse);
     });
 
-    test('sendChunk sends SSE formatted data', () async {
+    test('sendChunk sends SSE formatted data with message key', () async {
       final response = CallableResponse<String>(acceptsStreaming: true);
       response.initializeStreaming();
+
+      final stream = response.streamingResponse!.read();
 
       // Send a chunk - should succeed
       final success = await response.sendChunk('hello');
       expect(success, isTrue);
 
-      // The streamingResponse should have correct headers
-      expect(
-        response.streamingResponse!.headers['Content-Type'],
-        'text/event-stream',
-      );
+      final events = await stream.take(1).toList();
+      expect(utf8.decode(events.first), 'data: {"message":"hello"}\n\n');
 
-      // Clean up without awaiting (since no consumer)
-      response.clearHeartbeat();
+      unawaited(response.closeStream());
     });
 
     test('writeSSE sends raw SSE data', () {

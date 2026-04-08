@@ -380,7 +380,7 @@ void main() {
           final decodedEvents = events
               .map((e) => jsonDecode(e.substring('data: '.length)))
               .toList();
-          expect(decodedEvents, contains(equals({'result': 'part 1'})));
+          expect(decodedEvents, contains(equals({'message': 'part 1'})));
           expect(
             decodedEvents,
             contains(
@@ -424,8 +424,8 @@ void main() {
             final decodedEvents = events
                 .map((e) => jsonDecode(e.substring('data: '.length)))
                 .toList();
-            expect(decodedEvents, contains(equals({'result': 'item 1'})));
-            expect(decodedEvents, contains(equals({'result': 'item 2'})));
+            expect(decodedEvents, contains(equals({'message': 'item 1'})));
+            expect(decodedEvents, contains(equals({'message': 'item 2'})));
             expect(decodedEvents, contains(equals({'result': 'done'})));
           },
         );

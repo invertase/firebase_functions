@@ -292,7 +292,7 @@ class CallableResponse<T extends Object> {
     }
 
     try {
-      _streamController!.add(_encodeSSE({'result': chunk}));
+      _streamController!.add(_encodeSSE({'message': chunk}));
 
       // Reset heartbeat timer after successful write
       if (heartbeatSeconds != null && heartbeatSeconds! > 0) {
