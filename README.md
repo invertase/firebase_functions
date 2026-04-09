@@ -11,7 +11,7 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 
 | Trigger Type | Status | Functions |
 |-------------|--------|-----------|
-| **HTTPS** | ✅ Production | `onRequest`, `onCall`, `onCallWithData` |
+| **HTTPS** | ✅ Production | `onRequest`, `onCall`, `onCallWithData` [^1] |
 | **Firestore** | ⚠️ Emulator only | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ⚠️ Emulator only | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ⚠️ Emulator only | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
@@ -851,3 +851,7 @@ See [Testing Guide](test/snapshots/README.md) for more details.
 ## License
 
 [Apache 2.0](LICENSE)
+
+[^1]: When invoking functions defined with `onCall` and `onCallWithData` from
+    a client SDK, you must use `httpsCallableFromUrl`. The standard name-based
+    `httpsCallable` API is not supported for functions written in Dart.
