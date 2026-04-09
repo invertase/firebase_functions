@@ -756,9 +756,8 @@ void main(List<String> args) async {
       (request) async => Response.ok('Options via local variable'),
     );
 
-    // Options declared in a separate file — the builder cannot resolve these
-    // because _variableToOptionsExpr is scoped per-file. This function will
-    // fall back to the default region (us-central1).
+    // Options declared in a separate file — the builder can now resolve these
+    // using the shared options map collected in the first pass.
     firebase.https.onRequest(
       name: 'httpsCrossFileOptions',
       options: crossFileOpts,
