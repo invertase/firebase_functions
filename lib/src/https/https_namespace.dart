@@ -278,7 +278,9 @@ class HttpsNamespace extends FunctionsNamespace {
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         final finalResult = {'result': extractResultData(result)};
         callableResponse.writeSSE(finalResult);
-        await callableResponse.closeStream();
+        if (!callableResponse.isUsingResponseStream) {
+          unawaited(callableResponse.closeStream());
+        }
         return callableResponse.streamingResponse!;
       }
 
@@ -288,7 +290,7 @@ class HttpsNamespace extends FunctionsNamespace {
       // Handle HttpsError - use SSE format if streaming
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         callableResponse.writeSSE(e.toErrorResponse());
-        await callableResponse.closeStream();
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
@@ -299,13 +301,11 @@ class HttpsNamespace extends FunctionsNamespace {
 
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         callableResponse.writeSSE(error.toErrorResponse());
-        await callableResponse.closeStream();
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
       return error.toShelfResponse();
-    } finally {
-      callableResponse.clearHeartbeat();
     }
   }
 }

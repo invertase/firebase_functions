@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import 'dart:async' show unawaited;
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -288,22 +288,20 @@ void main() {
       expect(success, isFalse);
     });
 
-    test('sendChunk sends SSE formatted data', () async {
+    test('sendChunk sends SSE formatted data with message key', () async {
       final response = CallableResponse<String>(acceptsStreaming: true);
       response.initializeStreaming();
+
+      final stream = response.streamingResponse!.read();
 
       // Send a chunk - should succeed
       final success = await response.sendChunk('hello');
       expect(success, isTrue);
 
-      // The streamingResponse should have correct headers
-      expect(
-        response.streamingResponse!.headers['Content-Type'],
-        'text/event-stream',
-      );
+      final events = await stream.take(1).toList();
+      expect(utf8.decode(events.first), 'data: {"message":"hello"}\n\n');
 
-      // Clean up without awaiting (since no consumer)
-      response.clearHeartbeat();
+      unawaited(response.closeStream());
     });
 
     test('writeSSE sends raw SSE data', () {
@@ -383,6 +381,30 @@ void main() {
       response.clearHeartbeat();
     });
 
+    test('stream method stops forwarding after error', () async {
+      final response = CallableResponse<int>(acceptsStreaming: true);
+      response.initializeStreaming();
+
+      final controller = StreamController<CallableResult<int>>();
+      response.stream(controller.stream);
+
+      final stream = response.streamingResponse!.read();
+
+      controller.add(CallableResult(1));
+      controller.addError(Exception('test error'));
+      controller.add(CallableResult(2));
+      unawaited(controller.close());
+
+      final events = await stream.toList();
+      final decoded = events.map((e) => utf8.decode(e)).toList();
+
+      // We expect only 2 events: the first data and the error.
+      // The second data item should not be sent because the stream should close on error.
+      expect(decoded.length, 2);
+      expect(decoded[0], 'data: {"message":1}\n\n');
+      expect(decoded[1], contains('"status":"INTERNAL"'));
+    });
+
     test('stream method does nothing when not accepting streaming', () async {
       final response = CallableResponse<int>(acceptsStreaming: false);
 
@@ -398,6 +420,36 @@ void main() {
 
       // Stream should not have been consumed
       expect(streamCompleted, isFalse);
+    });
+
+    test('heartbeat sends ping when idle', () async {
+      final response = CallableResponse<String>(
+        acceptsStreaming: true,
+        heartbeatSeconds: 1,
+      );
+      response.initializeStreaming();
+
+      final stream = response.streamingResponse!.read();
+
+      // Wait for 1.5 seconds to ensure heartbeat fires
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+
+      final events = await stream.take(1).toList();
+      expect(events.first, utf8.encode(': ping\n\n'));
+
+      unawaited(response.closeStream());
+    });
+
+    test('client disconnect aborts stream', () async {
+      final response = CallableResponse<String>(acceptsStreaming: true);
+      response.initializeStreaming();
+
+      final stream = response.streamingResponse!.read();
+      final subscription = stream.listen((_) {});
+
+      await subscription.cancel();
+
+      expect(response.aborted, isTrue);
     });
   });
 
