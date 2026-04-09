@@ -51,31 +51,33 @@ class _SpecBuilder implements Builder {
     final allParams = <String, ParamSpec>{};
     final allEndpoints = <String, EndpointSpec>{};
 
-    // Process each Dart file
-    for (final asset in assets) {
-      // Only process files in this package
-      if (asset.package != buildStep.inputId.package) continue;
+    // Pass 1: collect all top-level options variable declarations across every
+    // file into a shared map, and cache each parsed AST for reuse in pass 2.
+    // This enables cross-file resolution — e.g. options declared in
+    // shared_options.dart can be referenced in server.dart.
+    final sharedOptionsVars = <String, InstanceCreationExpression>{};
+    final astCache = <AssetId, CompilationUnit>{};
 
-      // Try to get the library (skip part files)
+    for (final asset in assets) {
+      if (asset.package != buildStep.inputId.package) continue;
       LibraryElement library;
       try {
         library = await resolver.libraryFor(asset, allowSyntaxErrors: true);
       } catch (e) {
-        // Likely a part file, skip it
         continue;
       }
-
-      // Get the resolved AST for this library using the first fragment
-      // We need resolved types for TypeChecker to work properly
       final fragment = library.firstFragment;
-      final ast = await resolver.astNodeFor(fragment, resolve: true);
-      if (ast == null) continue;
+      final astNode = await resolver.astNodeFor(fragment, resolve: true);
+      if (astNode is! CompilationUnit) continue;
+      astCache[asset] = astNode;
+      astNode.accept(_OptionsVariableCollector(sharedOptionsVars));
+    }
 
-      // Visit the AST to find function declarations
-      final visitor = _FirebaseFunctionsVisitor();
-      ast.accept(visitor);
-
-      // Collect discovered functions and parameters
+    // Pass 2: visit each file with the shared options map so that variable
+    // references to options declared in other files can be resolved.
+    for (final entry in astCache.entries) {
+      final visitor = _FirebaseFunctionsVisitor(sharedOptionsVars);
+      entry.value.accept(visitor);
       allParams.addAll(visitor.params);
       allEndpoints.addAll(visitor.endpoints);
     }
@@ -109,9 +111,34 @@ class _Namespace {
   bool matches(String methodName) => methodNames.contains(methodName);
 }
 
+/// Lightweight AST visitor that collects top-level variable declarations whose
+/// initializers are [InstanceCreationExpression]s into [variableToOptionsExpr].
+/// Used in a pre-pass over all files to enable cross-file options resolution.
+class _OptionsVariableCollector extends RecursiveAstVisitor<void> {
+  _OptionsVariableCollector(this.variableToOptionsExpr);
+
+  final Map<String, InstanceCreationExpression> variableToOptionsExpr;
+
+  @override
+  void visitTopLevelVariableDeclaration(TopLevelVariableDeclaration node) {
+    for (final variable in node.variables.variables) {
+      final initializer = variable.initializer;
+      if (initializer is InstanceCreationExpression) {
+        variableToOptionsExpr[variable.name.lexeme] = initializer;
+      }
+    }
+    super.visitTopLevelVariableDeclaration(node);
+  }
+}
+
 /// AST visitor that discovers Firebase Functions declarations.
 class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
-  _FirebaseFunctionsVisitor() {
+  _FirebaseFunctionsVisitor([
+    Map<String, InstanceCreationExpression>? sharedOptionsVars,
+  ]) {
+    if (sharedOptionsVars != null) {
+      _variableToOptionsExpr.addAll(sharedOptionsVars);
+    }
     namespaces = <_Namespace>[
       _Namespace(
         _extractHttpsFunction,

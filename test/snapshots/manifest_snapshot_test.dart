@@ -320,14 +320,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(50),
+        equals(51),
         reason:
-            'Should discover 50 functions (5 Callable + 4 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options + 2 Variable Options)',
+            'Should discover 51 functions (5 Callable + 4 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options + 2 Variable Options + 1 Cross-file Options)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(50),
-        reason: 'Node.js reference should also have 50 endpoints',
+        equals(51),
+        reason: 'Node.js reference should also have 51 endpoints',
       );
 
       // Verify both manifests have the same endpoints (normalized via
@@ -1913,6 +1913,19 @@ void main() {
 
       expect(dartFunc['availableMemoryMb'], equals(2048));
       expect(nodejsFunc['availableMemoryMb'], equals(2048));
+    });
+
+    test('should resolve options from cross-file variable reference', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsCrossFileOptions')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsCrossFileOptions')!;
+
+      final dartRegion = dartFunc['region'] as List;
+      final nodejsRegion = nodejsFunc['region'] as List;
+      expect(dartRegion, contains('europe-west2'));
+      expect(nodejsRegion, contains('europe-west2'));
+
+      expect(dartFunc['availableMemoryMb'], equals(512));
+      expect(nodejsFunc['availableMemoryMb'], equals(512));
     });
   });
 }
