@@ -236,6 +236,12 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   /// e.g., 'minInstances' -> 'MIN_INSTANCES'
   final Map<String, String> _variableToParamName = {};
 
+  /// Maps variable names to their InstanceCreationExpression initializers.
+  /// Used to resolve options passed via variable references, e.g.:
+  ///   const opts = HttpsOptions(region: Region(SupportedRegion.europeWest3));
+  ///   firebase.https.onRequest(name: 'fn', options: opts, ...);
+  final Map<String, InstanceCreationExpression> _variableToOptionsExpr = {};
+
   @override
   void visitMethodInvocation(MethodInvocation node) {
     super.visitMethodInvocation(node);
@@ -274,6 +280,38 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     }
 
     super.visitFunctionExpressionInvocation(node);
+  }
+
+  @override
+  void visitCompilationUnit(CompilationUnit node) {
+    // Pre-pass: collect all top-level variable declarations so they're
+    // available when resolving variable references in function declarations,
+    // regardless of declaration order in the source file.
+    for (final declaration in node.declarations) {
+      if (declaration is TopLevelVariableDeclaration) {
+        for (final variable in declaration.variables.variables) {
+          final initializer = variable.initializer;
+          if (initializer is InstanceCreationExpression) {
+            _variableToOptionsExpr[variable.name.lexeme] = initializer;
+          }
+        }
+      }
+    }
+    super.visitCompilationUnit(node);
+  }
+
+  @override
+  void visitVariableDeclarationStatement(VariableDeclarationStatement node) {
+    // Track local variable declarations with InstanceCreationExpression
+    // initializers (e.g., `const opts = HttpsOptions(...)` inside a function).
+    for (final variable in node.variables.variables) {
+      final initializer = variable.initializer;
+      if (initializer is InstanceCreationExpression) {
+        _variableToOptionsExpr[variable.name.lexeme] = initializer;
+      }
+    }
+
+    super.visitVariableDeclarationStatement(node);
   }
 
   @override
@@ -361,7 +399,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: triggerType,
-      options: node.findOptionsArg(),
+      options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
   }
@@ -380,7 +418,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name: functionName,
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
-      options: node.findOptionsArg(),
+      options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
   }
@@ -392,7 +430,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (documentPath == null) return;
 
     // Extract options if present (for database and namespace)
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     String? database;
     String? namespace;
 
@@ -429,7 +467,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (refPath == null) return;
 
     // Extract options if present (for instance)
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     String? instance;
 
     if (optionsArg != null) {
@@ -467,7 +505,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (alertTypeValue == null) return;
 
     // Extract appId from options if present
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     String? appId;
 
     if (optionsArg != null) {
@@ -564,7 +602,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'remoteConfig',
-      options: node.findOptionsArg(),
+      options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
   }
@@ -584,7 +622,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'storage',
       storageBucket: bucketName,
       storageEventType: methodName,
-      options: node.findOptionsArg(),
+      options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
   }
@@ -592,7 +630,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   /// Helper to extract alert endpoint from a method invocation.
   void _extractAlertEndpoint(MethodInvocation node, String alertType) {
     // Extract appId from options if present
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     String? appId;
 
     if (optionsArg != null) {
@@ -629,7 +667,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (eventType == null) return;
 
     // Extract options if present
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     bool? idToken;
     bool? accessToken;
     bool? refreshToken;
@@ -674,7 +712,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final functionName = 'onSchedule_$sanitized';
 
     // Extract options if present
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     String? timeZone;
     Map<String, dynamic>? retryConfig;
 
@@ -701,7 +739,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     if (functionName == null) return;
 
     // Extract options if present
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     Map<String, dynamic>? retryConfig;
     Map<String, dynamic>? rateLimits;
 
@@ -731,7 +769,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final functionName = 'onCustomEventPublished_$sanitizedType';
 
     // Extract options if present (for channel and filters)
-    final optionsArg = node.findOptionsArg();
+    final optionsArg = node.findOptionsArg(_variableToOptionsExpr);
     String? channel;
     Map<String, String>? filters;
 
@@ -760,7 +798,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'testLab',
-      options: node.findOptionsArg(),
+      options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
   }
@@ -1072,9 +1110,20 @@ extension on MethodInvocation {
   String? extractLiteralForArg(String name) =>
       _extractStringLiteral(findNamedArg(name));
 
-  InstanceCreationExpression? findOptionsArg() {
+  InstanceCreationExpression? findOptionsArg([
+    Map<String, InstanceCreationExpression> variableToOptionsExpr = const {},
+  ]) {
     final options = findNamedArg('options');
-    return options is InstanceCreationExpression ? options : null;
+    if (options is InstanceCreationExpression) return options;
+
+    // Resolve variable references, e.g., `options: opts` where
+    // `const opts = HttpsOptions(...)` was declared earlier.
+    if (options is SimpleIdentifier) {
+      final tracked = variableToOptionsExpr[options.name];
+      if (tracked != null) return tracked;
+    }
+
+    return null;
   }
 }
 

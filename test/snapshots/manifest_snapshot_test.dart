@@ -320,14 +320,14 @@ void main() {
 
       expect(
         dartEndpoints.keys.length,
-        equals(48),
+        equals(50),
         reason:
-            'Should discover 48 functions (5 Callable + 4 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options)',
+            'Should discover 50 functions (5 Callable + 4 HTTPS + 1 Pub/Sub + 5 Firestore + 4 Firestore WithAuthContext + 5 Database + 3 Alerts + 4 Identity + 1 Remote Config + 4 Storage + 2 Eventarc + 2 Scheduler + 2 Tasks + 1 Test Lab + 5 Options + 2 Variable Options)',
       );
       expect(
         nodejsEndpoints.keys.length,
-        equals(48),
-        reason: 'Node.js reference should also have 48 endpoints',
+        equals(50),
+        reason: 'Node.js reference should also have 50 endpoints',
       );
 
       // Verify both manifests have the same endpoints (normalized via
@@ -1882,6 +1882,37 @@ void main() {
 
       expect(dartRegion, contains('us-west1'));
       expect(nodejsRegion, contains('us-west1'));
+    });
+
+    test('should resolve options from top-level variable reference', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsVarOptions')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsVarOptions')!;
+
+      // Region should be europe-west3 (not us-central1 default)
+      final dartRegion = dartFunc['region'] as List;
+      final nodejsRegion = nodejsFunc['region'] as List;
+      expect(dartRegion, contains('europe-west3'));
+      expect(nodejsRegion, contains('europe-west3'));
+
+      expect(dartFunc['availableMemoryMb'], equals(1024));
+      expect(nodejsFunc['availableMemoryMb'], equals(1024));
+
+      expect(dartFunc['timeoutSeconds'], equals(120));
+      expect(nodejsFunc['timeoutSeconds'], equals(120));
+    });
+
+    test('should resolve options from local variable reference', () {
+      final dartFunc = _getEndpoint(dartManifest, 'httpsLocalVarOptions')!;
+      final nodejsFunc = _getEndpoint(nodejsManifest, 'httpsLocalVarOptions')!;
+
+      // Region should be europe-west1 (not us-central1 default)
+      final dartRegion = dartFunc['region'] as List;
+      final nodejsRegion = nodejsFunc['region'] as List;
+      expect(dartRegion, contains('europe-west1'));
+      expect(nodejsRegion, contains('europe-west1'));
+
+      expect(dartFunc['availableMemoryMb'], equals(2048));
+      expect(nodejsFunc['availableMemoryMb'], equals(2048));
     });
   });
 }
