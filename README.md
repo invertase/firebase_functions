@@ -32,16 +32,16 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
-- [HTTPS Functions](#https-functions)
-- [Pub/Sub Triggers](#pubsub-triggers)
-- [Firestore Triggers](#firestore-triggers)
-- [Realtime Database Triggers](#realtime-database-triggers)
-- [Storage Triggers](#storage-triggers)
-- [Scheduler Triggers](#scheduler-triggers)
-- [Firebase Alerts](#firebase-alerts)
-- [Identity Platform (Auth Blocking)](#identity-platform-auth-blocking)
-- [Remote Config](#remote-config)
-- [Test Lab](#test-lab)
+  - [HTTPS Functions](#https-functions)
+  - [Pub/Sub Triggers](#pubsub-triggers)
+  - [Firestore Triggers](#firestore-triggers)
+  - [Realtime Database Triggers](#realtime-database-triggers)
+  - [Storage Triggers](#storage-triggers)
+  - [Scheduler Triggers](#scheduler-triggers)
+  - [Firebase Alerts](#firebase-alerts)
+  - [Identity Platform (Auth Blocking)](#identity-platform-auth-blocking)
+  - [Remote Config](#remote-config)
+  - [Test Lab](#test-lab)
 - [Parameters & Configuration](#parameters--configuration)
 - [Project Configuration](#project-configuration)
 - [Development](#development)
@@ -850,4 +850,4 @@ See [Testing Guide](test/snapshots/README.md) for more details.
 
 ## License
 
-Apache 2.0
+[Apache 2.0](LICENSE)
