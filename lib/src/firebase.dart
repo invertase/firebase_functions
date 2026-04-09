@@ -15,7 +15,6 @@
 import 'dart:async';
 
 import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:google_cloud_firestore/google_cloud_firestore.dart' as gfs;
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
@@ -38,29 +37,7 @@ import 'test_lab/test_lab_namespace.dart';
 ///
 /// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
-  factory Firebase() {
-    final env = FirebaseEnv();
-
-    // Initialize Admin SDK
-    final adminApp = FirebaseApp.initializeApp(
-      options: AppOptions(
-        credential: Credential.fromApplicationDefaultCredentials(),
-        projectId: env.projectId,
-      ),
-    );
-
-    return Firebase._(
-      adminApp: adminApp,
-      firestoreAdmin: adminApp.firestore(),
-      env: env,
-    );
-  }
-
-  Firebase._({
-    required this.adminApp,
-    required this.firestoreAdmin,
-    required FirebaseEnv env,
-  }) : _env = env;
+  Firebase._({required this.adminApp, required FirebaseEnv env}) : _env = env;
 
   final FirebaseEnv _env;
 
@@ -69,11 +46,6 @@ class Firebase {
   /// This app represents the server-side SDK and has elevated privileges
   /// corresponding to the environment's credentials.
   final FirebaseApp adminApp;
-
-  /// The Firestore admin client instance.
-  ///
-  /// Provides elevated server-side access to the Firestore database.
-  final gfs.Firestore firestoreAdmin;
 
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
@@ -258,4 +230,19 @@ abstract class FunctionsNamespace {
 @internal
 extension FirebaseInternal on Firebase {
   FirebaseEnv get $env => _env;
+}
+
+@internal
+Firebase createFirebaseInternal() {
+  final env = FirebaseEnv();
+
+  // Initialize Admin SDK
+  final adminApp = FirebaseApp.initializeApp(
+    options: AppOptions(
+      credential: Credential.fromApplicationDefaultCredentials(),
+      projectId: env.projectId,
+    ),
+  );
+
+  return Firebase._(adminApp: adminApp, env: env);
 }

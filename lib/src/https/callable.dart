@@ -15,8 +15,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:shelf/shelf.dart';
+
+import '../logger/logger.dart';
+import 'error.dart';
 
 /// JSON decoder function type.
 typedef JsonDecoder<T extends Object?> = T Function(Map<String, dynamic>);
@@ -193,18 +197,30 @@ class CallableRequest<T extends Object?> {
 /// ```
 class CallableResponse<T extends Object> {
   CallableResponse({required this.acceptsStreaming, this.heartbeatSeconds});
+
+  static final _dataPrefix = utf8.encode('data: ');
+  static final _newlineSuffix = utf8.encode('\n\n');
+  static final _pingBytes = utf8.encode(': ping\n\n');
   final bool acceptsStreaming;
   final int? heartbeatSeconds;
 
-  StreamController<String>? _streamController;
+  StreamController<List<int>>? _streamController;
   Response? _streamingResponse;
   Timer? _heartbeatTimer;
   StreamSubscription<CallableResult<T>>? _streamSubscription;
   bool _aborted = false;
+  bool _isUsingResponseStream = false;
+
+  /// Whether [stream] was called to set up background streaming.
+  bool get isUsingResponseStream => _isUsingResponseStream;
 
   /// Initializes SSE streaming.
   void initializeStreaming() {
-    _streamController = StreamController<String>();
+    _streamController = StreamController<List<int>>(
+      onCancel: () {
+        abort();
+      },
+    );
     _streamingResponse = Response.ok(
       _streamController!.stream,
       headers: {
@@ -241,17 +257,25 @@ class CallableResponse<T extends Object> {
       return;
     }
 
+    _isUsingResponseStream = true;
+
     _streamSubscription = dataStream.listen(
       (result) {
         unawaited(sendChunk(result.data));
       },
       onError: (Object error) {
-        // Log error but don't close the stream - let handler complete
+        logger.error('Error in data stream', {'error': error.toString()});
+        if (error is HttpsError) {
+          writeSSE(error.toErrorResponse());
+        } else {
+          writeSSE(InternalError().toErrorResponse());
+        }
+        unawaited(closeStream());
       },
-      onDone: () {
-        // Stream completed naturally
+      onDone: () async {
+        await closeStream();
       },
-      cancelOnError: false,
+      cancelOnError: true,
     );
   }
 
@@ -269,8 +293,7 @@ class CallableResponse<T extends Object> {
     }
 
     try {
-      final formattedData = _encodeSSE({'message': chunk});
-      _streamController!.add(formattedData);
+      _streamController!.add(_encodeSSE({'message': chunk}));
 
       // Reset heartbeat timer after successful write
       if (heartbeatSeconds != null && heartbeatSeconds! > 0) {
@@ -295,6 +318,8 @@ class CallableResponse<T extends Object> {
   Future<void> closeStream() async {
     await _streamSubscription?.cancel();
     _streamSubscription = null;
+
+    clearHeartbeat();
 
     if (_streamController != null && !_streamController!.isClosed) {
       await _streamController!.close();
@@ -333,16 +358,20 @@ class CallableResponse<T extends Object> {
       if (!_aborted &&
           _streamController != null &&
           !_streamController!.isClosed) {
-        _streamController!.add(': ping\n\n');
+        _streamController!.add(_pingBytes);
         _scheduleHeartbeat();
       }
     });
   }
 
   /// Encodes data as SSE format.
-  String _encodeSSE(Map<String, dynamic> data) {
-    final encoded = jsonEncode(data);
-    return 'data: $encoded\n\n';
+  List<int> _encodeSSE(Map<String, dynamic> data) {
+    final jsonBytes = json.fuse(utf8).encode(data);
+    return (BytesBuilder(copy: false)
+          ..add(_dataPrefix)
+          ..add(jsonBytes)
+          ..add(_newlineSuffix))
+        .takeBytes();
   }
 }
 
