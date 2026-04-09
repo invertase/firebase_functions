@@ -15,9 +15,9 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 /// Options declared in a separate file to test cross-file variable resolution.
-/// The builder visits each file independently, so variables declared here
-/// will NOT be resolved when referenced in server.dart — the function will
-/// fall back to the default region (us-central1).
+/// Options declared in a separate file to test cross-file variable resolution.
+/// The builder now performs a pre-pass to collect these variables, allowing
+/// them to be resolved when referenced in other files like server.dart.
 const crossFileOpts = HttpsOptions(
   region: Region(SupportedRegion.europeWest2),
   memory: Memory(MemoryOption.mb512),
