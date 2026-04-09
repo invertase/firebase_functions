@@ -289,12 +289,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     // regardless of declaration order in the source file.
     for (final declaration in node.declarations) {
       if (declaration is TopLevelVariableDeclaration) {
-        for (final variable in declaration.variables.variables) {
-          final initializer = variable.initializer;
-          if (initializer is InstanceCreationExpression) {
-            _variableToOptionsExpr[variable.name.lexeme] = initializer;
-          }
-        }
+        _trackOptionsVariables(declaration.variables);
       }
     }
     super.visitCompilationUnit(node);
@@ -302,16 +297,21 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitVariableDeclarationStatement(VariableDeclarationStatement node) {
-    // Track local variable declarations with InstanceCreationExpression
-    // initializers (e.g., `const opts = HttpsOptions(...)` inside a function).
-    for (final variable in node.variables.variables) {
+    // Track local variable declarations (e.g., `const opts = HttpsOptions(...)`
+    // inside a function body).
+    _trackOptionsVariables(node.variables);
+    super.visitVariableDeclarationStatement(node);
+  }
+
+  /// Tracks variables whose initializers are [InstanceCreationExpression]s,
+  /// so they can be resolved when passed as options via variable reference.
+  void _trackOptionsVariables(VariableDeclarationList variables) {
+    for (final variable in variables.variables) {
       final initializer = variable.initializer;
       if (initializer is InstanceCreationExpression) {
         _variableToOptionsExpr[variable.name.lexeme] = initializer;
       }
     }
-
-    super.visitVariableDeclarationStatement(node);
   }
 
   @override
