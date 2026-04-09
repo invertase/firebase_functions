@@ -81,7 +81,7 @@ void main() {
     late RemoteConfigNamespace remoteConfig;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
       remoteConfig = RemoteConfigNamespace(firebase);
     });
 

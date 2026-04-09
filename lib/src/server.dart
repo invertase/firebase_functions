@@ -46,7 +46,7 @@ typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
 /// }
 /// ```
 Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
-  final firebase = Firebase();
+  final firebase = createFirebaseInternal();
   final env = firebase.$env;
   final projectId = env.projectId;
 
