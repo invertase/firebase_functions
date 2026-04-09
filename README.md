@@ -853,5 +853,6 @@ See [Testing Guide](test/snapshots/README.md) for more details.
 [Apache 2.0](LICENSE)
 
 [^1]: When invoking functions defined with `onCall` and `onCallWithData` from
-    a client SDK, you must use `httpsCallableFromUrl`. The standard name-based
-    `httpsCallable` API is not supported for functions written in Dart.
+    a client SDK, you must use the function's HTTPS URL. The standard name-based
+    lookup is not supported for functions written in Dart. For example, in the
+    Flutter `cloud_functions` package, use `httpsCallableFromUrl`.
