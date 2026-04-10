@@ -673,6 +673,18 @@ exports.httpsLocalVarOptions = onRequest(
   }
 );
 
+// Options declared in a separate file (cross-file reference)
+const crossFileOpts = {
+  region: "europe-west2",
+  memory: "512MiB",
+};
+exports.httpsCrossFileOptions = onRequest(
+  crossFileOpts,
+  (request, response) => {
+    response.send("Cross-file options");
+  }
+);
+
 // Task queue function with options
 exports.sendEmail = onTaskDispatched(
   {

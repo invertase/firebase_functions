@@ -15,6 +15,7 @@
 // ignore_for_file: experimental_member_use
 
 import 'package:firebase_functions/firebase_functions.dart';
+import 'shared_options.dart';
 
 // =============================================================================
 // Parameterized Configuration Examples
@@ -753,6 +754,14 @@ void main(List<String> args) async {
       name: 'httpsLocalVarOptions',
       options: localOpts,
       (request) async => Response.ok('Options via local variable'),
+    );
+
+    // Options declared in a separate file — the builder can now resolve these
+    // using the shared options map collected in the first pass.
+    firebase.https.onRequest(
+      name: 'httpsCrossFileOptions',
+      options: crossFileOpts,
+      (request) async => Response.ok('Cross-file options'),
     );
 
     print('Functions registered successfully!');
