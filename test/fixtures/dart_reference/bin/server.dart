@@ -733,9 +733,38 @@ void main(List<String> args) async {
       },
     );
 
+    // ==========================================================================
+    // Options via variable reference
+    // ==========================================================================
+
+    // Options assigned to a top-level const variable
+    firebase.https.onRequest(
+      name: 'httpsVarOptions',
+      options: httpsVarOpts,
+      (request) async => Response.ok('Options via variable'),
+    );
+
+    // Options assigned to a local const variable
+    const localOpts = HttpsOptions(
+      region: Region(SupportedRegion.europeWest1),
+      memory: Memory(MemoryOption.gb2),
+    );
+    firebase.https.onRequest(
+      name: 'httpsLocalVarOptions',
+      options: localOpts,
+      (request) async => Response.ok('Options via local variable'),
+    );
+
     print('Functions registered successfully!');
   });
 }
+
+/// Options assigned to a top-level const variable.
+const httpsVarOpts = HttpsOptions(
+  region: Region(SupportedRegion.europeWest3),
+  memory: Memory(MemoryOption.gb1),
+  timeoutSeconds: TimeoutSeconds(120),
+);
 
 /// Testing constant expression evaluation
 const optionsTopic = 'options-topic';

@@ -649,6 +649,30 @@ exports.onMessagePublished_optionstopic = onMessagePublished(
   }
 );
 
+// Options via variable reference
+const httpsVarOpts = {
+  region: "europe-west3",
+  memory: "1GiB",
+  timeoutSeconds: 120,
+};
+exports.httpsVarOptions = onRequest(
+  httpsVarOpts,
+  (request, response) => {
+    response.send("Options via variable");
+  }
+);
+
+const localOpts = {
+  region: "europe-west1",
+  memory: "2GiB",
+};
+exports.httpsLocalVarOptions = onRequest(
+  localOpts,
+  (request, response) => {
+    response.send("Options via local variable");
+  }
+);
+
 // Task queue function with options
 exports.sendEmail = onTaskDispatched(
   {

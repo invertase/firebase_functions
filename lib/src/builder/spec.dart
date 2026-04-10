@@ -195,13 +195,10 @@ class EndpointSpec {
       return null; // Reset means use default
     }
 
-    // Extract literal value: Memory(MemoryOption.mb256)
+    // Extract literal value: Memory(MemoryOption.mb256) or Memory(.mb256)
     final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle MemoryOption.mb256
-      final propertyName = firstArg.identifier.name;
-      return _memoryOptionToInt(propertyName);
-    }
+    final enumName = _extractEnumValueName(args.firstOrNull);
+    if (enumName != null) return _memoryOptionToInt(enumName);
 
     return null;
   }
@@ -257,13 +254,11 @@ class EndpointSpec {
       return _extractParamReference(expression);
     }
 
-    // Extract literal value: Region(SupportedRegion.usCentral1)
+    // Extract literal value: Region(SupportedRegion.usCentral1) or Region(.usCentral1)
     final args = expression.argumentList.arguments;
-
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle SupportedRegion.usCentral1
-      final propertyName = firstArg.identifier.name;
-      final regionString = _regionEnumToString(propertyName);
+    final enumName = _extractEnumValueName(args.firstOrNull);
+    if (enumName != null) {
+      final regionString = _regionEnumToString(enumName);
       return regionString != null ? [regionString] : null;
     }
 
@@ -378,10 +373,9 @@ class EndpointSpec {
     if (expression is! InstanceCreationExpression) return null;
 
     final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle VpcEgressSetting enum
-      final propertyName = firstArg.identifier.name;
-      return switch (propertyName) {
+    final enumName = _extractEnumValueName(args.firstOrNull);
+    if (enumName != null) {
+      return switch (enumName) {
         'privateRangesOnly' => 'PRIVATE_RANGES_ONLY',
         'allTraffic' => 'ALL_TRAFFIC',
         _ => null,
@@ -396,10 +390,9 @@ class EndpointSpec {
     if (expression is! InstanceCreationExpression) return null;
 
     final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final PrefixedIdentifier firstArg) {
-      // Handle IngressSetting enum
-      final propertyName = firstArg.identifier.name;
-      return switch (propertyName) {
+    final enumName = _extractEnumValueName(args.firstOrNull);
+    if (enumName != null) {
+      return switch (enumName) {
         'allowAll' => 'ALLOW_ALL',
         'allowInternalOnly' => 'ALLOW_INTERNAL_ONLY',
         'allowInternalAndGclb' => 'ALLOW_INTERNAL_AND_GCLB',
@@ -531,6 +524,16 @@ class EndpointSpec {
     IntegerLiteral() => expression.value,
     DoubleLiteral() => expression.value,
     BooleanLiteral() => expression.value,
+    _ => null,
+  };
+
+  /// Extracts an enum value name from an expression, handling both
+  /// fully-qualified (`SupportedRegion.europeWest3`) and shorthand
+  /// (`.europeWest3`) syntax.
+  String? _extractEnumValueName(Expression? expression) => switch (expression) {
+    PrefixedIdentifier() => expression.identifier.name,
+    SimpleIdentifier() => expression.name,
+    PropertyAccess() => expression.propertyName.name,
     _ => null,
   };
 }
