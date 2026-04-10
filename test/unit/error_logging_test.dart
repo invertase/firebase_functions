@@ -97,7 +97,7 @@ void main() {
     late HttpsNamespace https;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
       https = HttpsNamespace(firebase);
     });
 
@@ -156,7 +156,7 @@ void main() {
     late Firebase firebase;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
     });
 
     test('PubSub: unexpected error returns 500 without details', () async {

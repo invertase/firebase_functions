@@ -82,7 +82,7 @@ void main() {
     late StorageNamespace storage;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
       storage = StorageNamespace(firebase);
     });
 
