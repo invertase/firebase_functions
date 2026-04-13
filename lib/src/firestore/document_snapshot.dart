@@ -78,7 +78,7 @@ Map<String, dynamic> parseFirestoreFields(Map<String, dynamic> fields) {
 
 /// A lightweight document snapshot for emulator mode.
 ///
-/// This provides a similar interface to dart_firebase_admin's QueryDocumentSnapshot
+/// This provides a similar interface to firebase_admin_sdk's QueryDocumentSnapshot
 /// but works with data fetched from the Firestore emulator REST API.
 class EmulatorDocumentSnapshot {
   EmulatorDocumentSnapshot({

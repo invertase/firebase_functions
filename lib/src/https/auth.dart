@@ -17,9 +17,9 @@ library;
 
 import 'dart:convert';
 
-import 'package:dart_firebase_admin/app_check.dart';
-import 'package:dart_firebase_admin/auth.dart';
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:firebase_admin_sdk/app_check.dart';
+import 'package:firebase_admin_sdk/auth.dart';
+import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
 
 import 'callable.dart';
 

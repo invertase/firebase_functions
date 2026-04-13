@@ -14,7 +14,7 @@
 
 import 'dart:async';
 
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
+import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
