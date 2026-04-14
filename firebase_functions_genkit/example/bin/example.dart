@@ -31,7 +31,7 @@ void main(List<String> args) {
     firebase.https.onCallGenkit(
       name: name,
       flow: flow,
-      contextProvider: (context) => {'auth': context.auth?.token?['email']},
+      contextProvider: (request) => {'auth': request.auth?.token?['email']},
     );
   });
 }
