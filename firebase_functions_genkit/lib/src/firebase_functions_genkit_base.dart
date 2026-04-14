@@ -5,12 +5,21 @@ import 'package:genkit/genkit.dart';
 // ignore: experimental_member_use
 import 'package:meta/meta.dart' show mustBeConst;
 
+/// Extension on [HttpsNamespace] to provide a seamless integration with Genkit.
 extension GenkitExt on HttpsNamespace {
-  void onCallGenkit<Output extends Object, Schema, Init>({
+  /// Registers a Genkit [flow] as a Firebase callable function.
+  ///
+  /// Automatically handles streaming and non-streaming responses based on
+  /// [CallableRequest.acceptsStreaming].
+  ///
+  /// Use [contextProvider] to map properties from the Firebase
+  /// [CallableRequest] (such as authentication tokens) into the Genkit context.
+  void onCallGenkit<Output extends Object, Init>({
     // Must repeat the name
+    /// It's experimental as we can't semver package:meta
     // ignore: experimental_member_use
     @mustBeConst required String name,
-    required Flow<Object?, Output, Schema, Init> flow,
+    required Flow<Object?, Output, Output, Init> flow,
 
     /// It's experimental as we can't semver package:meta
     // ignore: experimental_member_use
@@ -19,7 +28,7 @@ extension GenkitExt on HttpsNamespace {
   }) {
     /// This is why we restate the name in the params above
     // ignore: non_const_argument_for_const_parameter
-    onCall(name: name, options: options, (request, response) async {
+    onCall<Output>(name: name, options: options, (request, response) async {
       if (request.acceptsStreaming) {
         final actionStream = flow.stream(
           request.data,
@@ -28,9 +37,11 @@ extension GenkitExt on HttpsNamespace {
         await actionStream.forEach((chunk) => response.sendChunk(chunk));
         return CallableResult(actionStream.result);
       } else {
-        return CallableResult(
-          await flow.run(request.data, context: contextProvider?.call(request)),
+        final run = await flow.run(
+          request.data,
+          context: contextProvider?.call(request),
         );
+        return CallableResult(run.result);
       }
     });
   }

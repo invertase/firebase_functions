@@ -5,21 +5,24 @@ repository: https://github.com/invertase/firebase-functions-dart
 
 publish_to: none
 
+workspace:
+  - example
+
 environment:
   sdk: ^3.10.0
 
 dependencies:
   firebase_functions:
-    path: ../
-  genkit:
     git:
-      url: https://github.com/genkit-ai/genkit-dart/
-      path: packages/genkit
+      url: https://github.com/firebase/firebase-functions-dart/
+  genkit: ^0.12.1
   meta: ^1.18.1
-
-dependency_overrides: 
-  analyzer: ^10.0.1
-  protobuf: ^6.0.0
 
 dev_dependencies:
   dart_flutter_team_lints: ^3.5.2
+
+dependency_overrides:
+  google_cloud_firestore:
+    git:
+      url: https://github.com/firebase/firebase-admin-dart/
+      path: packages/google_cloud_firestore

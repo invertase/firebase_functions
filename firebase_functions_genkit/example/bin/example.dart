@@ -2,7 +2,6 @@ import 'package:firebase_functions/firebase_functions.dart';
 import 'package:firebase_functions_genkit/firebase_functions_genkit.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_google_genai/genkit_google_genai.dart';
-import 'package:schemantic/schemantic.dart';
 
 const name = 'jokeTeller';
 
@@ -11,11 +10,12 @@ void main(List<String> args) {
   final ai = Genkit(plugins: [gemini]);
   final flow = ai.defineFlow(
     name: name,
-    inputSchema: stringSchema(),
-    outputSchema: stringSchema(),
-    streamSchema: stringSchema(),
+    inputSchema: .string(),
+    outputSchema: .string(),
+    streamSchema: .string(),
     fn: (jokeType, context) async {
       final prompt = 'Tell me a $jokeType joke.';
+
       /// gemini.model does not have a generic type
       // ignore: inference_failure_on_function_invocation
       final stream = ai.generateStream(
