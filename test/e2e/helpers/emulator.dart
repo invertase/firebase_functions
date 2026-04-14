@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -11,6 +25,7 @@ class EmulatorHelper {
     this.firestorePort = 8080,
     this.databasePort = 9000,
     this.authPort = 9099,
+    this.storagePort = 9199,
     this.startupTimeout = const Duration(seconds: 90),
   });
   Process? _process;
@@ -20,6 +35,7 @@ class EmulatorHelper {
   final int firestorePort;
   final int databasePort;
   final int authPort;
+  final int storagePort;
   final Duration startupTimeout;
 
   // Completer to signal when emulator is ready
@@ -54,15 +70,18 @@ class EmulatorHelper {
       [
         ...baseArgs,
         'emulators:start',
-        '--debug',
         '--only',
-        'functions,pubsub,firestore,database,auth',
+        'functions,pubsub,firestore,database,auth,storage',
         '--project',
         'demo-test',
         '--non-interactive',
       ],
       workingDirectory: projectPath,
-      environment: {'FIREBASE_EMULATOR_HUB': 'true', ...Platform.environment},
+      environment: {
+        'FIREBASE_EMULATOR_HUB': 'true',
+        'FIREBASE_CLI_EXPERIMENTS': 'functionsrunapionly',
+        ...Platform.environment,
+      },
     );
 
     // Create completer to signal readiness
@@ -97,14 +116,20 @@ class EmulatorHelper {
         });
 
     // Wait for emulator to be ready
-    print('Waiting for emulator to be ready...');
-    await _waitForReady();
+    try {
+      print('Waiting for emulator to be ready...');
+      await _waitForReady();
 
-    // Additional wait to ensure Dart runtime is fully initialized
-    // The first request triggers Dart process startup which takes ~2-3 seconds
-    print('Waiting for Dart runtime to stabilize...');
-    await Future<void>.delayed(const Duration(seconds: 2));
-    print('✓ Emulator is ready');
+      // Additional wait to ensure Dart runtime is fully initialized
+      // The first request triggers Dart process startup which takes ~2-3 seconds
+      print('Waiting for Dart runtime to stabilize...');
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ Emulator is ready');
+    } catch (e) {
+      print('Error starting emulator: $e');
+      await stop();
+      rethrow;
+    }
   }
 
   /// Stops the Firebase emulator.
@@ -140,13 +165,13 @@ class EmulatorHelper {
         return;
       }
 
-      // Poll the helloWorld function endpoint as a fallback
+      // Poll the hello-world function endpoint as a fallback
       // We poll a specific function to ensure triggers are registered, not just the server
       try {
         final request = await client
             .getUrl(
               Uri.parse(
-                'http://127.0.0.1:$functionsPort/demo-test/us-central1/helloWorld',
+                'http://127.0.0.1:$functionsPort/demo-test/us-central1/hello-world',
               ),
             )
             .timeout(const Duration(seconds: 5));
@@ -156,7 +181,7 @@ class EmulatorHelper {
         await response.drain<void>();
         // Only consider ready if we get 200 (not 404 which means function not registered)
         if (response.statusCode == 200) {
-          print('Function helloWorld responding on port $functionsPort');
+          print('Function hello-world responding on port $functionsPort');
           client.close();
           if (!_readyCompleter!.isCompleted) {
             _readyCompleter!.complete();
@@ -278,6 +303,9 @@ class EmulatorHelper {
   /// Gets the base URL for the Auth emulator REST API.
   String get authUrl => 'http://localhost:$authPort';
 
+  /// Gets the base URL for the Storage emulator REST API.
+  String get storageUrl => 'http://localhost:$storagePort';
+
   /// Verifies that a function was executed in the emulator logs.
   /// Returns true if we find both "Beginning execution" and "Finished" messages.
   bool verifyFunctionExecution(String functionName) {
@@ -304,7 +332,7 @@ class EmulatorHelper {
           RegExp.escape(path),
     );
 
-    return _outputLines.any((line) => pattern.hasMatch(line));
+    return _outputLines.any(pattern.hasMatch);
   }
 
   /// Gets all output lines captured from the emulator.

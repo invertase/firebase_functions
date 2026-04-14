@@ -1,17 +1,31 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'test_client_base.dart';
+
 /// Helper for making HTTP requests to Firebase Functions in the emulator.
-class FunctionsHttpClient {
-  FunctionsHttpClient(this.baseUrl) : _client = http.Client();
-  final String baseUrl;
-  final http.Client _client;
+final class FunctionsHttpClient extends TestClientBase {
+  FunctionsHttpClient(super.baseUrl);
 
   /// Calls an onRequest function with GET method.
   Future<http.Response> get(String functionName) async {
     final url = Uri.parse('$baseUrl/$functionName');
     print('GET $url');
-    return await _client.get(url);
+    return await client.get(url);
   }
 
   /// Calls an onRequest function with POST method.
@@ -23,7 +37,7 @@ class FunctionsHttpClient {
     final url = Uri.parse('$baseUrl/$functionName');
     print('POST $url');
 
-    return await _client.post(
+    return await client.post(
       url,
       headers: {'Content-Type': 'application/json', ...?headers},
       body: body != null ? jsonEncode(body) : null,
@@ -41,7 +55,7 @@ class FunctionsHttpClient {
 
     final body = jsonEncode({'data': data});
 
-    return await _client.post(
+    return await client.post(
       url,
       headers: {'Content-Type': 'application/json', ...?headers},
       body: body,
@@ -65,10 +79,5 @@ class FunctionsHttpClient {
     }
 
     return json['result'];
-  }
-
-  /// Closes the HTTP client.
-  void close() {
-    _client.close();
   }
 }

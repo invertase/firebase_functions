@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:typed_data';
 
 import 'package:protobuf/protobuf.dart';
@@ -59,9 +73,7 @@ Map<String, EmulatorDocumentSnapshot?>? parseDocumentEventData(
     }
 
     return {'value': value, 'old_value': oldValue};
-  } catch (e, stack) {
-    print('Error parsing DocumentEventData protobuf: $e');
-    print('Stack: $stack');
+  } catch (_) {
     return null;
   }
 }
@@ -135,7 +147,6 @@ EmulatorDocumentSnapshot? _parseFirestoreDocument(Uint8List bytes) {
     }
 
     if (name == null) {
-      print('Warning: Document has no name field');
       return null;
     }
 
@@ -153,9 +164,7 @@ EmulatorDocumentSnapshot? _parseFirestoreDocument(Uint8List bytes) {
       createTime: createTime,
       updateTime: updateTime,
     );
-  } catch (e, stack) {
-    print('Error parsing Document protobuf: $e');
-    print('Stack: $stack');
+  } catch (_) {
     return null;
   }
 }
@@ -223,8 +232,7 @@ dynamic _parseFirestoreValue(Uint8List bytes) {
     }
 
     return null;
-  } catch (e) {
-    print('Error parsing Value: $e');
+  } catch (_) {
     return null;
   }
 }
@@ -320,8 +328,7 @@ DateTime? _parseTimestamp(Uint8List bytes) {
     }
 
     return null;
-  } catch (e) {
-    print('Error parsing Timestamp: $e');
+  } catch (_) {
     return null;
   }
 }
@@ -358,8 +365,7 @@ Map<String, double>? _parseGeoPoint(Uint8List bytes) {
     }
 
     return null;
-  } catch (e) {
-    print('Error parsing GeoPoint: $e');
+  } catch (_) {
     return null;
   }
 }

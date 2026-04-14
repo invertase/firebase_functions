@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /// Firebase Functions error codes.
 ///
 /// These match the gRPC error codes used by the Node.js SDK.
@@ -182,8 +196,10 @@ final class UnimplementedError extends HttpsError {
 
 /// Error indicating an internal error occurred.
 final class InternalError extends HttpsError {
-  InternalError([String? message, dynamic details])
-    : super(FunctionsErrorCode.internal, message, details);
+  InternalError([
+    String message = 'An unexpected error occurred.',
+    dynamic details,
+  ]) : super(FunctionsErrorCode.internal, message, details);
 }
 
 /// Error indicating the service is unavailable.
@@ -200,6 +216,6 @@ final class DataLossError extends HttpsError {
 
 /// Error indicating the user is not authenticated.
 final class UnauthenticatedError extends HttpsError {
-  UnauthenticatedError([String? message, dynamic details])
+  UnauthenticatedError([String message = 'Unauthenticated', dynamic details])
     : super(FunctionsErrorCode.unauthenticated, message, details);
 }

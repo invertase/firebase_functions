@@ -1,8 +1,21 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:convert';
 
 import 'package:firebase_functions/src/https/auth.dart';
 import 'package:firebase_functions/src/https/callable.dart';
-import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -12,12 +25,7 @@ void main() {
 
   group('extractAuthToken', () {
     test('returns missing when no Authorization header', () async {
-      final request = _createRequest();
-
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({});
 
       expect(status, TokenStatus.missing);
       expect(auth, isNull);
@@ -26,14 +34,9 @@ void main() {
     test(
       'returns invalid when Authorization header is not Bearer format',
       () async {
-        final request = _createRequest(
-          headers: {'authorization': 'Basic abc123'},
-        );
-
-        final (status, auth) = await extractAuthToken(
-          request,
-          skipTokenVerification: true,
-        );
+        final (status, auth) = await extractAuthToken({
+          'authorization': 'Basic abc123',
+        });
 
         expect(status, TokenStatus.invalid);
         expect(auth, isNull);
@@ -42,12 +45,10 @@ void main() {
 
     test('returns invalid when token has no uid/sub claim', () async {
       final jwt = _createJwt({'email': 'test@example.com'});
-      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({
+        'authorization': 'Bearer $jwt',
+      });
 
       expect(status, TokenStatus.invalid);
       expect(auth, isNull);
@@ -59,12 +60,10 @@ void main() {
         'email': 'test@example.com',
         'custom_claim': 'value',
       });
-      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({
+        'authorization': 'Bearer $jwt',
+      });
 
       expect(status, TokenStatus.valid);
       expect(auth, isNotNull);
@@ -76,12 +75,10 @@ void main() {
 
     test('extracts uid from user_id claim as fallback', () async {
       final jwt = _createJwt({'user_id': 'user456'});
-      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({
+        'authorization': 'Bearer $jwt',
+      });
 
       expect(status, TokenStatus.valid);
       expect(auth?.uid, 'user456');
@@ -89,26 +86,19 @@ void main() {
 
     test('handles case-insensitive Bearer prefix', () async {
       final jwt = _createJwt({'sub': 'user123'});
-      final request = _createRequest(headers: {'authorization': 'bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({
+        'authorization': 'bearer $jwt',
+      });
 
       expect(status, TokenStatus.valid);
       expect(auth?.uid, 'user123');
     });
 
     test('returns invalid for malformed JWT', () async {
-      final request = _createRequest(
-        headers: {'authorization': 'Bearer not-a-valid-jwt'},
-      );
-
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({
+        'authorization': 'Bearer not-a-valid-jwt',
+      });
 
       expect(status, TokenStatus.invalid);
       expect(auth, isNull);
@@ -116,12 +106,10 @@ void main() {
 
     test('returns invalid for JWT with empty payload', () async {
       final jwt = _createJwt({});
-      final request = _createRequest(headers: {'authorization': 'Bearer $jwt'});
 
-      final (status, auth) = await extractAuthToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, auth) = await extractAuthToken({
+        'authorization': 'Bearer $jwt',
+      });
 
       expect(status, TokenStatus.invalid);
       expect(auth, isNull);
@@ -130,12 +118,7 @@ void main() {
 
   group('extractAppCheckToken', () {
     test('returns missing when no X-Firebase-AppCheck header', () async {
-      final request = _createRequest();
-
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken({});
 
       expect(status, TokenStatus.missing);
       expect(appCheck, isNull);
@@ -143,12 +126,10 @@ void main() {
 
     test('returns invalid when token has no sub claim', () async {
       final jwt = _createJwt({'other': 'value'});
-      final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken({
+        'x-firebase-appcheck': jwt,
+      });
 
       expect(status, TokenStatus.invalid);
       expect(appCheck, isNull);
@@ -156,12 +137,10 @@ void main() {
 
     test('returns valid with AppCheckData for valid token', () async {
       final jwt = _createJwt({'sub': 'app123'});
-      final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken({
+        'x-firebase-appcheck': jwt,
+      });
 
       expect(status, TokenStatus.valid);
       expect(appCheck, isNotNull);
@@ -171,12 +150,10 @@ void main() {
 
     test('extracts app_id from explicit claim', () async {
       final jwt = _createJwt({'sub': 'sub-value', 'app_id': 'explicit-app-id'});
-      final request = _createRequest(headers: {'x-firebase-appcheck': jwt});
 
-      final (status, appCheck) = await extractAppCheckToken(
-        request,
-        skipTokenVerification: true,
-      );
+      final (status, appCheck) = await extractAppCheckToken({
+        'x-firebase-appcheck': jwt,
+      });
 
       expect(status, TokenStatus.valid);
       expect(appCheck?.appId, 'explicit-app-id');
@@ -187,14 +164,11 @@ void main() {
     test('returns both auth and app check data when present', () async {
       final authJwt = _createJwt({'sub': 'user123'});
       final appCheckJwt = _createJwt({'sub': 'app123'});
-      final request = _createRequest(
-        headers: {
-          'authorization': 'Bearer $authJwt',
-          'x-firebase-appcheck': appCheckJwt,
-        },
-      );
 
-      final result = await checkTokens(request, skipTokenVerification: true);
+      final result = await checkTokens({
+        'authorization': 'Bearer $authJwt',
+        'x-firebase-appcheck': appCheckJwt,
+      });
 
       expect(result.result.auth, TokenStatus.valid);
       expect(result.result.app, TokenStatus.valid);
@@ -203,9 +177,7 @@ void main() {
     });
 
     test('returns missing status when headers are absent', () async {
-      final request = _createRequest();
-
-      final result = await checkTokens(request, skipTokenVerification: true);
+      final result = await checkTokens({});
 
       expect(result.result.auth, TokenStatus.missing);
       expect(result.result.app, TokenStatus.missing);
@@ -216,14 +188,11 @@ void main() {
     test('handles mixed valid and invalid tokens', () async {
       final authJwt = _createJwt({'sub': 'user123'});
       final invalidAppCheckJwt = _createJwt({'no_sub': 'value'});
-      final request = _createRequest(
-        headers: {
-          'authorization': 'Bearer $authJwt',
-          'x-firebase-appcheck': invalidAppCheckJwt,
-        },
-      );
 
-      final result = await checkTokens(request, skipTokenVerification: true);
+      final result = await checkTokens({
+        'authorization': 'Bearer $authJwt',
+        'x-firebase-appcheck': invalidAppCheckJwt,
+      });
 
       expect(result.result.auth, TokenStatus.valid);
       expect(result.result.app, TokenStatus.invalid);
@@ -288,13 +257,4 @@ String _createJwt(Map<String, dynamic> payload) {
   const signature = 'dummysignature';
 
   return '$header.$body.$signature';
-}
-
-/// Creates a test request with optional headers.
-Request _createRequest({Map<String, String>? headers}) {
-  return Request(
-    'POST',
-    Uri.parse('http://localhost:8080/test'),
-    headers: headers,
-  );
 }

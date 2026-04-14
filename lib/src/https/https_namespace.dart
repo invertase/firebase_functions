@@ -1,29 +1,29 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'auth.dart';
 import 'callable.dart';
 import 'error.dart';
 import 'options.dart';
-
-/// Checks if token verification should be skipped (emulator mode).
-bool _shouldSkipTokenVerification() {
-  final debugFeatures = Platform.environment['FIREBASE_DEBUG_FEATURES'];
-  if (debugFeatures == null) {
-    return false;
-  }
-  try {
-    final features = jsonDecode(debugFeatures);
-    return features['skipTokenVerification'] as bool? ?? false;
-  } catch (_) {
-    return false;
-  }
-}
 
 /// HTTPS triggers namespace.
 ///
@@ -51,25 +51,20 @@ class HttpsNamespace extends FunctionsNamespace {
     // ignore: experimental_member_use
     @mustBeConst HttpsOptions? options = const HttpsOptions(),
   }) {
-    firebase.registerFunction(name, (request) async {
-      try {
-        return await handler(request);
-      } on HttpsError catch (e) {
-        return Response(
-          e.httpStatusCode,
-          body: jsonEncode(e.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
-      } catch (e) {
-        // Unexpected error - return internal error
-        final error = InternalError(e.toString());
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
-      }
-    }, external: true);
+    firebase.registerFunction(
+      name,
+      (request) async {
+        try {
+          return await handler(request);
+        } on HttpsError catch (e) {
+          return e.toShelfResponse();
+        } catch (e, stackTrace) {
+          return logInternalError(e, stackTrace).toShelfResponse();
+        }
+      },
+      external: true,
+      allowedOrigins: options?.cors?.runtimeValue(),
+    );
   }
 
   /// Creates an HTTPS callable function (untyped data).
@@ -110,42 +105,28 @@ class HttpsNamespace extends FunctionsNamespace {
       }
 
       // Extract auth and app check tokens
-      final skipVerification = _shouldSkipTokenVerification();
+
       final tokens = await checkTokens(
-        request,
-        skipTokenVerification: skipVerification,
-        adminApp: firebase.adminApp,
+        request.headers,
+        adminApp: firebase.$env.skipTokenVerification
+            ? null
+            : firebase.adminApp,
       );
 
       // Check for invalid auth token
       if (tokens.result.auth == TokenStatus.invalid) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       // Check for invalid or missing app check token if enforced
       final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
       if (tokens.result.app == TokenStatus.invalid) {
         if (enforceAppCheck) {
-          final error = UnauthenticatedError('Unauthenticated');
-          return Response(
-            error.httpStatusCode,
-            body: jsonEncode(error.toErrorResponse()),
-            headers: {'Content-Type': 'application/json'},
-          );
+          return UnauthenticatedError().toShelfResponse();
         }
       }
       if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       final callableRequest = CallableRequest(
@@ -165,7 +146,7 @@ class HttpsNamespace extends FunctionsNamespace {
         (result) => result.data,
         (result) => result.toResponse(),
       );
-    });
+    }, allowedOrigins: options?.cors?.runtimeValue());
   }
 
   /// Creates an HTTPS callable function with typed data.
@@ -205,42 +186,28 @@ class HttpsNamespace extends FunctionsNamespace {
       final body = await request.json as Map<String, dynamic>?;
 
       // Extract auth and app check tokens
-      final skipVerification = _shouldSkipTokenVerification();
+
       final tokens = await checkTokens(
-        request,
-        skipTokenVerification: skipVerification,
-        adminApp: firebase.adminApp,
+        request.headers,
+        adminApp: firebase.$env.skipTokenVerification
+            ? null
+            : firebase.adminApp,
       );
 
       // Check for invalid auth token
       if (tokens.result.auth == TokenStatus.invalid) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       // Check for invalid or missing app check token if enforced
       final enforceAppCheck = options?.enforceAppCheck?.runtimeValue() ?? false;
       if (tokens.result.app == TokenStatus.invalid) {
         if (enforceAppCheck) {
-          final error = UnauthenticatedError('Unauthenticated');
-          return Response(
-            error.httpStatusCode,
-            body: jsonEncode(error.toErrorResponse()),
-            headers: {'Content-Type': 'application/json'},
-          );
+          return UnauthenticatedError().toShelfResponse();
         }
       }
       if (tokens.result.app == TokenStatus.missing && enforceAppCheck) {
-        final error = UnauthenticatedError('Unauthenticated');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode(error.toErrorResponse()),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return UnauthenticatedError().toShelfResponse();
       }
 
       final callableRequest = CallableRequest<Input>(
@@ -263,7 +230,7 @@ class HttpsNamespace extends FunctionsNamespace {
           headers: {'Content-Type': 'application/json'},
         ),
       );
-    });
+    }, allowedOrigins: options?.cors?.runtimeValue());
   }
 
   /// Internal handler for callable functions.
@@ -289,12 +256,7 @@ class HttpsNamespace extends FunctionsNamespace {
   ) async {
     // Validate request - pass empty map if body is null to avoid double-read
     if (!await request.isValidRequest(body ?? {})) {
-      final error = InvalidArgumentError('Invalid callable request');
-      return Response(
-        error.httpStatusCode,
-        body: jsonEncode(error.toErrorResponse()),
-        headers: {'Content-Type': 'application/json'},
-      );
+      return InvalidArgumentError('Invalid callable request').toShelfResponse();
     }
 
     final heartbeatSeconds = options?.heartBeatIntervalSeconds?.runtimeValue();
@@ -316,7 +278,9 @@ class HttpsNamespace extends FunctionsNamespace {
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         final finalResult = {'result': extractResultData(result)};
         callableResponse.writeSSE(finalResult);
-        await callableResponse.closeStream();
+        if (!callableResponse.isUsingResponseStream) {
+          unawaited(callableResponse.closeStream());
+        }
         return callableResponse.streamingResponse!;
       }
 
@@ -326,32 +290,22 @@ class HttpsNamespace extends FunctionsNamespace {
       // Handle HttpsError - use SSE format if streaming
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         callableResponse.writeSSE(e.toErrorResponse());
-        await callableResponse.closeStream();
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
-      return Response(
-        e.httpStatusCode,
-        body: jsonEncode(e.toErrorResponse()),
-        headers: {'Content-Type': 'application/json'},
-      );
-    } catch (e) {
-      // Unexpected error
-      final error = InternalError(e.toString());
+      return e.toShelfResponse();
+    } catch (e, stackTrace) {
+      // Unexpected error - don't expose details to client
+      final error = logInternalError(e, stackTrace);
 
       if (callableRequest.acceptsStreaming && !callableResponse.aborted) {
         callableResponse.writeSSE(error.toErrorResponse());
-        await callableResponse.closeStream();
+        unawaited(callableResponse.closeStream());
         return callableResponse.streamingResponse!;
       }
 
-      return Response(
-        error.httpStatusCode,
-        body: jsonEncode(error.toErrorResponse()),
-        headers: {'Content-Type': 'application/json'},
-      );
-    } finally {
-      callableResponse.clearHeartbeat();
+      return error.toShelfResponse();
     }
   }
 }

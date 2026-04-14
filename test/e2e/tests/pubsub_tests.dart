@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:io';
 
 import 'package:test/test.dart';
@@ -24,7 +38,7 @@ void runPubSubTests(
 
     test('function is registered with emulator', () {
       // Verify the function was loaded in manifest
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
 
       // Debug output
@@ -43,7 +57,7 @@ void runPubSubTests(
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('onMessagePublished_mytopic'),
+        contains('on-message-published-mytopic'),
         reason: 'Manifest should contain Pub/Sub function',
       );
     });

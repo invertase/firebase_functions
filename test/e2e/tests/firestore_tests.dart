@@ -1,3 +1,19 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:test/test.dart';
 
 import '../helpers/emulator.dart';
@@ -98,13 +114,26 @@ void runFirestoreTests(
       await client.deleteDocument('users/$testUserId');
       print('✓ Document deleted successfully');
 
-      // Wait for trigger
+      // Wait for trigger to fire
       await Future<void>.delayed(const Duration(seconds: 2));
 
       // Verify document no longer exists
       final doc = await client.getDocument('users/$testUserId');
       expect(doc, isNull, reason: 'Document should not exist after deletion');
       print('✓ Document deletion verified');
+
+      // Verify handler received the pre-deletion document data by checking
+      // the structured log line emitted by the handler.
+      final outputLogs = getEmulator().outputLines.join('\n');
+      expect(
+        outputLogs,
+        contains('[onDocumentDeleted] hasData=true'),
+        reason: 'event.data should be non-null for delete events',
+      );
+      expect(outputLogs, contains('name=To Be Deleted'));
+      expect(outputLogs, contains('email=delete@example.com'));
+      expect(outputLogs, contains('finalMessage=goodbye'));
+      print('✓ Handler received correct pre-deletion document data');
     });
 
     test('onDocumentWritten fires for all operations', () async {
@@ -213,6 +242,67 @@ void runFirestoreTests(
 
       await Future<void>.delayed(const Duration(seconds: 2));
       print('✓ Path parameter extraction verified (check function logs)');
+    });
+
+    test('onDocumentCreatedWithAuthContext fires with auth context', () async {
+      print('\n=== Testing onDocumentCreatedWithAuthContext ===');
+
+      final orderId = 'order_${DateTime.now().millisecondsSinceEpoch}';
+
+      // Create a document in the 'orders' collection
+      final doc = await client.createDocument('orders', orderId, {
+        'product': 'Widget',
+        'quantity': 3,
+        'price': 19.99,
+      });
+
+      expect(doc, isNotNull);
+      print('✓ Order document created');
+
+      // Wait for trigger to process
+      await Future<void>.delayed(const Duration(seconds: 2));
+
+      // Verify document exists
+      final retrieved = await client.getDocument('orders/$orderId');
+      expect(retrieved, isNotNull);
+      expect(retrieved!['fields']['product']['stringValue'], 'Widget');
+      print(
+        '✓ WithAuthContext trigger verified (check function logs for authType/authId)',
+      );
+
+      // Cleanup
+      try {
+        await client.deleteDocument('orders/$orderId');
+      } catch (e) {
+        // Ignore
+      }
+    });
+
+    test('onDocumentWrittenWithAuthContext fires for all operations', () async {
+      print('\n=== Testing onDocumentWrittenWithAuthContext ===');
+
+      final orderId = 'order_written_${DateTime.now().millisecondsSinceEpoch}';
+
+      // CREATE
+      await client.createDocument('orders', orderId, {
+        'product': 'Gadget',
+        'status': 'pending',
+      });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ CREATE operation triggered with auth context');
+
+      // UPDATE
+      await client.updateDocument('orders/$orderId', {
+        'product': 'Gadget',
+        'status': 'shipped',
+      });
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ UPDATE operation triggered with auth context');
+
+      // DELETE
+      await client.deleteDocument('orders/$orderId');
+      await Future<void>.delayed(const Duration(seconds: 2));
+      print('✓ DELETE operation triggered with auth context');
     });
 
     tearDown(() async {

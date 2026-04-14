@@ -1,4 +1,18 @@
 #!/bin/bash
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 #
 # Local validation script to test CI workflows before committing.
 # This simulates the GitHub Actions environment locally.
@@ -46,7 +60,7 @@ echo "========================================="
 echo ""
 
 echo "Installing dependencies..."
-dart pub get
+dart pub upgrade
 
 echo "Checking formatting..."
 if dart format --output=none --set-exit-if-changed .; then
@@ -88,9 +102,9 @@ echo "3. Running Builder Tests"
 echo "========================================="
 echo ""
 
-echo "Installing example dependencies..."
-cd example/basic
-dart pub get
+echo "Installing fixture dependencies..."
+cd test/fixtures/dart_reference
+dart pub upgrade
 
 echo "Running build_runner..."
 if dart run build_runner build --delete-conflicting-outputs; then
@@ -101,7 +115,7 @@ else
 fi
 
 echo "Checking generated manifest..."
-if [ ! -f ".dart_tool/firebase/functions.yaml" ]; then
+if [ ! -f "functions.yaml" ]; then
     echo -e "${RED}✗${NC} functions.yaml not generated"
     exit 1
 fi
@@ -109,7 +123,7 @@ fi
 echo -e "${GREEN}✓${NC} Manifest generated successfully"
 echo ""
 echo "Generated manifest:"
-cat .dart_tool/firebase/functions.yaml
+cat functions.yaml
 
 cd "$ROOT_DIR"
 echo ""
@@ -121,7 +135,7 @@ echo "========================================="
 echo ""
 
 echo "Installing Node.js dependencies..."
-cd example/nodejs_reference
+cd test/fixtures/nodejs_reference
 npm ci
 
 echo "Starting firebase-functions server..."
@@ -169,10 +183,10 @@ else
     echo -e "${RED}✗${NC} Snapshot tests failed"
     echo ""
     echo "Dart manifest:"
-    cat example/basic/.dart_tool/firebase/functions.yaml
+    cat test/fixtures/dart_reference/functions.yaml
     echo ""
     echo "Node.js manifest:"
-    cat example/nodejs_reference/nodejs_manifest.json
+    cat test/fixtures/nodejs_reference/nodejs_manifest.json
     exit 1
 fi
 

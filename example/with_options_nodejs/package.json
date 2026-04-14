@@ -1,9 +1,0 @@
-{
-  "name": "with_options_nodejs",
-  "version": "1.0.0",
-  "description": "Node.js reference with all HTTP function options",
-  "main": "index.js",
-  "dependencies": {
-    "firebase-functions": "^5.0.0"
-  }
-}

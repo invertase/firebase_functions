@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:io';
 
 import 'package:test/test.dart';
@@ -11,32 +25,8 @@ void runIntegrationTests(String Function() getExamplePath) {
       examplePath = getExamplePath();
     });
     test('functions.yaml was generated correctly', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
-
-      // Debug output
-      print('DEBUG: examplePath = $examplePath');
-      print('DEBUG: manifestPath = $manifestPath');
-      print('DEBUG: Directory.current.path = ${Directory.current.path}');
-      print('DEBUG: manifestFile.existsSync() = ${manifestFile.existsSync()}');
-
-      // Check if .dart_tool directory exists
-      final dartToolDir = Directory('$examplePath/.dart_tool');
-      print('DEBUG: .dart_tool exists = ${dartToolDir.existsSync()}');
-
-      if (dartToolDir.existsSync()) {
-        final firebaseDir = Directory('$examplePath/.dart_tool/firebase');
-        print(
-          'DEBUG: .dart_tool/firebase exists = ${firebaseDir.existsSync()}',
-        );
-
-        if (firebaseDir.existsSync()) {
-          print('DEBUG: Contents of .dart_tool/firebase:');
-          for (final entity in firebaseDir.listSync()) {
-            print('DEBUG:   ${entity.path}');
-          }
-        }
-      }
 
       expect(
         manifestFile.existsSync(),
@@ -47,8 +37,8 @@ void runIntegrationTests(String Function() getExamplePath) {
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('helloWorld'),
-        reason: 'Manifest should contain helloWorld function',
+        contains('hello-world'),
+        reason: 'Manifest should contain hello-world function',
       );
     });
   });

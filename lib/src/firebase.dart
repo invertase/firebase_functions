@@ -1,100 +1,131 @@
-import 'dart:async';
-import 'dart:io';
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:googleapis_firestore/googleapis_firestore.dart' as gfs;
+import 'dart:async';
+
+import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
+import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import 'alerts/alerts_namespace.dart';
+import 'common/cloud_run_id.dart';
+import 'common/environment.dart';
 import 'database/database_namespace.dart';
+import 'eventarc/eventarc_namespace.dart';
 import 'firestore/firestore_namespace.dart';
 import 'https/https_namespace.dart';
 import 'identity/identity_namespace.dart';
 import 'pubsub/pubsub_namespace.dart';
+import 'remote_config/remote_config_namespace.dart';
 import 'scheduler/scheduler_namespace.dart';
+import 'storage/storage_namespace.dart';
+import 'tasks/tasks_namespace.dart';
+import 'test_lab/test_lab_namespace.dart';
 
 /// Main Firebase Functions instance.
 ///
 /// Provides access to all function namespaces (https, pubsub, firestore, etc.).
 class Firebase {
-  Firebase() {
-    _initializeAdminSDK();
-  }
+  Firebase._({required this.adminApp, required FirebaseEnv env}) : _env = env;
 
-  FirebaseApp? _adminApp;
-  gfs.Firestore? _firestoreInstance;
+  final FirebaseEnv _env;
 
-  /// Initialize the Firebase Admin SDK
-  void _initializeAdminSDK() {
-    // Get project ID from environment
-    final projectId =
-        Platform.environment['GCLOUD_PROJECT'] ??
-        Platform.environment['GCP_PROJECT'] ??
-        'demo-test'; // Fallback for emulator
-
-    // Check if running in emulator
-    final firestoreEmulatorHost =
-        Platform.environment['FIRESTORE_EMULATOR_HOST'];
-    final isEmulator = firestoreEmulatorHost != null;
-
-    if (isEmulator) {
-      print('Running in emulator mode - Firestore Admin SDK disabled');
-      print('Firestore emulator: $firestoreEmulatorHost');
-      print('Document fetching from emulator not yet implemented');
-      print('Handler will receive CloudEvent metadata only');
-      // TODO: Implement direct REST API calls to emulator
-      // For now, we'll skip document fetching in emulator mode
-      return;
-    }
-
-    // Production mode only
-    try {
-      print('Initializing Firebase Admin SDK (project: $projectId)');
-
-      // Initialize Admin SDK
-      _adminApp = FirebaseApp.initializeApp(
-        options: AppOptions(
-          credential: Credential.fromApplicationDefaultCredentials(),
-          projectId: projectId,
-        ),
-      );
-
-      // Create Firestore instance
-      _firestoreInstance = _adminApp!.firestore();
-
-      print('Firebase Admin SDK initialized successfully');
-    } catch (e) {
-      print('Warning: Failed to initialize Firebase Admin SDK: $e');
-      print('Firestore triggers will not be able to fetch document data');
-    }
-  }
-
-  /// Get the Firestore instance
-  gfs.Firestore? get firestoreAdmin => _firestoreInstance;
-
-  /// Get the Firebase Admin App instance
-  FirebaseApp? get adminApp => _adminApp;
+  /// The initialized Firebase Admin SDK application instance.
+  ///
+  /// This app represents the server-side SDK and has elevated privileges
+  /// corresponding to the environment's credentials.
+  final FirebaseApp adminApp;
 
   /// HTTPS triggers namespace.
   HttpsNamespace get https => HttpsNamespace(this);
 
   /// Pub/Sub triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   PubSubNamespace get pubsub => PubSubNamespace(this);
 
   /// Firestore triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is only supported in the Firebase
+  /// emulator and is not yet available for production deployments.
+  @experimental
   FirestoreNamespace get firestore => FirestoreNamespace(this);
 
+  /// Eventarc triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
+  EventarcNamespace get eventarc => EventarcNamespace(this);
+
   /// Realtime Database triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is only supported in the Firebase
+  /// emulator and is not yet available for production deployments.
+  @experimental
   DatabaseNamespace get database => DatabaseNamespace(this);
 
   /// Firebase Alerts namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   AlertsNamespace get alerts => AlertsNamespace(this);
 
   /// Identity Platform namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   IdentityNamespace get identity => IdentityNamespace(this);
 
+  /// Remote Config namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
+  RemoteConfigNamespace get remoteConfig => RemoteConfigNamespace(this);
+
   /// Scheduler namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
   SchedulerNamespace get scheduler => SchedulerNamespace(this);
+
+  /// Cloud Storage triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is only supported in the Firebase
+  /// emulator and is not yet available for production deployments.
+  @experimental
+  StorageNamespace get storage => StorageNamespace(this);
+
+  /// Task queue triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
+  TasksNamespace get tasks => TasksNamespace(this);
+
+  /// Test Lab triggers namespace.
+  ///
+  /// **Experimental**: This trigger type is not yet supported in production
+  /// or the Firebase emulator.
+  @experimental
+  TestLabNamespace get testLab => TestLabNamespace(this);
 }
 
 /// Extension for internal function registration.
@@ -121,20 +152,23 @@ extension FirebaseX on Firebase {
     bool external = false,
     String? documentPattern,
     String? refPattern,
+    List<String>? allowedOrigins,
   }) {
     // Check for duplicate function names
     if (functions.any((f) => f.name == name)) {
       throw StateError('Function "$name" is already registered');
     }
 
-    // Transform the name to be URL-safe
-    final transformedName = name.replaceAll(' ', '_');
+    // Transform the name to a valid Cloud Run service ID
+    // (lowercase, digits, and hyphens only, <50 chars)
+    final transformedName = toCloudRunId(name);
 
     functions.add(
       FirebaseFunctionDeclaration(
         name: transformedName,
         handler: handler,
         external: external,
+        allowedOrigins: allowedOrigins,
         documentPattern: documentPattern,
         refPattern: refPattern,
       ),
@@ -154,6 +188,7 @@ final class FirebaseFunctionDeclaration {
     required this.name,
     required this.handler,
     required this.external,
+    this.allowedOrigins,
     this.documentPattern,
     this.refPattern,
   }) : path = name;
@@ -178,6 +213,9 @@ final class FirebaseFunctionDeclaration {
   /// Event-driven functions are internal (false, POST only).
   final bool external;
 
+  /// Allowed origins for CORS (if specified).
+  final List<String>? allowedOrigins;
+
   /// The function handler.
   final FirebaseFunctionHandler handler;
 }
@@ -186,4 +224,25 @@ final class FirebaseFunctionDeclaration {
 abstract class FunctionsNamespace {
   const FunctionsNamespace(this.firebase);
   final Firebase firebase;
+}
+
+/// Internal extension to access private members of Firebase.
+@internal
+extension FirebaseInternal on Firebase {
+  FirebaseEnv get $env => _env;
+}
+
+@internal
+Firebase createFirebaseInternal() {
+  final env = FirebaseEnv();
+
+  // Initialize Admin SDK
+  final adminApp = FirebaseApp.initializeApp(
+    options: AppOptions(
+      credential: Credential.fromApplicationDefaultCredentials(),
+      projectId: env.projectId,
+    ),
+  );
+
+  return Firebase._(adminApp: adminApp, env: env);
 }

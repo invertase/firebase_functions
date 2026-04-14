@@ -1,0 +1,189 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// ignore_for_file: experimental_member_use
+
+import 'package:firebase_functions/firebase_functions.dart';
+
+void main(List<String> args) async {
+  await fireUp(args, (firebase) {
+    // Test Firestore onDocumentCreated with wildcard
+    firebase.firestore.onDocumentCreated(document: 'users/{userId}', (
+      event,
+    ) async {
+      print('=== USER HANDLER CALLED ===');
+      print('User created: ${event.document}');
+      print('Params: ${event.params}');
+      print('Event ID: ${event.id}');
+      print('Event time: ${event.time}');
+
+      // Access document data (similar to Node.js)
+      if (event.data != null) {
+        final data = event.data!.data();
+        print('Document data: $data');
+
+        // Access specific fields
+        if (data.containsKey('name')) {
+          print('User name: ${data['name']}');
+        }
+        if (data.containsKey('email')) {
+          print('User email: ${data['email']}');
+        }
+      }
+    });
+
+    // Test Firestore onDocumentCreated with literal path
+    firebase.firestore.onDocumentCreated(document: 'config/settings', (
+      event,
+    ) async {
+      print('Settings document created');
+    });
+
+    // Test with nested collection path
+    firebase.firestore.onDocumentCreated(
+      document: 'posts/{postId}/comments/{commentId}',
+      (event) async {
+        print('Comment created in post: ${event.params}');
+      },
+    );
+
+    // Test onDocumentUpdated
+    firebase.firestore.onDocumentUpdated(document: 'users/{userId}', (
+      event,
+    ) async {
+      print('=== USER UPDATED HANDLER CALLED ===');
+      print('User updated: ${event.document}');
+      print('Params: ${event.params}');
+
+      // Access before and after states
+      if (event.data != null) {
+        final before = event.data!.before;
+        final after = event.data!.after;
+
+        if (before != null && after != null) {
+          print('Before: ${before.data()}');
+          print('After: ${after.data()}');
+
+          // Check what changed
+          final beforeData = before.data();
+          final afterData = after.data();
+
+          if (beforeData['name'] != afterData['name']) {
+            print(
+              'Name changed: ${beforeData['name']} -> ${afterData['name']}',
+            );
+          }
+        }
+      }
+    });
+
+    // Test onDocumentDeleted
+    firebase.firestore.onDocumentDeleted(document: 'users/{userId}', (
+      event,
+    ) async {
+      print('=== USER DELETED HANDLER CALLED ===');
+      print('User deleted: ${event.document}');
+      print('User ID: ${event.params['userId']}');
+
+      // Access the final state before deletion
+      if (event.data != null) {
+        final deletedData = event.data!.data();
+        print('Deleted user data: $deletedData');
+      }
+    });
+
+    // Test onDocumentCreatedWithAuthContext
+    firebase.firestore.onDocumentCreatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER CREATED WITH AUTH CONTEXT ===');
+        print('Order created: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+        print('Params: ${event.params}');
+
+        if (event.data != null) {
+          final data = event.data!.data();
+          print('Order data: $data');
+        }
+      },
+    );
+
+    // Test onDocumentUpdatedWithAuthContext
+    firebase.firestore.onDocumentUpdatedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER UPDATED WITH AUTH CONTEXT ===');
+        print('Order updated: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+        if (event.data != null) {
+          print('Before: ${event.data!.before?.data()}');
+          print('After: ${event.data!.after?.data()}');
+        }
+      },
+    );
+
+    // Test onDocumentDeletedWithAuthContext
+    firebase.firestore.onDocumentDeletedWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER DELETED WITH AUTH CONTEXT ===');
+        print('Order deleted: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+        if (event.data != null) {
+          print('Deleted data: ${event.data!.data()}');
+        }
+      },
+    );
+
+    // Test onDocumentWrittenWithAuthContext
+    firebase.firestore.onDocumentWrittenWithAuthContext(
+      document: 'orders/{orderId}',
+      (event) async {
+        print('=== ORDER WRITTEN WITH AUTH CONTEXT ===');
+        print('Order written: ${event.document}');
+        print('Auth type: ${event.authType}');
+        print('Auth ID: ${event.authId}');
+      },
+    );
+
+    // Test onDocumentWritten (catches all operations)
+    firebase.firestore.onDocumentWritten(document: 'users/{userId}', (
+      event,
+    ) async {
+      print('=== USER WRITTEN HANDLER CALLED ===');
+      print('User written: ${event.document}');
+
+      if (event.data != null) {
+        final before = event.data!.before;
+        final after = event.data!.after;
+
+        // Determine operation type
+        if (before == null && after != null) {
+          print('Operation: CREATE');
+          print('New user data: ${after.data()}');
+        } else if (before != null && after == null) {
+          print('Operation: DELETE');
+          print('Deleted user data: ${before.data()}');
+        } else if (before != null && after != null) {
+          print('Operation: UPDATE');
+          print('Before: ${before.data()}');
+          print('After: ${after.data()}');
+        }
+      }
+    });
+  });
+}

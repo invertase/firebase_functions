@@ -1,8 +1,21 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:io';
 
 import 'package:test/test.dart';
 
-// ignore: unused_import
 import '../helpers/emulator.dart';
 
 /// Scheduler test group
@@ -29,7 +42,7 @@ void runSchedulerTests(
 
     test('function is registered in manifest', () {
       // Verify the function was loaded in manifest
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
 
       expect(
@@ -41,7 +54,7 @@ void runSchedulerTests(
       final manifestContent = manifestFile.readAsStringSync();
       expect(
         manifestContent,
-        contains('onSchedule_0_0___'),
+        contains('on-schedule-0-0'),
         reason: 'Manifest should contain basic scheduler function',
       );
       expect(
@@ -51,24 +64,24 @@ void runSchedulerTests(
       );
       expect(
         manifestContent,
-        contains('schedule: "0 0 * * *"'),
+        contains('schedule: 0 0 * * *'),
         reason: 'Manifest should have schedule cron expression',
       );
     });
 
     test('function with options is registered in manifest', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
       final manifestContent = manifestFile.readAsStringSync();
 
       expect(
         manifestContent,
-        contains('onSchedule_0_9___15'),
+        contains('on-schedule-0-9-15'),
         reason: 'Manifest should contain scheduler function with options',
       );
       expect(
         manifestContent,
-        contains('timeZone: "America/New_York"'),
+        contains('timeZone: America/New_York'),
         reason: 'Manifest should have timeZone',
       );
       expect(
@@ -84,7 +97,7 @@ void runSchedulerTests(
     });
 
     test('cloudscheduler API is in requiredAPIs', () {
-      final manifestPath = '$examplePath/.dart_tool/firebase/functions.yaml';
+      final manifestPath = '$examplePath/functions.yaml';
       final manifestFile = File(manifestPath);
       final manifestContent = manifestFile.readAsStringSync();
 

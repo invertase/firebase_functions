@@ -1,10 +1,25 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /// Authentication and App Check token extraction for callable functions.
 library;
 
 import 'dart:convert';
 
-import 'package:dart_firebase_admin/dart_firebase_admin.dart';
-import 'package:shelf/shelf.dart';
+import 'package:firebase_admin_sdk/app_check.dart';
+import 'package:firebase_admin_sdk/auth.dart';
+import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
 
 import 'callable.dart';
 
@@ -29,25 +44,25 @@ class TokenVerificationResult {
 }
 
 /// Regular expression for validating JWT format.
+/// Allows empty signature for emulator tokens (alg: none).
 final _jwtRegex = RegExp(
-  r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+$',
+  r'^[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]*$',
 );
 
 /// Extracts and validates auth token from request.
 ///
-/// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
+/// In emulator mode (when [auth] is `null`), tokens are decoded
 /// but not verified. In production, tokens are verified using the Firebase
 /// Admin SDK.
 ///
-/// The [adminApp] is required for production token verification.
+/// The [auth] is required for production token verification.
 ///
 /// Returns a tuple of (TokenStatus, AuthData?).
 Future<(TokenStatus, AuthData?)> extractAuthToken(
-  Request request, {
-  required bool skipTokenVerification,
-  FirebaseApp? adminApp,
+  Map<String, String> headers, {
+  Auth? auth,
 }) async {
-  final authorization = request.headers['authorization'];
+  final authorization = headers['authorization'];
   if (authorization == null || authorization.isEmpty) {
     return (TokenStatus.missing, null);
   }
@@ -67,7 +82,7 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
     String uid;
     Map<String, dynamic>? decodedToken;
 
-    if (skipTokenVerification) {
+    if (auth == null) {
       // In emulator mode, just decode without verification
       decodedToken = _unsafeDecodeIdToken(idToken);
 
@@ -78,12 +93,6 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
           '';
     } else {
       // In production, verify the token using Firebase Admin SDK
-      if (adminApp == null) {
-        // Can't verify without admin app
-        return (TokenStatus.invalid, null);
-      }
-
-      final auth = adminApp.auth();
       final decoded = await auth.verifyIdToken(idToken);
       uid = decoded.uid;
       decodedToken = {
@@ -116,19 +125,18 @@ Future<(TokenStatus, AuthData?)> extractAuthToken(
 
 /// Extracts and validates App Check token from request.
 ///
-/// In emulator mode (when [skipTokenVerification] is true), tokens are decoded
+/// In emulator mode (when [appCheck] is `null`), tokens are decoded
 /// but not verified. In production, tokens are verified using the Firebase
 /// Admin SDK.
 ///
-/// The [adminApp] is required for production token verification.
+/// The [appCheck] is required for production token verification.
 ///
 /// Returns a tuple of (TokenStatus, AppCheckData?).
 Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
-  Request request, {
-  required bool skipTokenVerification,
-  FirebaseApp? adminApp,
+  Map<String, String> headers, {
+  AppCheck? appCheck,
 }) async {
-  final appCheckToken = request.headers['x-firebase-appcheck'];
+  final appCheckToken = headers['x-firebase-appcheck'];
   if (appCheckToken == null || appCheckToken.isEmpty) {
     return (TokenStatus.missing, null);
   }
@@ -136,7 +144,7 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
   try {
     String appId;
 
-    if (skipTokenVerification) {
+    if (appCheck == null) {
       // In emulator mode, just decode without verification
       final decodedToken = _unsafeDecodeAppCheckToken(appCheckToken);
 
@@ -146,12 +154,6 @@ Future<(TokenStatus, AppCheckData?)> extractAppCheckToken(
           '';
     } else {
       // In production, verify the token using Firebase Admin SDK
-      if (adminApp == null) {
-        // Can't verify without admin app
-        return (TokenStatus.invalid, null);
-      }
-
-      final appCheck = adminApp.appCheck();
       final decoded = await appCheck.verifyToken(appCheckToken);
       appId = decoded.appId;
     }
@@ -179,21 +181,15 @@ Future<
     AppCheckData? appCheckData,
   })
 >
-checkTokens(
-  Request request, {
-  required bool skipTokenVerification,
-  FirebaseApp? adminApp,
-}) async {
+checkTokens(Map<String, String> headers, {FirebaseApp? adminApp}) async {
   final (authStatus, authData) = await extractAuthToken(
-    request,
-    skipTokenVerification: skipTokenVerification,
-    adminApp: adminApp,
+    headers,
+    auth: adminApp?.auth(),
   );
 
   final (appStatus, appCheckData) = await extractAppCheckToken(
-    request,
-    skipTokenVerification: skipTokenVerification,
-    adminApp: adminApp,
+    headers,
+    appCheck: adminApp?.appCheck(),
   );
 
   return (

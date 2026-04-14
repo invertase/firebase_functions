@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /// Firebase Functions parameter system.
 ///
 /// Provides strongly-typed configuration that works at both deploy time
@@ -70,6 +84,8 @@
 ///   handler,
 /// );
 /// ```
+///
+/// @docImport 'params.dart';
 library;
 
 import 'src/common/params.dart' as internal;
@@ -91,14 +107,13 @@ export 'src/common/on_init.dart' show onInit;
 // Re-export factory functions
 export 'src/common/params.dart'
     show
-        // Classes
         BooleanParam,
         DoubleParam,
         EnumListParam,
         IntParam,
+        InternalExpression,
         JsonSecretParam,
         ListParam,
-        // Input types
         MultiSelectParamInput,
         Param,
         ParamInput,
@@ -110,10 +125,8 @@ export 'src/common/params.dart'
         StringParam,
         TextParamInput,
         WireParamSpec,
-        // Registry
         clearParams,
         declaredParams,
-        // Factory functions
         defineBoolean,
         defineDouble,
         defineEnumList,
@@ -122,9 +135,7 @@ export 'src/common/params.dart'
         defineJsonSecret,
         defineList,
         defineSecret,
-        defineString,
-        // Internal expression (for built-in params)
-        InternalExpression;
+        defineString;
 
 // ============================================================================
 // Built-in Parameters

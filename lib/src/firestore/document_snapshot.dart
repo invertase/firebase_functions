@@ -1,4 +1,18 @@
-import 'package:googleapis_firestore/googleapis_firestore.dart'
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import 'package:google_cloud_firestore/google_cloud_firestore.dart'
     show DocumentData;
 
 export '../common/change.dart';
@@ -6,11 +20,11 @@ export '../common/change.dart';
 /// Parses Firestore REST API field format into Dart values.
 ///
 /// Firestore REST API uses typed wrappers like:
-/// - {stringValue: "text"} → "text"
-/// - {integerValue: "123"} → 123
-/// - {booleanValue: true} → true
-/// - {mapValue: {fields: {...}}} → Map
-/// - {arrayValue: {values: [...]}} → List
+/// - `{stringValue: "text"}` → `"text"`
+/// - `{integerValue: "123"}` → `123`
+/// - `{booleanValue: true}` → `true`
+/// - `{mapValue: {fields: {...}}}` → [Map]
+/// - `{arrayValue: {values: [...]}}` → [List]
 dynamic parseFirestoreValue(Map<String, dynamic> field) {
   if (field.containsKey('stringValue')) {
     return field['stringValue'] as String;
@@ -64,7 +78,7 @@ Map<String, dynamic> parseFirestoreFields(Map<String, dynamic> fields) {
 
 /// A lightweight document snapshot for emulator mode.
 ///
-/// This provides a similar interface to dart_firebase_admin's QueryDocumentSnapshot
+/// This provides a similar interface to firebase_admin_sdk's QueryDocumentSnapshot
 /// but works with data fetched from the Firestore emulator REST API.
 class EmulatorDocumentSnapshot {
   EmulatorDocumentSnapshot({

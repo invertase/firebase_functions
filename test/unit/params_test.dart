@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'package:firebase_functions/src/common/expression.dart';
 import 'package:firebase_functions/src/common/params.dart';
 import 'package:test/test.dart';
@@ -111,7 +125,7 @@ void main() {
     test('StringParam generates correct spec', () {
       final param = defineString(
         'MY_STRING',
-        ParamOptions(
+        const ParamOptions(
           defaultValue: 'hello',
           label: 'My String',
           description: 'A test string',
@@ -127,7 +141,7 @@ void main() {
     });
 
     test('IntParam generates correct spec', () {
-      final param = defineInt('MY_INT', ParamOptions(defaultValue: 42));
+      final param = defineInt('MY_INT', const ParamOptions(defaultValue: 42));
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_INT');
@@ -136,7 +150,10 @@ void main() {
     });
 
     test('BooleanParam generates correct spec', () {
-      final param = defineBoolean('MY_BOOL', ParamOptions(defaultValue: true));
+      final param = defineBoolean(
+        'MY_BOOL',
+        const ParamOptions(defaultValue: true),
+      );
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_BOOL');
@@ -179,6 +196,102 @@ void main() {
     });
   });
 
+  group('SelectOption', () {
+    test('can be created with value only', () {
+      const option = SelectOption(value: 42);
+      expect(option.value, 42);
+      expect(option.label, isNull);
+    });
+
+    test('can be created with value and label', () {
+      const option = SelectOption(value: 512, label: 'Medium');
+      expect(option.value, 512);
+      expect(option.label, 'Medium');
+    });
+
+    test('works with String type', () {
+      const option = SelectOption(value: 'us-central1', label: 'US Central');
+      expect(option.value, 'us-central1');
+      expect(option.label, 'US Central');
+    });
+
+    test('works with double type', () {
+      const option = SelectOption(value: 0.5, label: 'Half');
+      expect(option.value, 0.5);
+      expect(option.label, 'Half');
+    });
+
+    test('select factory creates options with null labels', () {
+      final input = ParamInput.select([10, 20, 30]);
+      for (final option in input.options) {
+        expect(option.label, isNull);
+      }
+      expect(input.options.map((o) => o.value).toList(), [10, 20, 30]);
+    });
+
+    test('selectWithLabels factory maps labels to values', () {
+      final input = ParamInput.selectWithLabels({
+        'Small': 256,
+        'Medium': 512,
+        'Large': 1024,
+      });
+      expect(input.options[0].label, 'Small');
+      expect(input.options[0].value, 256);
+      expect(input.options[1].label, 'Medium');
+      expect(input.options[1].value, 512);
+      expect(input.options[2].label, 'Large');
+      expect(input.options[2].value, 1024);
+    });
+
+    test('multiSelect factory creates options with null labels', () {
+      final input = ParamInput.multiSelect(['a', 'b', 'c']);
+      for (final option in input.options) {
+        expect(option.label, isNull);
+      }
+      expect(input.options.map((o) => o.value).toList(), ['a', 'b', 'c']);
+    });
+
+    test('multiSelectWithLabels factory maps labels to values', () {
+      final input = ParamInput.multiSelectWithLabels({
+        'Option A': 'a',
+        'Option B': 'b',
+        'Option C': 'c',
+      });
+      expect(input, isA<MultiSelectParamInput>());
+      expect(input.options.length, 3);
+      expect(input.options[0].label, 'Option A');
+      expect(input.options[0].value, 'a');
+      expect(input.options[1].label, 'Option B');
+      expect(input.options[1].value, 'b');
+      expect(input.options[2].label, 'Option C');
+      expect(input.options[2].value, 'c');
+    });
+
+    test('can be used in SelectParamInput directly', () {
+      final input = const SelectParamInput<String>(
+        options: [
+          SelectOption(value: 'us-central1', label: 'US Central'),
+          SelectOption(value: 'europe-west1', label: 'Europe West'),
+        ],
+      );
+      expect(input.options.length, 2);
+      expect(input.options[0].value, 'us-central1');
+      expect(input.options[1].label, 'Europe West');
+    });
+
+    test('can be used in MultiSelectParamInput directly', () {
+      final input = const MultiSelectParamInput(
+        options: [
+          SelectOption(value: 'read', label: 'Read Access'),
+          SelectOption(value: 'write', label: 'Write Access'),
+        ],
+      );
+      expect(input.options.length, 2);
+      expect(input.options[0].value, 'read');
+      expect(input.options[1].label, 'Write Access');
+    });
+  });
+
   group('ParamInput', () {
     test('select creates SelectParamInput', () {
       final input = ParamInput.select([1, 2, 3]);
@@ -202,6 +315,17 @@ void main() {
       final input = ParamInput.multiSelect(['a', 'b', 'c']);
       expect(input, isA<MultiSelectParamInput>());
       expect(input.options.length, 3);
+    });
+
+    test('multiSelectWithLabels creates MultiSelectParamInput with labels', () {
+      final input = ParamInput.multiSelectWithLabels({
+        'Label A': 'val_a',
+        'Label B': 'val_b',
+      });
+      expect(input, isA<MultiSelectParamInput>());
+      expect(input.options.length, 2);
+      expect(input.options[0].label, 'Label A');
+      expect(input.options[0].value, 'val_a');
     });
 
     test('bucketPicker is a ResourceInput', () {
@@ -259,7 +383,10 @@ void main() {
     });
 
     test('generates correct spec', () {
-      final param = defineFloat('MY_FLOAT', ParamOptions(defaultValue: 3.14));
+      final param = defineFloat(
+        'MY_FLOAT',
+        const ParamOptions(defaultValue: 3.14),
+      );
 
       final spec = param.toSpec();
       expect(spec.name, 'MY_FLOAT');
@@ -285,7 +412,7 @@ void main() {
     test('accepts ParamOptions with default values', () {
       final param = defineEnumList(
         TestRegion.values,
-        ParamOptions(
+        const ParamOptions(
           defaultValue: [TestRegion.usCentral1],
           label: 'Regions',
           description: 'Select deployment regions',
@@ -300,7 +427,7 @@ void main() {
     test('generates correct spec', () {
       final param = defineEnumList(
         TestRegion.values,
-        ParamOptions(
+        const ParamOptions(
           defaultValue: [TestRegion.europeWest1],
           label: 'Deployment Regions',
         ),
@@ -353,8 +480,8 @@ void main() {
       final param = defineInt('MEMORY_MB');
       final needsMoreCpu = param.greaterThan(2048);
       final cpuCount = needsMoreCpu.when(
-        then: LiteralExpression(4),
-        otherwise: LiteralExpression(1),
+        then: const LiteralExpression(4),
+        otherwise: const LiteralExpression(1),
       );
 
       expect(cpuCount, isA<If<int>>());

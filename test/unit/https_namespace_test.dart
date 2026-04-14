@@ -1,5 +1,23 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// ignore_for_file: avoid_dynamic_calls
+
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:firebase_functions/src/common/environment.dart';
 import 'package:firebase_functions/src/firebase.dart';
 import 'package:firebase_functions/src/https/callable.dart';
 import 'package:firebase_functions/src/https/error.dart';
@@ -8,7 +26,7 @@ import 'package:firebase_functions/src/https/options.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
-// Helper to find function by name
+// Helper to find function by name (uses kebab-case Cloud Run ID)
 FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
   try {
     return firebase.functions.firstWhere((f) => f.name == name);
@@ -18,12 +36,16 @@ FirebaseFunctionDeclaration? _findFunction(Firebase firebase, String name) {
 }
 
 void main() {
+  setUpAll(() {
+    FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': 'demo-test'};
+  });
+
   group('HttpsNamespace', () {
     late Firebase firebase;
     late HttpsNamespace https;
 
     setUp(() {
-      firebase = Firebase();
+      firebase = createFirebaseInternal();
       https = HttpsNamespace(firebase);
     });
 
@@ -34,7 +56,7 @@ void main() {
           (request) async => Response.ok('Hello'),
         );
 
-        expect(_findFunction(firebase, 'testFunction'), isNotNull);
+        expect(_findFunction(firebase, 'test-function'), isNotNull);
       });
 
       test('handler receives request and returns response', () async {
@@ -43,10 +65,10 @@ void main() {
           (request) async => Response.ok('Hello, World!'),
         );
 
-        final func = _findFunction(firebase, 'testFunction')!;
+        final func = _findFunction(firebase, 'test-function')!;
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/testFunction'),
+          Uri.parse('http://localhost/test-function'),
         );
         final response = await func.handler(request);
 
@@ -59,10 +81,10 @@ void main() {
           throw NotFoundError('Resource not found');
         });
 
-        final func = _findFunction(firebase, 'errorFunction')!;
+        final func = _findFunction(firebase, 'error-function')!;
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/errorFunction'),
+          Uri.parse('http://localhost/error-function'),
         );
         final response = await func.handler(request);
 
@@ -79,10 +101,10 @@ void main() {
           throw Exception('Unexpected crash');
         });
 
-        final func = _findFunction(firebase, 'crashFunction')!;
+        final func = _findFunction(firebase, 'crash-function')!;
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/crashFunction'),
+          Uri.parse('http://localhost/crash-function'),
         );
         final response = await func.handler(request);
 
@@ -99,7 +121,7 @@ void main() {
           (request) async => Response.ok('OK'),
         );
 
-        final func = _findFunction(firebase, 'externalFunction')!;
+        final func = _findFunction(firebase, 'external-function')!;
         expect(func.external, isTrue);
       });
 
@@ -108,7 +130,7 @@ void main() {
           throw UnauthenticatedError('Not logged in');
         });
 
-        final func = _findFunction(firebase, 'unauthorizedFunction')!;
+        final func = _findFunction(firebase, 'unauthorized-function')!;
         final request = Request('GET', Uri.parse('http://localhost/test'));
         final response = await func.handler(request);
 
@@ -124,7 +146,7 @@ void main() {
         final body = jsonEncode({'data': data});
         return Request(
           'POST',
-          Uri.parse('http://localhost/testFunction'),
+          Uri.parse('http://localhost/test-function'),
           headers: {'content-type': 'application/json', ...headers},
           body: body,
         );
@@ -136,7 +158,7 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        expect(_findFunction(firebase, 'callableFunction'), isNotNull);
+        expect(_findFunction(firebase, 'callable-function'), isNotNull);
       });
 
       test('handler returns wrapped result', () async {
@@ -146,7 +168,7 @@ void main() {
           return CallableResult({'message': 'Hello, $name!'});
         });
 
-        final func = _findFunction(firebase, 'greetFunction')!;
+        final func = _findFunction(firebase, 'greet-function')!;
         final request = createCallableRequest(data: {'name': 'World'});
         final response = await func.handler(request);
 
@@ -163,10 +185,10 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        final func = _findFunction(firebase, 'postOnlyFunction')!;
+        final func = _findFunction(firebase, 'post-only-function')!;
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/postOnlyFunction'),
+          Uri.parse('http://localhost/post-only-function'),
           headers: {'content-type': 'application/json'},
         );
         final response = await func.handler(request);
@@ -182,10 +204,10 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        final func = _findFunction(firebase, 'jsonOnlyFunction')!;
+        final func = _findFunction(firebase, 'json-only-function')!;
         final request = Request(
           'POST',
-          Uri.parse('http://localhost/jsonOnlyFunction'),
+          Uri.parse('http://localhost/json-only-function'),
           headers: {'content-type': 'text/plain'},
           body: '{"data": "test"}',
         );
@@ -199,7 +221,7 @@ void main() {
           throw PermissionDeniedError('Not authorized');
         });
 
-        final func = _findFunction(firebase, 'errorFunction')!;
+        final func = _findFunction(firebase, 'error-function')!;
         final request = createCallableRequest();
         final response = await func.handler(request);
 
@@ -214,7 +236,7 @@ void main() {
           throw StateError('Something broke');
         });
 
-        final func = _findFunction(firebase, 'crashFunction')!;
+        final func = _findFunction(firebase, 'crash-function')!;
         final request = createCallableRequest();
         final response = await func.handler(request);
 
@@ -228,7 +250,7 @@ void main() {
           return CallableResult('result');
         });
 
-        final func = _findFunction(firebase, 'nonStreamFunction')!;
+        final func = _findFunction(firebase, 'non-stream-function')!;
         final request = createCallableRequest();
         final response = await func.handler(request);
 
@@ -244,12 +266,169 @@ void main() {
           return JsonResult({'status': 'ok', 'count': 42});
         });
 
-        final func = _findFunction(firebase, 'jsonResultFunction')!;
+        final func = _findFunction(firebase, 'json-result-function')!;
         final request = createCallableRequest();
         final response = await func.handler(request);
 
         final body = jsonDecode(await response.readAsString());
         expect(body['result'], {'status': 'ok', 'count': 42});
+      });
+
+      group('streaming handling', () {
+        test('catches HttpsError and returns SSE error', () async {
+          https.onCall(name: 'streamErrorFunction', (request, response) async {
+            throw InvalidArgumentError('Invalid data');
+          });
+
+          final func = _findFunction(firebase, 'stream-error-function')!;
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func.handler(request);
+
+          expect(response.statusCode, 200);
+          expect(response.headers['content-type'], 'text/event-stream');
+
+          final body = await response.readAsString();
+          final jsonStr = body.substring('data: '.length).trim();
+          expect(jsonDecode(jsonStr), {
+            'error': {'status': 'INVALID_ARGUMENT', 'message': 'Invalid data'},
+          });
+        });
+
+        test(
+          'catches unexpected exceptions and returns SSE internal error',
+          () async {
+            https.onCall(name: 'streamCrashFunction', (
+              request,
+              response,
+            ) async {
+              throw Exception('Unexpected crash');
+            });
+
+            final func = _findFunction(firebase, 'stream-crash-function')!;
+            final request = createCallableRequest(
+              headers: {'accept': 'text/event-stream'},
+            );
+            final response = await func.handler(request);
+
+            expect(response.statusCode, 200);
+            expect(response.headers['content-type'], 'text/event-stream');
+
+            final body = await response.readAsString();
+            final jsonStr = body.substring('data: '.length).trim();
+            expect(jsonDecode(jsonStr), {
+              'error': {
+                'status': 'INTERNAL',
+                'message': 'An unexpected error occurred.',
+              },
+            });
+          },
+        );
+
+        test('success streaming returns SSE data', () async {
+          https.onCall(name: 'streamSuccessFunction', (
+            request,
+            response,
+          ) async {
+            return CallableResult('success');
+          });
+
+          final func = _findFunction(firebase, 'stream-success-function')!;
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func.handler(request);
+
+          expect(response.statusCode, 200);
+          expect(response.headers['content-type'], 'text/event-stream');
+
+          final body = await response.readAsString();
+          final jsonStr = body.substring('data: '.length).trim();
+          expect(jsonDecode(jsonStr), {'result': 'success'});
+        });
+
+        test('catches error emitted by stream and returns SSE error', () async {
+          https.onCall(name: 'streamStreamErrorFunction', (
+            request,
+            response,
+          ) async {
+            final controller = StreamController<CallableResult<String>>();
+            response.stream(controller.stream);
+
+            controller.add(CallableResult('part 1'));
+            controller.addError(InvalidArgumentError('Invalid part 2'));
+            unawaited(controller.close());
+
+            await Future<void>.delayed(const Duration(milliseconds: 100));
+            return CallableResult('done');
+          });
+
+          final func = _findFunction(firebase, 'stream-stream-error-function')!;
+          final request = createCallableRequest(
+            headers: {'accept': 'text/event-stream'},
+          );
+          final response = await func.handler(request);
+
+          expect(response.statusCode, 200);
+          final body = await response.readAsString();
+          final events = body
+              .split('\n\n')
+              .where((e) => e.trim().isNotEmpty)
+              .toList();
+          expect(events.length, 2);
+          final decodedEvents = events
+              .map((e) => jsonDecode(e.substring('data: '.length)))
+              .toList();
+          expect(decodedEvents, contains(equals({'message': 'part 1'})));
+          expect(
+            decodedEvents,
+            contains(
+              equals({
+                'error': {
+                  'status': 'INVALID_ARGUMENT',
+                  'message': 'Invalid part 2',
+                },
+              }),
+            ),
+          );
+        });
+
+        test(
+          'true background streaming works with Stream.fromIterable',
+          () async {
+            https.onCall(name: 'bgStreamFunction', (request, response) async {
+              final source = Stream.fromIterable([
+                CallableResult('item 1'),
+                CallableResult('item 2'),
+              ]);
+              response.stream(source);
+
+              return CallableResult('done');
+            });
+
+            final func = _findFunction(firebase, 'bg-stream-function')!;
+            final request = createCallableRequest(
+              headers: {'accept': 'text/event-stream'},
+            );
+            final response = await func.handler(request);
+
+            expect(response.statusCode, 200);
+
+            final body = await response.readAsString();
+            final events = body
+                .split('\n\n')
+                .where((e) => e.trim().isNotEmpty)
+                .toList();
+            expect(events.length, 3);
+            final decodedEvents = events
+                .map((e) => jsonDecode(e.substring('data: '.length)))
+                .toList();
+            expect(decodedEvents, contains(equals({'message': 'item 1'})));
+            expect(decodedEvents, contains(equals({'message': 'item 2'})));
+            expect(decodedEvents, contains(equals({'result': 'done'})));
+          },
+        );
       });
     });
 
@@ -261,7 +440,7 @@ void main() {
         final body = jsonEncode({'data': data});
         return Request(
           'POST',
-          Uri.parse('http://localhost/testFunction'),
+          Uri.parse('http://localhost/test-function'),
           headers: {'content-type': 'application/json', ...headers},
           body: body,
         );
@@ -276,7 +455,7 @@ void main() {
           },
         );
 
-        expect(_findFunction(firebase, 'typedFunction'), isNotNull);
+        expect(_findFunction(firebase, 'typed-function'), isNotNull);
       });
 
       test('deserializes input using fromJson', () async {
@@ -290,7 +469,7 @@ void main() {
           },
         );
 
-        final func = _findFunction(firebase, 'typedFunction')!;
+        final func = _findFunction(firebase, 'typed-function')!;
         final request = createCallableRequest(data: {'name': 'World'});
         final response = await func.handler(request);
 
@@ -308,7 +487,7 @@ void main() {
           },
         );
 
-        final func = _findFunction(firebase, 'typedOutputFunction')!;
+        final func = _findFunction(firebase, 'typed-output-function')!;
         final request = createCallableRequest(data: {'name': 'World'});
         final response = await func.handler(request);
 
@@ -325,10 +504,10 @@ void main() {
           (request, response) async => 'OK',
         );
 
-        final func = _findFunction(firebase, 'postOnlyTypedFunction')!;
+        final func = _findFunction(firebase, 'post-only-typed-function')!;
         final request = Request(
           'GET',
-          Uri.parse('http://localhost/postOnlyTypedFunction'),
+          Uri.parse('http://localhost/post-only-typed-function'),
           headers: {'content-type': 'application/json'},
         );
         final response = await func.handler(request);
@@ -345,7 +524,7 @@ void main() {
           },
         );
 
-        final func = _findFunction(firebase, 'errorTypedFunction')!;
+        final func = _findFunction(firebase, 'error-typed-function')!;
         final request = createCallableRequest(data: {'name': ''});
         final response = await func.handler(request);
 
@@ -364,7 +543,8 @@ void main() {
           (request) async => Response.ok('OK'),
         );
 
-        expect(_findFunction(firebase, 'optionsFunction'), isNotNull);
+        final func = _findFunction(firebase, 'options-function')!;
+        expect(func.allowedOrigins, ['https://example.com']);
       });
 
       test('CallableOptions can be provided', () {
@@ -376,7 +556,21 @@ void main() {
           (request, response) async => CallableResult('OK'),
         );
 
-        expect(_findFunction(firebase, 'callableOptionsFunction'), isNotNull);
+        expect(_findFunction(firebase, 'callable-options-function'), isNotNull);
+      });
+
+      test('CallableOptions can be provided passing allowedOrigins', () {
+        https.onCall(
+          name: 'callableOptionsFunctionWithOrigins',
+          options: const CallableOptions(cors: Cors(['https://example.com'])),
+          (request, response) async => CallableResult('OK'),
+        );
+
+        final func = _findFunction(
+          firebase,
+          'callable-options-function-with-origins',
+        )!;
+        expect(func.allowedOrigins, ['https://example.com']);
       });
     });
   });

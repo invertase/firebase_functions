@@ -1,13 +1,24 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'test_client_base.dart';
 
 /// Helper client for interacting with Firestore emulator REST API.
-class FirestoreClient {
-  FirestoreClient(this.baseUrl);
-
-  final String baseUrl;
-  final http.Client _client = http.Client();
+final class FirestoreClient extends TestClientBase {
+  FirestoreClient(super.baseUrl);
 
   /// Creates a document with the specified ID.
   ///
@@ -27,7 +38,7 @@ class FirestoreClient {
     Map<String, dynamic> data,
   ) async {
     final url = '$baseUrl/$collectionPath?documentId=$documentId';
-    final response = await _client.post(
+    final response = await client.post(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'fields': fields(data)}),
@@ -58,7 +69,7 @@ class FirestoreClient {
     Map<String, dynamic> data,
   ) async {
     final url = '$baseUrl/$documentPath';
-    final response = await _client.patch(
+    final response = await client.patch(
       Uri.parse(url),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'fields': fields(data)}),
@@ -76,7 +87,7 @@ class FirestoreClient {
   /// Deletes a document.
   Future<void> deleteDocument(String documentPath) async {
     final url = '$baseUrl/$documentPath';
-    final response = await _client.delete(Uri.parse(url));
+    final response = await client.delete(Uri.parse(url));
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -88,7 +99,7 @@ class FirestoreClient {
   /// Gets a document.
   Future<Map<String, dynamic>?> getDocument(String documentPath) async {
     final url = '$baseUrl/$documentPath';
-    final response = await _client.get(Uri.parse(url));
+    final response = await client.get(Uri.parse(url));
 
     if (response.statusCode == 404) {
       return null;
@@ -150,7 +161,7 @@ class FirestoreClient {
   /// value([1, 2])   // {'arrayValue': {'values': [...]}}
   /// value({'key': 'value'})  // {'mapValue': {'fields': {...}}}
   /// ```
-  static Map<String, dynamic> value(dynamic val) {
+  static Map<String, dynamic> value(Object? val) {
     if (val is String) return stringValue(val);
     if (val is int) return intValue(val);
     if (val is double) return doubleValue(val);
@@ -158,7 +169,7 @@ class FirestoreClient {
     if (val == null) return nullValue();
 
     if (val is List) {
-      return arrayValue(val.map((e) => value(e)).toList());
+      return arrayValue(val.map(value).toList());
     }
 
     if (val is Map) {
@@ -191,10 +202,5 @@ class FirestoreClient {
       result[entry.key] = value(entry.value);
     }
     return result;
-  }
-
-  /// Closes the HTTP client.
-  void close() {
-    _client.close();
   }
 }

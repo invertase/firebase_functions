@@ -1,9 +1,22 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /// Identity Platform namespace for Cloud Functions.
 library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
@@ -235,18 +248,9 @@ class IdentityNamespace extends FunctionsNamespace {
           headers: {'Content-Type': 'application/json'},
         );
       } on HttpsError catch (e) {
-        return Response(
-          e.httpStatusCode,
-          body: jsonEncode({'error': e.toErrorResponse()}),
-          headers: {'Content-Type': 'application/json'},
-        );
-      } catch (e) {
-        final error = InternalError('An unexpected error occurred.');
-        return Response(
-          error.httpStatusCode,
-          body: jsonEncode({'error': error.toErrorResponse()}),
-          headers: {'Content-Type': 'application/json'},
-        );
+        return e.toShelfResponse();
+      } catch (e, stackTrace) {
+        return logInternalError(e, stackTrace).toShelfResponse();
       }
     });
   }
@@ -271,43 +275,22 @@ class IdentityNamespace extends FunctionsNamespace {
   /// certificates. In emulator mode (when FUNCTIONS_EMULATOR=true or
   /// skipTokenVerification debug feature is enabled), verification is skipped.
   Future<Map<String, dynamic>> _decodeAndVerifyJwt(String jwt) async {
-    // Get environment configuration
-    final env = Platform.environment;
-    final isEmulator = env['FUNCTIONS_EMULATOR'] == 'true';
-    final skipVerification = _shouldSkipTokenVerification(env);
-
     // Get project ID
-    final projectId =
-        env['GCLOUD_PROJECT'] ??
-        env['GCP_PROJECT'] ??
-        env['FIREBASE_PROJECT'] ??
-        'demo-test';
+    final projectId = firebase.$env.projectId;
 
     // Create verifier
     final verifier = AuthBlockingTokenVerifier(
       projectId: projectId,
-      isEmulator: isEmulator || skipVerification,
+      isEmulator:
+          firebase.$env.isEmulator || firebase.$env.skipTokenVerification,
     );
 
     // Determine audience based on platform
     // Cloud Run uses "run.app", GCF v1 uses default
-    final kService = env['K_SERVICE']; // Cloud Run service name
+    final kService = firebase.$env.kService; // Cloud Run service name
     final audience = kService != null ? 'run.app' : null;
 
     return verifier.verifyToken(jwt, audience: audience);
-  }
-
-  /// Checks if token verification should be skipped based on debug features.
-  bool _shouldSkipTokenVerification(Map<String, String> env) {
-    final debugFeatures = env['FIREBASE_DEBUG_FEATURES'];
-    if (debugFeatures == null) return false;
-
-    try {
-      final features = jsonDecode(debugFeatures) as Map<String, dynamic>;
-      return features['skipTokenVerification'] as bool? ?? false;
-    } on FormatException {
-      return false;
-    }
   }
 
   /// Validates the auth response for invalid claims.
@@ -342,7 +325,7 @@ class IdentityNamespace extends FunctionsNamespace {
       final customClaims = authResponse.customClaims;
       if (customClaims != null) {
         final invalidClaims = disallowedClaims
-            .where((claim) => customClaims.containsKey(claim))
+            .where(customClaims.containsKey)
             .toList();
         if (invalidClaims.isNotEmpty) {
           throw InvalidArgumentError(
@@ -363,7 +346,7 @@ class IdentityNamespace extends FunctionsNamespace {
       final sessionClaims = authResponse.sessionClaims;
       if (sessionClaims != null) {
         final invalidClaims = disallowedClaims
-            .where((claim) => sessionClaims.containsKey(claim))
+            .where(sessionClaims.containsKey)
             .toList();
         if (invalidClaims.isNotEmpty) {
           throw InvalidArgumentError(

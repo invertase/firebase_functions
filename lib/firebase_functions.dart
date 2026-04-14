@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /// Firebase Functions for Dart
 ///
 /// Write Firebase Cloud Functions in Dart with full type safety.
@@ -48,20 +62,33 @@
 /// );
 /// ```
 ///
+/// ## Trigger Support
+///
+/// Only HTTPS triggers (`onRequest`, `onCall`, `onCallWithData`) are
+/// production-ready. All other trigger types are marked `@experimental`:
+///
+/// - **Emulator only**: Firestore, Realtime Database, Storage
+/// - **Not yet supported**: Pub/Sub, Alerts, Eventarc, Identity, Remote Config,
+///   Scheduler, Tasks, Test Lab
+///
 /// See also:
-/// - [params.dart] for the full params API
+/// - [params] for the full params API
 /// - [onInit] for safe initialization with secrets
+///
+/// @docImport 'src/common/on_init.dart';
 library;
 
-// Re-export Firestore types for convenience
-export 'package:googleapis_firestore/googleapis_firestore.dart'
+// Used for the `params` import in the docs!
+import 'params.dart' as params;
+
+// Package re-exports
+export 'package:google_cloud_firestore/google_cloud_firestore.dart'
     show DocumentData, DocumentSnapshot, QueryDocumentSnapshot;
-// Re-export Shelf types for convenience
 export 'package:shelf/shelf.dart' show Request, Response;
 
-// Re-export built-in params from params.dart for convenience
+// Built-in params
 export 'params.dart' show databaseURL, gcloudProject, projectID, storageBucket;
-// Alerts triggers
+// Experimental: Alerts triggers (not yet supported in production or emulator)
 export 'src/alerts/alerts.dart';
 // Common types
 export 'src/common/cloud_event.dart';
@@ -69,19 +96,31 @@ export 'src/common/expression.dart';
 export 'src/common/on_init.dart' show onInit;
 export 'src/common/options.dart';
 export 'src/common/params.dart';
-// Database triggers
+// Experimental: Realtime Database triggers (emulator only)
 export 'src/database/database.dart';
+// Experimental: Eventarc triggers (not yet supported in production or emulator)
+export 'src/eventarc/eventarc.dart';
 // Core firebase instance
 export 'src/firebase.dart' show Firebase;
-// Firestore triggers
+// Experimental: Firestore triggers (emulator only)
 export 'src/firestore/firestore.dart';
-// HTTPS triggers
+// HTTPS triggers (production-ready)
 export 'src/https/https.dart';
-// Identity triggers
+// Experimental: Identity triggers (not yet supported in production or emulator)
 export 'src/identity/identity.dart';
-// Pub/Sub triggers
+// Logger
+export 'src/logger/logger.dart' show LogEntry, LogSeverity, Logger, logger;
+// Experimental: Pub/Sub triggers (not yet supported in production or emulator)
 export 'src/pubsub/pubsub.dart';
-// Scheduler triggers
+// Experimental: Remote Config triggers (not yet supported in production or emulator)
+export 'src/remote_config/remote_config.dart';
+// Experimental: Scheduler triggers (not yet supported in production or emulator)
 export 'src/scheduler/scheduler.dart';
 // Core runtime
 export 'src/server.dart' show fireUp;
+// Experimental: Storage triggers (emulator only)
+export 'src/storage/storage.dart';
+// Experimental: Task queue triggers (not yet supported in production or emulator)
+export 'src/tasks/tasks.dart';
+// Experimental: Test Lab triggers (not yet supported in production or emulator)
+export 'src/test_lab/test_lab.dart';

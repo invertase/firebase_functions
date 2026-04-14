@@ -1,3 +1,17 @@
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -5,6 +19,7 @@ import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
 
 import '../common/cloud_event.dart';
+import '../common/utilities.dart';
 import '../firebase.dart';
 import 'data_snapshot.dart';
 import 'event.dart';
@@ -90,11 +105,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueCreated triggered!');
-          print('Ref: $refPath');
-          print('Instance: $instanceName');
-          print('Params: $params');
-
           // Parse JSON body
           DataSnapshot? snapshot;
           try {
@@ -109,9 +119,8 @@ class DatabaseNamespace extends FunctionsNamespace {
                 data: deltaData,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - snapshot remains null
           }
 
           try {
@@ -131,11 +140,8 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
-            return Response(500, body: 'Handler error: $e');
+          } catch (e, stackTrace) {
+            return logEventHandlerError(e, stackTrace);
           }
 
           return Response.ok('');
@@ -186,10 +192,7 @@ class DatabaseNamespace extends FunctionsNamespace {
       } on FormatException catch (e) {
         return Response(400, body: 'Invalid CloudEvent: ${e.message}');
       } catch (e, stackTrace) {
-        return Response(
-          500,
-          body: 'Error processing Database event: $e\n$stackTrace',
-        );
+        return logEventHandlerError(e, stackTrace);
       }
     }, refPattern: _normalizeRefPattern(ref));
   }
@@ -254,10 +257,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueUpdated triggered!');
-          print('Ref: $refPath');
-          print('Params: $params');
-
           // Parse JSON body
           Change<DataSnapshot>? change;
           try {
@@ -285,9 +284,8 @@ class DatabaseNamespace extends FunctionsNamespace {
                 after: afterSnapshot,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - change remains null
           }
 
           try {
@@ -307,11 +305,8 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
-            return Response(500, body: 'Handler error: $e');
+          } catch (e, stackTrace) {
+            return logEventHandlerError(e, stackTrace);
           }
 
           return Response.ok('');
@@ -436,10 +431,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueDeleted triggered!');
-          print('Ref: $refPath');
-          print('Params: $params');
-
           // Parse JSON body
           DataSnapshot? snapshot;
           try {
@@ -454,9 +445,8 @@ class DatabaseNamespace extends FunctionsNamespace {
                 data: deletedData,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - snapshot remains null
           }
 
           try {
@@ -476,11 +466,8 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
-            return Response(500, body: 'Handler error: $e');
+          } catch (e, stackTrace) {
+            return logEventHandlerError(e, stackTrace);
           }
 
           return Response.ok('');
@@ -605,10 +592,6 @@ class DatabaseNamespace extends FunctionsNamespace {
 
           final params = _extractParams(ref, refPath);
 
-          print('Database onValueWritten triggered!');
-          print('Ref: $refPath');
-          print('Params: $params');
-
           // Parse JSON body
           Change<DataSnapshot>? change;
           try {
@@ -632,23 +615,13 @@ class DatabaseNamespace extends FunctionsNamespace {
                 data: afterData,
               );
 
-              // Determine operation type
-              if (beforeData == null && afterData != null) {
-                print('  Operation: CREATE');
-              } else if (beforeData != null && afterData == null) {
-                print('  Operation: DELETE');
-              } else {
-                print('  Operation: UPDATE');
-              }
-
               change = Change<DataSnapshot>(
                 before: beforeSnapshot,
                 after: afterSnapshot,
               );
             }
-          } catch (e, stack) {
-            print('Error parsing body: $e');
-            print('Stack: $stack');
+          } catch (_) {
+            // Body parsing failed - change remains null
           }
 
           try {
@@ -668,11 +641,8 @@ class DatabaseNamespace extends FunctionsNamespace {
             );
 
             await handler(event);
-            print('Handler completed successfully');
-          } catch (e, stack) {
-            print('Handler error: $e');
-            print('Stack: $stack');
-            return Response(500, body: 'Handler error: $e');
+          } catch (e, stackTrace) {
+            return logEventHandlerError(e, stackTrace);
           }
 
           return Response.ok('');
