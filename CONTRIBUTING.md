@@ -19,7 +19,6 @@ All submissions, including submissions by project members, require review. We us
 - **Dart SDK** >= 3.9.0
 - **Node.js** v22 (required for snapshot tests and the Firebase Emulator)
 - **Java 21+** (required for the Firestore emulator)
-- **Custom Firebase CLI** with Dart runtime support (the `@invertase/dart` branch of firebase-tools)
 
 ### Setup
 
