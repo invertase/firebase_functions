@@ -27,8 +27,6 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 ## Table of Contents
 
 - [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
 - [Quick Start](#quick-start)
   - [HTTPS Functions](#https-functions)
   - [Pub/Sub Triggers](#pubsub-triggers)
