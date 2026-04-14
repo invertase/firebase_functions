@@ -1,11 +1,9 @@
-# Firebase SDK for Dart Functions
-
 [![Tests](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml/badge.svg)](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml)
 [![pub package](https://img.shields.io/pub/v/firebase_functions.svg)](https://pub.dev/packages/firebase_functions) 
 
 Write Firebase Cloud Functions in Dart with full type safety and performance.
 
-## Status: Alpha (v0.1.0)
+## Status: Experimental (v0.5.0)
 
 This package provides a Dart implementation of Firebase Cloud Functions. Only HTTPS triggers are currently supported in production. Other trigger types are experimental and have varying levels of support.
 
@@ -56,31 +54,6 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 - **Conditional Config**: CEL expressions for environment-based options
 - **Error Handling**: Built-in typed error classes matching the Node.js SDK
 - **Hot Reload**: Fast development with build_runner watch
-
-## Prerequisites
-
-- Dart SDK >=3.0.0
-- Node v22 (Later versions of Node won't work!)
-- Java 21+ (for Firestore)
-- Custom Firebase CLI with Dart runtime support:
-
-```bash
-git clone -b @invertase/dart https://github.com/invertase/firebase-tools.git
-cd firebase-tools
-npm install
-npm run build
-npm link
-```
-
-## Installation
-
-Add to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  firebase_functions:
-    path: ../firebase-functions-dart
-```
 
 ## Quick Start
 
