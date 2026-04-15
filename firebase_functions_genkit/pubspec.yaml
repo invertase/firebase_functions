@@ -1,7 +1,7 @@
 name: firebase_functions_genkit
 description: A starting point for Dart libraries or applications.
 version: 0.1.0
-repository: https://github.com/invertase/firebase-functions-dart
+repository: https://github.com/firebase/firebase-functions-dart
 
 publish_to: none
 
