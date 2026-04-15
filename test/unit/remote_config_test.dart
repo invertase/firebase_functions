@@ -50,8 +50,7 @@ Request _createRemoteConfigRequest({
     'description': description,
     'updateOrigin': updateOrigin,
     'updateType': updateType,
-    // ignore: use_null_aware_elements
-    if (rollbackSource != null) 'rollbackSource': rollbackSource,
+    'rollbackSource': ?rollbackSource,
   };
 
   final cloudEvent = {
