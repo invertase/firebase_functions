@@ -9,7 +9,7 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 
 | Trigger Type | Status | Functions |
 |-------------|--------|-----------|
-| **HTTPS** | ✅ Production | `onRequest`, `onCall`, `onCallWithData` [^1] |
+| **HTTPS** | ✅ Production | `onRequest`, `onCall`, `onCallWithData` [(see note)](#note) |
 | **Firestore** | ⚠️ Emulator only | `onDocumentCreated`, `onDocumentUpdated`, `onDocumentDeleted`, `onDocumentWritten`, `onDocumentCreatedWithAuthContext`, `onDocumentUpdatedWithAuthContext`, `onDocumentDeletedWithAuthContext`, `onDocumentWrittenWithAuthContext` |
 | **Realtime Database** | ⚠️ Emulator only | `onValueCreated`, `onValueUpdated`, `onValueDeleted`, `onValueWritten` |
 | **Storage** | ⚠️ Emulator only | `onObjectFinalized`, `onObjectArchived`, `onObjectDeleted`, `onObjectMetadataUpdated` |
@@ -23,6 +23,13 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 | **Task Queues** | 🚧 Experimental | `onTaskDispatched` |
 
 > **Legend**: ✅ Production — works in production and emulator. ⚠️ Emulator only — works with the Firebase emulator but not yet in production. 🚧 Experimental — implemented but not currently supported by the emulator or production; APIs may change.
+
+<a name="note"></a>
+> [!NOTE]
+> When invoking functions defined with `onCall` and `onCallWithData` from a
+> client SDK, you must use the function's HTTPS URL. The standard name-based
+> lookup is not supported for functions written in Dart. For example, in the
+> Flutter `cloud_functions` package, use `httpsCallableFromUrl`.
 
 ## Table of Contents
 
@@ -822,8 +829,3 @@ See [Testing Guide](test/snapshots/README.md) for more details.
 ## License
 
 [Apache 2.0](LICENSE)
-
-[^1]: When invoking functions defined with `onCall` and `onCallWithData` from
-    a client SDK, you must use the function's HTTPS URL. The standard name-based
-    lookup is not supported for functions written in Dart. For example, in the
-    Flutter `cloud_functions` package, use `httpsCallableFromUrl`.
