@@ -1,4 +1,4 @@
-## 0.5.1-wip
+## 0.5.1
 
 - Update constraint: `meta: ^1.17.0`
 - Remove the use of footnotes in README.md, since they are not supported by
