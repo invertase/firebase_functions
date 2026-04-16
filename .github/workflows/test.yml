@@ -140,7 +140,7 @@ jobs:
           cat test/fixtures/dart_reference/functions.yaml
 
       - name: Upload generated manifest
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: dart-manifest
           path: test/fixtures/dart_reference/functions.yaml
@@ -197,7 +197,7 @@ jobs:
 
       - name: Upload manifests on failure
         if: failure()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: manifests-comparison
           path: |
@@ -261,7 +261,7 @@ jobs:
 
       - name: Upload test logs on failure
         if: failure()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: e2e-test-logs
           path: |
