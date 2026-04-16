@@ -79,7 +79,7 @@ class EmulatorHelper {
       workingDirectory: projectPath,
       environment: {
         'FIREBASE_EMULATOR_HUB': 'true',
-        'FIREBASE_CLI_EXPERIMENTS': 'functionsrunapionly',
+        'FIREBASE_CLI_EXPERIMENTS': 'dartfunctions',
         ...Platform.environment,
       },
     );
