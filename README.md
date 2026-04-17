@@ -47,6 +47,7 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
   - [Test Lab](#test-lab)
 - [Parameters & Configuration](#parameters--configuration)
 - [Project Configuration](#project-configuration)
+- [Deployment](#deployment)
 - [Development](#development)
 
 ## Features
@@ -782,6 +783,12 @@ Your `firebase.json` must specify the Dart runtime:
   }
 }
 ```
+
+## Deployment
+
+For full deployment instructions, see the [Get started with Cloud Functions for Firebase (Dart)](https://firebase.google.com/docs/functions/start-dart) guide.
+
+> **Note**: Only HTTPS triggers (`onRequest`, `onCall`) are supported in production. See the [status table](#status-experimental-v050) for other trigger types.
 
 ## Development
 
