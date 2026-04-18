@@ -1,3 +1,8 @@
+## 0.5.2-wip
+
+- Add a comment to the generated manifest (`functions.yaml`) to indicate that
+  it is managed by this package.
+
 ## 0.5.1
 
 - Update constraint: `meta: ^1.17.0`
