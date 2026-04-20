@@ -82,6 +82,13 @@ void main() {
       expect(dartManifest['specVersion'], equals('v1alpha1'));
     });
 
+    test('should have a comment at top', () {
+      final dartYaml = File(
+        'test/fixtures/dart_reference/functions.yaml',
+      ).readAsStringSync();
+      expect(dartYaml, startsWith('#'));
+    });
+
     // =========================================================================
     // Params Tests
     // =========================================================================
