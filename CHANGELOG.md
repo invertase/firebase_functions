@@ -2,6 +2,7 @@
 
 - Add a comment to the generated manifest (`functions.yaml`) to indicate that
   it is managed by this package.
+- Add "Learn more" and "Usage" sections to README.md.
 
 ## 0.5.1
 
