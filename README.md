@@ -1,5 +1,11 @@
 # Dart Firebase SDK for Cloud Functions
 
+<!--
+Keep this content in sync with the Node and Python READMEs:
+  - https://github.com/firebase/firebase-functions
+  - https://github.com/firebase/firebase-functions-python
+-->
+
 [![Tests](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml/badge.svg)](https://github.com/firebase/firebase-functions-dart/actions/workflows/test.yml)
 [![pub package](https://img.shields.io/pub/v/firebase_functions.svg)](https://pub.dev/packages/firebase_functions)
 
