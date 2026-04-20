@@ -19,7 +19,7 @@ Here are some resources to get help:
 - [Browse some examples](example/)
 - [Codelabs](https://codelabs.developers.google.com/deploy-dart-on-firebase-functions)
 
-If the official documentation doesn't help, try asking through our [official support channels](https://firebase.google.com/support/)
+If the official documentation doesn't help, try asking through our [official support channels](https://firebase.google.com/support/).
 
 ## Usage
 
