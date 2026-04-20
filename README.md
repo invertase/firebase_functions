@@ -3,6 +3,11 @@
 
 Write Firebase Cloud Functions in Dart with full type safety and performance.
 
+[Quickstart](https://firebase.google.com/docs/functions/start-dart)
+[Read the full API reference](https://pub.dev/documentation/firebase_functions/latest/)
+[Browse some examples](example/)
+[Codelabs](https://codelabs.developers.google.com/deploy-dart-on-firebase-functions)
+
 ## Status: Experimental (v0.5.0)
 
 This package provides a Dart implementation of Firebase Cloud Functions. Only HTTPS triggers are currently supported in production. Other trigger types are experimental and have varying levels of support.
