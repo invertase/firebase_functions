@@ -102,8 +102,6 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 - **Error Handling**: Built-in typed error classes matching the Node.js SDK
 - **Hot Reload**: Fast development with build_runner watch
 
-
-
 ## HTTPS Functions
 
 ### onRequest - Raw HTTP Handler
