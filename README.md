@@ -44,7 +44,7 @@ void main(List<String> args) {
 }
 ```
 
-## Status: Experimental (v0.5.0)
+## Status: Experimental
 
 This package provides a Dart implementation of Firebase Cloud Functions. Only HTTPS triggers are currently supported in production. Other trigger types are experimental and have varying levels of support.
 
@@ -855,13 +855,6 @@ dart test test/snapshots/
 ```
 
 See [Testing Guide](test/snapshots/README.md) for more details.
-
-## Documentation
-
-- [Getting Started](docs/getting-started.md)
-- [HTTPS Triggers](docs/https-triggers.md)
-- [Pub/Sub Triggers](docs/pubsub-triggers.md)
-- [Architecture](docs/architecture.md)
 
 ## License
 
