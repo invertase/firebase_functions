@@ -1,4 +1,4 @@
-## 0.5.2-wip
+## 0.5.2
 
 - Add a comment to the generated manifest (`functions.yaml`) to indicate that
   it is managed by this package.
