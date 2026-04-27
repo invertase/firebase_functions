@@ -43,7 +43,7 @@ final isProduction = defineBoolean(
 );
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Basic callable function - untyped data
     firebase.https.onCall(name: 'greet', (request, response) async {
       final data = request.data as Map<String, dynamic>?;

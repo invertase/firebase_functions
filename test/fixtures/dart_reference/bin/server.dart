@@ -50,7 +50,7 @@ final isProduction = defineBoolean(
 );
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // ==========================================================================
     // HTTPS Callable Functions (onCall / onCallWithData)
     // ==========================================================================

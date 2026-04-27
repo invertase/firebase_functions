@@ -1,3 +1,8 @@
+## 0.6.0-wip
+
+- Add `runFunctions` as the primary API.
+- Deprecate `fireUp` in favor of `runFunctions`.
+
 ## 0.5.2
 
 - Add a comment to the generated manifest (`functions.yaml`) to indicate that

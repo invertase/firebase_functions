@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Basic task queue function
     firebase.tasks.onTaskDispatched(name: 'processOrder', (request) async {
       final data = request.data as Map<String, dynamic>;

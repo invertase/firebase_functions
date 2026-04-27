@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Basic Eventarc custom event - uses default Firebase channel
     firebase.eventarc.onCustomEventPublished(eventType: 'com.example.myevent', (
       event,

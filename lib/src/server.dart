@@ -37,7 +37,7 @@ typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
 /// Example:
 /// ```dart
 /// void main(List<String> args) {
-///   fireUp(args, (firebase) {
+///   runFunctions((firebase) {
 ///     firebase.https.onRequest(
 ///       name: 'hello',
 ///       (request) async => Response.ok('Hello!'),
@@ -45,7 +45,26 @@ typedef FunctionsRunner = FutureOr<void> Function(Firebase firebase);
 ///   });
 /// }
 /// ```
-Future<void> fireUp(List<String> args, FunctionsRunner runner) async {
+@Deprecated('Use `runFunctions` instead.')
+Future<void> fireUp(List<String> args, FunctionsRunner runner) =>
+    runFunctions(runner);
+
+/// Starts the Firebase Functions runtime.
+///
+/// This is the main entry point for a Firebase Functions application.
+///
+/// Example:
+/// ```dart
+/// void main(List<String> args) {
+///   runFunctions((firebase) {
+///     firebase.https.onRequest(
+///       name: 'hello',
+///       (request) async => Response.ok('Hello!'),
+///     );
+///   });
+/// }
+/// ```
+Future<void> runFunctions(FunctionsRunner runner) async {
   final firebase = createFirebaseInternal();
   final env = firebase.$env;
   final projectId = env.projectId;

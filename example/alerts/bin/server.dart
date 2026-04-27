@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // App Distribution new tester iOS device alert
     firebase.alerts.appDistribution.onNewTesterIosDevicePublished((
       event,
