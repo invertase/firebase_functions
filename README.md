@@ -33,7 +33,7 @@ If the official documentation doesn't help, try asking through our [official sup
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) {
-  fireUp(args, (firebase) {
+  runFunctions((firebase) {
     firebase.https.onRequest(
       name: 'hello',
       (request) async {

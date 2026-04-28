@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Test Lab onTestMatrixCompleted - triggers when a test matrix completes
     firebase.testLab.onTestMatrixCompleted((event) async {
       final data = event.data;

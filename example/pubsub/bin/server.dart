@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Pub/Sub trigger - triggers when a message is published to a topic
     firebase.pubsub.onMessagePublished(topic: 'my-topic', (event) async {
       final message = event.data;

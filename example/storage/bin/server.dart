@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Storage onObjectFinalized - triggers when an object is created/overwritten
     firebase.storage.onObjectFinalized(
       bucket: 'demo-test.firebasestorage.app',

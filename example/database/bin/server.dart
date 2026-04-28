@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Database onValueCreated - triggers when data is created
     firebase.database.onValueCreated(ref: 'messages/{messageId}', (
       event,

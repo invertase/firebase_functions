@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Basic scheduled function - runs every day at midnight
     firebase.scheduler.onSchedule(schedule: '0 0 * * *', (event) async {
       print('Scheduled function triggered:');

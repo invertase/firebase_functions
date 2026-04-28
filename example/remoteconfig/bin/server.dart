@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Remote Config update trigger
     firebase.remoteConfig.onConfigUpdated((event) async {
       final data = event.data;

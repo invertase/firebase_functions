@@ -46,7 +46,7 @@ bool _didInit = false;
 ///     apiClient = SomeApiClient(apiKey: apiKey.value());
 ///   });
 ///
-///   fireUp(args, (firebase) {
+///   runFunctions((firebase) {
 ///     firebase.https.onRequest(
 ///       name: 'api',
 ///       options: HttpsOptions(secrets: [apiKey]),

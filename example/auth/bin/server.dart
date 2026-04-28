@@ -17,7 +17,7 @@
 import 'package:firebase_functions/firebase_functions.dart';
 
 void main(List<String> args) async {
-  await fireUp(args, (firebase) {
+  await runFunctions((firebase) {
     // Before user created - runs before a new user is created
     firebase.identity.beforeUserCreated(
       options: const BlockingOptions(idToken: true, accessToken: true),
