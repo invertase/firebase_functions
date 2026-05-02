@@ -75,7 +75,7 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@cb7127289503113089d94a9c7247ada34feeb436
+        uses: dart-lang/setup-dart@2bd11704788983a6a210731656d0042e2df8b2c1
         with:
           sdk: ${{ matrix.sdk }}
 
@@ -111,7 +111,7 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@cb7127289503113089d94a9c7247ada34feeb436
+        uses: dart-lang/setup-dart@2bd11704788983a6a210731656d0042e2df8b2c1
         with:
           sdk: stable
 
@@ -157,7 +157,7 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@cb7127289503113089d94a9c7247ada34feeb436
+        uses: dart-lang/setup-dart@2bd11704788983a6a210731656d0042e2df8b2c1
         with:
           sdk: stable
 
@@ -216,7 +216,7 @@ jobs:
         uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98
 
       - name: Setup Dart SDK
-        uses: dart-lang/setup-dart@cb7127289503113089d94a9c7247ada34feeb436
+        uses: dart-lang/setup-dart@2bd11704788983a6a210731656d0042e2df8b2c1
         with:
           sdk: stable
 
