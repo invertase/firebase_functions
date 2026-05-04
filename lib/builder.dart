@@ -389,7 +389,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
             }
           } else {
             final nameArg = args.first;
-            final paramName = _extractStringLiteral(nameArg);
+            final paramName = _extractStringLiteral(nameArg as Expression?);
             if (paramName != null) {
               // Map variable name to actual param name
               _variableToParamName[variable.name.lexeme] = paramName;
@@ -835,11 +835,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     InstanceCreationExpression node,
     String fieldName,
   ) {
-    final arg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == fieldName)
-        .map((e) => e.expression)
-        .firstOrNull;
+    final arg = node.findNamedArg(fieldName);
 
     if (arg is! SetOrMapLiteral || !arg.isMap) return null;
 
@@ -861,21 +857,17 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   Map<String, dynamic>? _extractTaskQueueRetryConfig(
     InstanceCreationExpression node,
   ) {
-    final retryConfigArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'retryConfig')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final retryConfigArg = node.findNamedArg('retryConfig');
 
     if (retryConfigArg is! InstanceCreationExpression) return null;
 
     final config = <String, dynamic>{};
 
     for (final arg in retryConfigArg.argumentList.arguments) {
-      if (arg is! NamedExpression) continue;
+      if (arg is! NamedArgument) continue;
 
-      final fieldName = arg.name.label.name;
-      final value = _extractRetryConfigValue(arg.expression);
+      final fieldName = arg.name.lexeme;
+      final value = _extractRetryConfigValue(arg.argumentExpression);
       if (value != null) {
         config[fieldName] = value;
       }
@@ -888,21 +880,17 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   Map<String, dynamic>? _extractTaskQueueRateLimits(
     InstanceCreationExpression node,
   ) {
-    final rateLimitsArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'rateLimits')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final rateLimitsArg = node.findNamedArg('rateLimits');
 
     if (rateLimitsArg is! InstanceCreationExpression) return null;
 
     final config = <String, dynamic>{};
 
     for (final arg in rateLimitsArg.argumentList.arguments) {
-      if (arg is! NamedExpression) continue;
+      if (arg is! NamedArgument) continue;
 
-      final fieldName = arg.name.label.name;
-      final value = _extractRetryConfigValue(arg.expression);
+      final fieldName = arg.name.lexeme;
+      final value = _extractRetryConfigValue(arg.argumentExpression);
       if (value != null) {
         config[fieldName] = value;
       }
@@ -913,11 +901,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts timeZone from ScheduleOptions.
   String? _extractSchedulerTimeZone(InstanceCreationExpression node) {
-    final timeZoneArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'timeZone')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final timeZoneArg = node.findNamedArg('timeZone');
 
     if (timeZoneArg is InstanceCreationExpression) {
       // TimeZone('America/New_York')
@@ -931,21 +915,17 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts RetryConfig from ScheduleOptions.
   Map<String, dynamic>? _extractRetryConfig(InstanceCreationExpression node) {
-    final retryConfigArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'retryConfig')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final retryConfigArg = node.findNamedArg('retryConfig');
 
     if (retryConfigArg is! InstanceCreationExpression) return null;
 
     final config = <String, dynamic>{};
 
     for (final arg in retryConfigArg.argumentList.arguments) {
-      if (arg is! NamedExpression) continue;
+      if (arg is! NamedArgument) continue;
 
-      final fieldName = arg.name.label.name;
-      final value = _extractRetryConfigValue(arg.expression);
+      final fieldName = arg.name.lexeme;
+      final value = _extractRetryConfigValue(arg.argumentExpression);
       if (value != null) {
         config[fieldName] = value;
       }
@@ -969,11 +949,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts a boolean field from an InstanceCreationExpression.
   bool? _extractBoolField(InstanceCreationExpression node, String fieldName) {
-    final arg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == fieldName)
-        .map((e) => e.expression)
-        .firstOrNull;
+    final arg = node.findNamedArg(fieldName);
 
     if (arg is BooleanLiteral) {
       return arg.value;
@@ -1019,7 +995,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 
   /// Common logic for extracting parameter definitions from arguments.
-  void _extractParamFromArgs(NodeList<Expression> args, String functionName) {
+  void _extractParamFromArgs(NodeList<Argument> args, String functionName) {
     if (args.isEmpty) return;
 
     String? paramName;
@@ -1053,7 +1029,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     } else {
       // Standard parameter definitions: defineXxx('NAME', [ParamOptions])
       final nameArg = args.first;
-      paramName = _extractStringLiteral(nameArg);
+      paramName = _extractStringLiteral(nameArg as Expression?);
 
       // Second argument is optional ParamOptions (not used for secrets)
       if (args.length > 1 && args[1] is InstanceCreationExpression) {
@@ -1100,11 +1076,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
 
   /// Extracts the defaultValue field.
   Object? _extractDefaultValue(InstanceCreationExpression node) {
-    final defaultValueArg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == 'defaultValue')
-        .map((e) => e.expression)
-        .firstOrNull;
+    final defaultValueArg = node.findNamedArg('defaultValue');
 
     if (defaultValueArg == null) return null;
 
@@ -1116,22 +1088,27 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     InstanceCreationExpression node,
     String fieldName,
   ) {
-    final arg = node.argumentList.arguments
-        .whereType<NamedExpression>()
-        .where((e) => e.name.label.name == fieldName)
-        .map((e) => e.expression)
-        .firstOrNull;
+    final arg = node.findNamedArg(fieldName);
 
     return _extractStringLiteral(arg);
   }
 }
 
+extension on InstanceCreationExpression {
+  /// Finds a named argument in a method invocation.
+  Expression? findNamedArg(String name) => argumentList.arguments
+      .whereType<NamedArgument>()
+      .where((e) => e.name.lexeme == name)
+      .map((e) => e.argumentExpression)
+      .firstOrNull;
+}
+
 extension on MethodInvocation {
   /// Finds a named argument in a method invocation.
   Expression? findNamedArg(String name) => argumentList.arguments
-      .whereType<NamedExpression>()
-      .where((e) => e.name.label.name == name)
-      .map((e) => e.expression)
+      .whereType<NamedArgument>()
+      .where((e) => e.name.lexeme == name)
+      .map((e) => e.argumentExpression)
       .firstOrNull;
 
   String? extractLiteralForArg(String name) =>

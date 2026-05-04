@@ -112,10 +112,10 @@ class EndpointSpec {
     final result = <String, dynamic>{};
 
     for (final arg in options!.argumentList.arguments) {
-      if (arg is! NamedExpression) continue;
+      if (arg is! NamedArgument) continue;
 
-      final name = arg.name.label.name;
-      final expr = arg.expression;
+      final name = arg.name.lexeme;
+      final expr = arg.argumentExpression;
 
       // Helper to reduce boilerplate: only adds to map if value exists
       void add(String key, dynamic Function(Expression expr) func) {
@@ -186,7 +186,7 @@ class EndpointSpec {
     // Check if it's Memory.expression() - generate CEL from expression
     if (expression.constructorName.name?.name == 'expression') {
       return _extractCelExpression(
-        expression.argumentList.arguments.firstOrNull,
+        expression.argumentList.arguments.firstOrNull as Expression?,
       );
     }
 
@@ -197,7 +197,7 @@ class EndpointSpec {
 
     // Extract literal value: Memory(MemoryOption.mb256) or Memory(.mb256)
     final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final enumName = _extractEnumValueName(args.firstOrNull as Expression?);
     if (enumName != null) return _memoryOptionToInt(enumName);
 
     return null;
@@ -256,7 +256,7 @@ class EndpointSpec {
 
     // Extract literal value: Region(SupportedRegion.usCentral1) or Region(.usCentral1)
     final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final enumName = _extractEnumValueName(args.firstOrNull as Expression?);
     if (enumName != null) {
       final regionString = _regionEnumToString(enumName);
       return regionString != null ? [regionString] : null;
@@ -373,7 +373,7 @@ class EndpointSpec {
     if (expression is! InstanceCreationExpression) return null;
 
     final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final enumName = _extractEnumValueName(args.firstOrNull as Expression?);
     if (enumName != null) {
       return switch (enumName) {
         'privateRangesOnly' => 'PRIVATE_RANGES_ONLY',
@@ -390,7 +390,7 @@ class EndpointSpec {
     if (expression is! InstanceCreationExpression) return null;
 
     final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final enumName = _extractEnumValueName(args.firstOrNull as Expression?);
     if (enumName != null) {
       return switch (enumName) {
         'allowAll' => 'ALLOW_ALL',
@@ -506,8 +506,8 @@ class EndpointSpec {
         // Extract the two arguments
         final args = expression.argumentList.arguments;
         if (args.length >= 2) {
-          final trueValue = _extractLiteralValue(args[0]);
-          final falseValue = _extractLiteralValue(args[1]);
+          final trueValue = _extractLiteralValue(args[0] as Expression);
+          final falseValue = _extractLiteralValue(args[1] as Expression);
           if (trueValue != null && falseValue != null) {
             return '{{ params.$paramName ? $trueValue : $falseValue }}';
           }
