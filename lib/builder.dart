@@ -1094,22 +1094,23 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   }
 }
 
-extension on InstanceCreationExpression {
+extension on ArgumentList {
   /// Finds a named argument in a method invocation.
-  Expression? findNamedArg(String name) => argumentList.arguments
+  Expression? findNamedArg(String name) => arguments
       .whereType<NamedArgument>()
       .where((e) => e.name.lexeme == name)
       .map((e) => e.argumentExpression)
       .firstOrNull;
 }
 
+extension on InstanceCreationExpression {
+  /// Finds a named argument in a method invocation.
+  Expression? findNamedArg(String name) => argumentList.findNamedArg(name);
+}
+
 extension on MethodInvocation {
   /// Finds a named argument in a method invocation.
-  Expression? findNamedArg(String name) => argumentList.arguments
-      .whereType<NamedArgument>()
-      .where((e) => e.name.lexeme == name)
-      .map((e) => e.argumentExpression)
-      .firstOrNull;
+  Expression? findNamedArg(String name) => argumentList.findNamedArg(name);
 
   String? extractLiteralForArg(String name) =>
       _extractStringLiteral(findNamedArg(name));
