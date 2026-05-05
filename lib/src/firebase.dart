@@ -46,13 +46,13 @@ class Firebase {
   /// This app represents the server-side SDK and has elevated privileges
   /// corresponding to the environment's credentials.
   ///
-  /// If the default Admin SDK app already exists when [runFunctions] starts,
+  /// If the default Admin SDK app already exists when `runFunctions` starts,
   /// the Functions runtime reuses it. Otherwise, the runtime creates a default
   /// app with Application Default Credentials and the current Functions project
   /// ID.
   ///
   /// To use a service account JSON file, initialize the default Admin SDK app
-  /// before calling [runFunctions]:
+  /// before calling `runFunctions`:
   ///
   /// ```dart
   /// FirebaseApp.initializeApp(

@@ -75,10 +75,10 @@
 /// - [params] for the full params API
 /// - [onInit] for safe initialization with secrets
 /// - Firebase Admin SDK initialization: if the default Admin SDK app already
-///   exists when [runFunctions] starts, the runtime reuses it. Otherwise it
+///   exists when `runFunctions` starts, the runtime reuses it. Otherwise it
 ///   creates one automatically with Application Default Credentials. To use a
 ///   service account JSON file, initialize the default Admin SDK app with
-///   `Credential.fromServiceAccount(...)` before calling [runFunctions], or set
+///   `Credential.fromServiceAccount(...)` before calling `runFunctions`, or set
 ///   `GOOGLE_APPLICATION_CREDENTIALS` for Application Default Credentials.
 ///
 /// @docImport 'src/common/on_init.dart';
