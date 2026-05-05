@@ -35,6 +35,7 @@ This package provides a Dart implementation of Firebase Cloud Functions. Only HT
 - [Storage Triggers](#storage-triggers)
 - [Scheduler Triggers](#scheduler-triggers)
 - [Firebase Alerts](#firebase-alerts)
+- [Eventarc](#eventarc)
 - [Identity Platform (Auth Blocking)](#identity-platform-auth-blocking)
 - [Remote Config](#remote-config)
 - [Test Lab](#test-lab)
