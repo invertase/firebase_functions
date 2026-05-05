@@ -15,6 +15,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:google_cloud/constants.dart' as google_cloud;
 import 'package:meta/meta.dart';
 
 /// Provides unified access to environment variables, emulator checks, and
@@ -114,9 +115,7 @@ class FirebaseEnv {
 /// Common project ID environment variables checked in order.
 const _projectIdEnvKeyOptions = [
   'FIREBASE_PROJECT',
-  'GCLOUD_PROJECT',
-  'GOOGLE_CLOUD_PROJECT',
-  'GCP_PROJECT',
+  ...google_cloud.projectIdEnvironmentVariableOptions,
 ];
 
 /// Common emulator host keys used to detect emulator environment.

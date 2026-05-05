@@ -236,10 +236,10 @@ extension FirebaseInternal on Firebase {
 Firebase createFirebaseInternal() {
   final env = FirebaseEnv();
 
-  // Initialize Admin SDK
+  // Initialize Admin SDK — credential is auto-discovered from the environment
+  // via GOOGLE_APPLICATION_CREDENTIALS (service account) or ADC fallback.
   final adminApp = FirebaseApp.initializeApp(
     options: AppOptions(
-      credential: Credential.fromApplicationDefaultCredentials(),
       projectId: env.projectId,
     ),
   );
