@@ -73,10 +73,20 @@ class _SpecBuilder implements Builder {
       astNode.accept(_OptionsVariableCollector(sharedOptionsVars));
     }
 
+    InstanceCreationExpression? globalOptions;
+    for (final ast in astCache.values) {
+      final collector = _GlobalOptionsCollector(sharedOptionsVars);
+      ast.accept(collector);
+      globalOptions = collector.globalOptions ?? globalOptions;
+    }
+
     // Pass 2: visit each file with the shared options map so that variable
     // references to options declared in other files can be resolved.
     for (final entry in astCache.entries) {
-      final visitor = _FirebaseFunctionsVisitor(sharedOptionsVars);
+      final visitor = _FirebaseFunctionsVisitor(
+        sharedOptionsVars,
+        globalOptions: globalOptions,
+      );
       entry.value.accept(visitor);
       allParams.addAll(visitor.params);
       allEndpoints.addAll(visitor.endpoints);
@@ -131,11 +141,33 @@ class _OptionsVariableCollector extends RecursiveAstVisitor<void> {
   }
 }
 
+/// Collects the expression passed to `setGlobalOptions(...)`.
+class _GlobalOptionsCollector extends RecursiveAstVisitor<void> {
+  _GlobalOptionsCollector(this.variableToOptionsExpr);
+
+  final Map<String, InstanceCreationExpression> variableToOptionsExpr;
+  InstanceCreationExpression? globalOptions;
+
+  @override
+  void visitMethodInvocation(MethodInvocation node) {
+    if (node.target == null && node.methodName.name == 'setGlobalOptions') {
+      final firstArg = node.argumentList.arguments.firstOrNull;
+      if (firstArg is InstanceCreationExpression) {
+        globalOptions = firstArg;
+      } else if (firstArg is SimpleIdentifier) {
+        globalOptions = variableToOptionsExpr[firstArg.name] ?? globalOptions;
+      }
+    }
+    super.visitMethodInvocation(node);
+  }
+}
+
 /// AST visitor that discovers Firebase Functions declarations.
 class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
-  _FirebaseFunctionsVisitor([
-    Map<String, InstanceCreationExpression>? sharedOptionsVars,
-  ]) {
+  _FirebaseFunctionsVisitor(
+    Map<String, InstanceCreationExpression>? sharedOptionsVars, {
+    InstanceCreationExpression? globalOptions,
+  }) : _globalOptionsExpr = globalOptions {
     if (sharedOptionsVars != null) {
       _variableToOptionsExpr.addAll(sharedOptionsVars);
     }
@@ -258,6 +290,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
   final Map<String, ParamSpec> params = {};
   final Map<String, EndpointSpec> endpoints = {};
   late final List<_Namespace> namespaces;
+  final InstanceCreationExpression? _globalOptionsExpr;
 
   /// Maps variable names to their actual parameter names.
   /// e.g., 'minInstances' -> 'MIN_INSTANCES'
@@ -426,6 +459,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: triggerType,
+      globalOptions: _globalOptionsExpr,
       options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
@@ -445,6 +479,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       name: functionName,
       type: 'pubsub',
       topic: topicName, // Keep original topic name for eventFilters
+      globalOptions: _globalOptionsExpr,
       options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
@@ -482,6 +517,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       documentPath: documentPath,
       database: database ?? '(default)',
       namespace: namespace ?? '(default)',
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -517,6 +553,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       databaseEventType: methodName,
       refPath: refPath,
       instance: instance ?? '*',
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -550,6 +587,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'alert',
       alertType: alertTypeValue,
       appId: appId,
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -629,6 +667,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'remoteConfig',
+      globalOptions: _globalOptionsExpr,
       options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
@@ -649,6 +688,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'storage',
       storageBucket: bucketName,
       storageEventType: methodName,
+      globalOptions: _globalOptionsExpr,
       options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
@@ -675,6 +715,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'alert',
       alertType: alertType,
       appId: appId,
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -715,6 +756,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       idToken: idToken,
       accessToken: accessToken,
       refreshToken: refreshToken,
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -754,6 +796,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       schedule: schedule,
       timeZone: timeZone,
       retryConfig: retryConfig,
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -780,6 +823,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       type: 'taskQueue',
       taskQueueRetryConfig: retryConfig,
       taskQueueRateLimits: rateLimits,
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -811,6 +855,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
       eventarcEventType: eventType,
       eventarcChannel: channel ?? 'locations/us-central1/channels/firebase',
       eventarcFilters: filters,
+      globalOptions: _globalOptionsExpr,
       options: optionsArg,
       variableToParamName: _variableToParamName,
     );
@@ -825,6 +870,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     endpoints[functionName] = EndpointSpec(
       name: functionName,
       type: 'testLab',
+      globalOptions: _globalOptionsExpr,
       options: node.findOptionsArg(_variableToOptionsExpr),
       variableToParamName: _variableToParamName,
     );
