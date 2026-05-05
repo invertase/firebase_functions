@@ -1,6 +1,6 @@
-## Parameters & Configuration
+# Parameters & Configuration
 
-### Defining Parameters
+## Defining Parameters
 
 ```dart
 final welcomeMessage = defineString(
@@ -23,7 +23,7 @@ final isProduction = defineBoolean(
 );
 ```
 
-### Using Parameters at Runtime
+## Using Parameters at Runtime
 
 ```dart
 firebase.https.onRequest(
@@ -34,7 +34,7 @@ firebase.https.onRequest(
 );
 ```
 
-### Using Parameters in Options (Deploy-time)
+## Using Parameters in Options (Deploy-time)
 
 ```dart
 firebase.https.onRequest(
@@ -46,7 +46,7 @@ firebase.https.onRequest(
 );
 ```
 
-### Conditional Configuration
+## Conditional Configuration
 
 ```dart
 firebase.https.onRequest(
