@@ -2,6 +2,10 @@
 
 - Add `runFunctions` as the primary API.
 - Deprecate `fireUp` in favor of `runFunctions`.
+- Split `README.md` into multiple pages:
+  - `docs/config.md`
+  - `docs/triggers.md`
+  - `test/README.md`
 - Require `analyzer: ^13.0.0`.
 - Require `sdk: ^3.11.0`.
 
