@@ -5,6 +5,7 @@
 - Split `README.md` into multiple pages:
   - `docs/config.md`
   - `docs/triggers.md`
+  - `test/README.md`
 
 ## 0.5.2
 
