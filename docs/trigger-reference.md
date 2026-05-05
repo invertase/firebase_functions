@@ -662,6 +662,49 @@ firebase.testLab.onTestMatrixCompleted((event) async {
 });
 ```
 
+## Task Queues
+
+Handle Cloud Tasks dispatched to a function.
+
+```dart
+firebase.tasks.onTaskDispatched(
+  name: 'processOrder',
+  (request) async {
+    final data = request.data as Map<String, dynamic>;
+    print('Processing order: ${data['orderId']}');
+    print('Task ID: ${request.id}');
+    print('Queue: ${request.queueName}');
+    print('Retry count: ${request.retryCount}');
+  },
+);
+```
+
+Use `TaskQueueOptions` to configure retry behavior and dispatch rate limits:
+
+```dart
+firebase.tasks.onTaskDispatched(
+  name: 'sendEmail',
+  options: const TaskQueueOptions(
+    retryConfig: TaskQueueRetryConfig(
+      maxAttempts: MaxAttempts(5),
+      maxRetrySeconds: TaskMaxRetrySeconds(300),
+      minBackoffSeconds: TaskMinBackoffSeconds(10),
+      maxBackoffSeconds: TaskMaxBackoffSeconds(60),
+      maxDoublings: TaskMaxDoublings(3),
+    ),
+    rateLimits: TaskQueueRateLimits(
+      maxConcurrentDispatches: MaxConcurrentDispatches(100),
+      maxDispatchesPerSecond: MaxDispatchesPerSecond(50),
+    ),
+  ),
+  (request) async {
+    final data = request.data as Map<String, dynamic>;
+    print('Sending email to: ${data['to']}');
+    print('Subject: ${data['subject']}');
+  },
+);
+```
+
 ## Parameters & Configuration
 
 ### Defining Parameters
@@ -706,7 +749,7 @@ firebase.https.onRequest(
   options: HttpsOptions(
     minInstances: DeployOption.param(minInstances),
   ),
-  handler,
+  (request) async => Response.ok('Configured'),
 );
 ```
 
@@ -755,7 +798,7 @@ Your `firebase.json` must specify the Dart runtime:
 For full deployment instructions, see the [Get started with Cloud Functions for Firebase (Dart)](https://firebase.google.com/docs/functions/start-dart) guide.
 
 > [!NOTE]
-> Only HTTPS triggers (`onRequest`, `onCall`, `onCallWithData`) are supported in production. See the [status table](#status-experimental) for other trigger types.
+> Only HTTPS triggers (`onRequest`, `onCall`, `onCallWithData`) are supported in production. See the [status table](#status) for other trigger types.
 
 ## Development
 
@@ -791,4 +834,4 @@ dart test test/builder/
 dart test test/snapshots/
 ```
 
-See [Testing Guide](test/snapshots/README.md) for more details.
+See [Testing Guide](../test/snapshots/README.md) for more details.
