@@ -1,4 +1,4 @@
-## 0.6.0-wip
+## 0.6.0
 
 - Add `runFunctions` as the primary API.
 - Deprecate `fireUp` in favor of `runFunctions`.
