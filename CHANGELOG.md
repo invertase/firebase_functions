@@ -2,6 +2,9 @@
 
 - Add `runFunctions` as the primary API.
 - Deprecate `fireUp` in favor of `runFunctions`.
+- Split `README.md` into multiple pages:
+  - `docs/config.md`
+  - `docs/triggers.md`
 
 ## 0.5.2
 
