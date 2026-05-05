@@ -120,7 +120,7 @@ class EndpointSpec {
       }
     }
 
-    return result;
+    return result..removeWhere((_, value) => identical(value, _resetOption));
   }
 
   static const Object _resetOption = Object();
@@ -197,6 +197,8 @@ class EndpointSpec {
 
   bool _isResetOption(Expression expression) =>
       expression is InstanceCreationExpression &&
+      // `name` is preferred, but resolved/synthetic ASTs can represent
+      // typedef-backed constructors without it.
       (expression.constructorName.name?.name == 'reset' ||
           expression.constructorName.toSource().endsWith('.reset'));
 

@@ -57,6 +57,28 @@ final endpointOptions = new HttpsOptions(
       expect(endpoint['timeoutSeconds'], isNull);
       expect(endpoint['httpsTrigger'], equals({}));
     });
+
+    test('does not emit reset values from global options', () {
+      final globalOptions = _initializerFor('''
+final globalOptions = new GlobalOptions(
+  timeoutSeconds: new TimeoutSeconds.reset(),
+);
+''', 'globalOptions');
+
+      final yaml = generateManifestYaml({}, {
+        'globalResetEndpoint': EndpointSpec(
+          name: 'globalResetEndpoint',
+          type: 'https',
+          globalOptions: globalOptions,
+        ),
+      });
+      final manifest = loadYaml(yaml) as YamlMap;
+      final endpoint =
+          (manifest['endpoints'] as YamlMap)['global-reset-endpoint']
+              as YamlMap;
+
+      expect(endpoint['timeoutSeconds'], isNull);
+    });
   });
 }
 

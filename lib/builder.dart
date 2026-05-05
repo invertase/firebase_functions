@@ -73,12 +73,11 @@ class _SpecBuilder implements Builder {
       astNode.accept(_OptionsVariableCollector(sharedOptionsVars));
     }
 
-    InstanceCreationExpression? globalOptions;
+    final globalOptionsCollector = _GlobalOptionsCollector(sharedOptionsVars);
     for (final ast in astCache.values) {
-      final collector = _GlobalOptionsCollector(sharedOptionsVars);
-      ast.accept(collector);
-      globalOptions = collector.globalOptions ?? globalOptions;
+      ast.accept(globalOptionsCollector);
     }
+    final globalOptions = globalOptionsCollector.globalOptions;
 
     // Pass 2: visit each file with the shared options map so that variable
     // references to options declared in other files can be resolved.
