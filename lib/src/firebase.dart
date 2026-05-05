@@ -239,9 +239,7 @@ Firebase createFirebaseInternal() {
   // Initialize Admin SDK — credential is auto-discovered from the environment
   // via GOOGLE_APPLICATION_CREDENTIALS (service account) or ADC fallback.
   final adminApp = FirebaseApp.initializeApp(
-    options: AppOptions(
-      projectId: env.projectId,
-    ),
+    options: AppOptions(projectId: env.projectId),
   );
 
   return Firebase._(adminApp: adminApp, env: env);
