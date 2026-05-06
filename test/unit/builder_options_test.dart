@@ -37,6 +37,49 @@ void main() {
 
       expect(endpoint.extractOptions(), containsPair('region', ['asia-east1']));
     });
+
+    test('extracts other unresolved wrapper literals consistently', () {
+      final options = _parseHttpsOptions('''
+void main() {
+  const options = const HttpsOptions(
+    memory: Memory(.mb512),
+    cpu: Cpu(2),
+    timeoutSeconds: TimeoutSeconds(60),
+    maxInstances: Instances(10),
+    serviceAccount: ServiceAccount('test@example.com'),
+    vpcConnectorEgressSettings: VpcConnectorEgressSettings(
+      .privateRangesOnly,
+    ),
+    ingressSettings: Ingress(.allowAll),
+    invoker: Invoker(['user@example.com']),
+    omit: Omit(false),
+  );
+}
+''');
+
+      final endpoint = EndpointSpec(
+        name: 'helloWorld',
+        type: 'https',
+        options: options,
+      );
+      final extractedOptions = endpoint.extractOptions();
+
+      expect(extractedOptions, containsPair('availableMemoryMb', 512));
+      expect(extractedOptions, containsPair('cpu', 2));
+      expect(extractedOptions, containsPair('timeoutSeconds', 60));
+      expect(extractedOptions, containsPair('maxInstances', 10));
+      expect(
+        extractedOptions,
+        containsPair('serviceAccount', 'test@example.com'),
+      );
+      expect(
+        extractedOptions,
+        containsPair('vpcConnectorEgressSettings', 'PRIVATE_RANGES_ONLY'),
+      );
+      expect(extractedOptions, containsPair('ingressSettings', 'ALLOW_ALL'));
+      expect(extractedOptions, containsPair('invoker', ['user@example.com']));
+      expect(extractedOptions, containsPair('omit', false));
+    });
   });
 }
 
