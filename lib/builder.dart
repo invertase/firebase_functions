@@ -284,7 +284,7 @@ class _FirebaseFunctionsVisitor extends RecursiveAstVisitor<void> {
     final target = node.target;
     final methodName = node.methodName.name;
 
-    if (_isFunctionsRunnerInvocation(methodName)) {
+    if (target == null && _isFunctionsRunnerInvocation(methodName)) {
       _visitRegistrationRunner(node);
       return;
     }
