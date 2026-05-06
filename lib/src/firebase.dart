@@ -45,6 +45,27 @@ class Firebase {
   ///
   /// This app represents the server-side SDK and has elevated privileges
   /// corresponding to the environment's credentials.
+  ///
+  /// If the default Admin SDK app already exists when `runFunctions` starts,
+  /// the Functions runtime reuses it. Otherwise, the runtime creates a default
+  /// app with Application Default Credentials and the current Functions project
+  /// ID.
+  ///
+  /// To use a service account JSON file, initialize the default Admin SDK app
+  /// before calling `runFunctions`:
+  ///
+  /// ```dart
+  /// FirebaseApp.initializeApp(
+  ///   options: AppOptions(
+  ///     credential: Credential.fromServiceAccount(
+  ///       File('path/to/service-account.json'),
+  ///     ),
+  ///   ),
+  /// );
+  /// ```
+  ///
+  /// You can also set `GOOGLE_APPLICATION_CREDENTIALS` to a service account
+  /// JSON file path and let Application Default Credentials load it.
   final FirebaseApp adminApp;
 
   /// HTTPS triggers namespace.
@@ -235,14 +256,24 @@ extension FirebaseInternal on Firebase {
 @internal
 Firebase createFirebaseInternal() {
   final env = FirebaseEnv();
+  final adminApp = _getOrInitializeAdminApp(env);
 
-  // Initialize Admin SDK
-  final adminApp = FirebaseApp.initializeApp(
+  return Firebase._(adminApp: adminApp, env: env);
+}
+
+FirebaseApp _getOrInitializeAdminApp(FirebaseEnv env) {
+  try {
+    return FirebaseApp.getApp();
+  } on FirebaseAppException catch (error) {
+    if (error.errorCode != AppErrorCode.noApp) {
+      rethrow;
+    }
+  }
+
+  return FirebaseApp.initializeApp(
     options: AppOptions(
       credential: Credential.fromApplicationDefaultCredentials(),
       projectId: env.projectId,
     ),
   );
-
-  return Firebase._(adminApp: adminApp, env: env);
 }

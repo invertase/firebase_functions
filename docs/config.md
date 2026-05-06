@@ -62,3 +62,41 @@ firebase.https.onRequest(
 );
 ```
 
+## Firebase Admin SDK
+
+The Functions runtime uses a Firebase Admin SDK app for features such as
+callable auth and App Check token verification.
+
+If you do not initialize an Admin SDK app yourself, the runtime creates a
+default app with Application Default Credentials and the current Functions
+project ID. Application Default Credentials can load a service account JSON file
+from the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
+
+To customize Admin SDK options, initialize the default app before calling
+`runFunctions`. The runtime will reuse that app instead of creating another one.
+
+```dart
+import 'dart:io';
+
+import 'package:firebase_admin_sdk/firebase_admin_sdk.dart';
+import 'package:firebase_functions/firebase_functions.dart';
+
+void main() {
+  FirebaseApp.initializeApp(
+    options: AppOptions(
+      credential: Credential.fromServiceAccount(
+        File('path/to/service-account.json'),
+      ),
+      projectId: 'my-project',
+    ),
+  );
+
+  runFunctions((firebase) {
+    firebase.https.onRequest(
+      name: 'hello',
+      (request) async => Response.ok('Hello from Dart!'),
+    );
+  });
+}
+```
+
