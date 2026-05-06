@@ -247,6 +247,18 @@ class EndpointSpec {
 
   /// Extracts Region option value.
   Object? _extractRegion(Expression expression) {
+    if (expression is FunctionExpressionInvocation) {
+      return _extractRegionLiteral(
+        expression.argumentList.arguments.firstOrNull,
+      );
+    }
+
+    if (expression is MethodInvocation && expression.target == null) {
+      return _extractRegionLiteral(
+        expression.argumentList.arguments.firstOrNull,
+      );
+    }
+
     if (expression is! InstanceCreationExpression) return null;
 
     // Check if it's Region.param() - generate CEL
@@ -256,7 +268,12 @@ class EndpointSpec {
 
     // Extract literal value: Region(SupportedRegion.usCentral1) or Region(.usCentral1)
     final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    return _extractRegionLiteral(args.firstOrNull);
+  }
+
+  /// Extracts a literal region option from an enum expression.
+  Object? _extractRegionLiteral(Expression? expression) {
+    final enumName = _extractEnumValueName(expression);
     if (enumName != null) {
       final regionString = _regionEnumToString(enumName);
       return regionString != null ? [regionString] : null;
@@ -534,6 +551,7 @@ class EndpointSpec {
     PrefixedIdentifier() => expression.identifier.name,
     SimpleIdentifier() => expression.name,
     PropertyAccess() => expression.propertyName.name,
+    DotShorthandPropertyAccess() => expression.propertyName.name,
     _ => null,
   };
 }
