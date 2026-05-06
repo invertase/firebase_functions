@@ -6,6 +6,8 @@
   - `docs/config.md`
   - `docs/triggers.md`
   - `test/README.md`
+- Require `analyzer: ^13.0.0`.
+- Require `sdk: ^3.11.0`.
 
 ## 0.5.2
 
