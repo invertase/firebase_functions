@@ -72,11 +72,13 @@ Future<FunctionsTestClient> runFunctionsTest(
       ));
 
   FirebaseEnv.mockEnvironment = {'FIREBASE_PROJECT': projectId};
-  final firebase = createTestFirebaseInternal(adminApp);
-  FirebaseEnv.mockEnvironment = null;
-
-  await runner(firebase);
-  return FunctionsTestClient._(firebase);
+  try {
+    final firebase = createTestFirebaseInternal(adminApp);
+    await runner(firebase);
+    return FunctionsTestClient._(firebase);
+  } finally {
+    FirebaseEnv.mockEnvironment = null;
+  }
 }
 
 /// In-process test client returned by [runFunctionsTest].
@@ -128,8 +130,11 @@ class FunctionsTestClient {
   /// contain a `result` key.
   Future<dynamic> parseCallableResponse(Response response) async {
     final body = await response.readAsString();
-    final json = jsonDecode(body) as Map<String, dynamic>;
-    return json['result'];
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, dynamic>) {
+      throw FormatException('Response body is not a JSON object: $body');
+    }
+    return decoded['result'];
   }
 
   /// Removes all registered functions from this instance.
