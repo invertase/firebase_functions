@@ -37,7 +37,7 @@ dart pub upgrade
 ### Run Locally
 
 ```bash
-dart run bin/server.dart
+dart run bin/main.dart
 ```
 
 The server will start on `http://localhost:8080`.

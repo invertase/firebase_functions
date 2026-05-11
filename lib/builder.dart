@@ -54,7 +54,7 @@ class _SpecBuilder implements Builder {
     // Pass 1: collect all top-level options variable declarations across every
     // file into a shared map, and cache each parsed AST for reuse in pass 2.
     // This enables cross-file resolution — e.g. options declared in
-    // shared_options.dart can be referenced in server.dart.
+    // shared_options.dart can be referenced in main.dart.
     final sharedOptionsVars = <String, InstanceCreationExpression>{};
     final astCache = <AssetId, CompilationUnit>{};
 
