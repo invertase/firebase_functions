@@ -71,6 +71,7 @@ class EndpointSpec {
     this.eventarcEventType,
     this.eventarcChannel,
     this.eventarcFilters,
+    this.globalOptions,
     this.options,
     this.variableToParamName = const {},
   });
@@ -102,16 +103,34 @@ class EndpointSpec {
   final String? eventarcEventType; // For Eventarc: custom event type
   final String? eventarcChannel; // For Eventarc: channel ID
   final Map<String, String>? eventarcFilters; // For Eventarc: event filters
+  final InstanceCreationExpression? globalOptions;
   final InstanceCreationExpression? options;
   final Map<String, String> variableToParamName;
 
   /// Extracts options configuration from the AST.
   Map<String, dynamic> extractOptions() {
+    final result = _extractOptions(globalOptions);
+    final endpointOptions = _extractOptions(options);
+
+    for (final entry in endpointOptions.entries) {
+      if (identical(entry.value, _resetOption)) {
+        result.remove(entry.key);
+      } else {
+        result[entry.key] = entry.value;
+      }
+    }
+
+    return result..removeWhere((_, value) => identical(value, _resetOption));
+  }
+
+  static const Object _resetOption = Object();
+
+  Map<String, dynamic> _extractOptions(InstanceCreationExpression? options) {
     if (options == null) return {};
 
     final result = <String, dynamic>{};
 
-    for (final arg in options!.argumentList.arguments) {
+    for (final arg in options.argumentList.arguments) {
       if (arg is! NamedExpression) continue;
 
       final name = arg.name.label.name;
@@ -119,7 +138,7 @@ class EndpointSpec {
 
       // Helper to reduce boilerplate: only adds to map if value exists
       void add(String key, dynamic Function(Expression expr) func) {
-        final value = func(expr);
+        final value = _isResetOption(expr) ? _resetOption : func(expr);
         if (value != null) result[key] = value;
       }
 
@@ -128,6 +147,9 @@ class EndpointSpec {
           add('availableMemoryMb', _extractMemory);
         case 'cpu':
           add('cpu', _extractCpu);
+        case 'enforceAppCheck':
+          // Runtime-only option for callable functions.
+          break;
         case 'timeoutSeconds':
           add('timeoutSeconds', _extractTimeoutSeconds);
         case 'minInstances':
@@ -162,7 +184,6 @@ class EndpointSpec {
         // - heartBeatIntervalSeconds: Runtime streaming keepalive
         // - preserveExternalChanges: Deployment behavior, not function config
         case 'cors':
-        case 'enforceAppCheck':
         case 'preserveExternalChanges':
         case 'consumeAppCheckToken':
         case 'heartBeatIntervalSeconds':
@@ -173,6 +194,13 @@ class EndpointSpec {
 
     return result;
   }
+
+  bool _isResetOption(Expression expression) =>
+      expression is InstanceCreationExpression &&
+      // `name` is preferred, but resolved/synthetic ASTs can represent
+      // typedef-backed constructors without it.
+      (expression.constructorName.name?.name == 'reset' ||
+          expression.constructorName.toSource().endsWith('.reset'));
 
   /// Extracts Memory option value.
   Object? _extractMemory(Expression expression) {
