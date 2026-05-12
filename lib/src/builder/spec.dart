@@ -446,10 +446,7 @@ class EndpointSpec {
   /// Extracts secret name from SecretParam instance.
   String? _extractSecretName(Expression expression) {
     if (expression is! SimpleIdentifier) return null;
-
-    // The identifier references a SecretParam variable
-    // We need to find its definition, but for now just use the variable name
-    return expression.name;
+    return variableToParamName[expression.name] ?? expression.name;
   }
 
   /// Extracts labels map.
