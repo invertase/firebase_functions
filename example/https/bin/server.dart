@@ -131,9 +131,10 @@ void main(List<String> args) async {
     // HTTPS function using a secret from Cloud Secret Manager
     firebase.https.onRequest(
       name: 'secretExample',
+      // ignore: non_const_argument_for_const_parameter
       options: HttpsOptions(
         secrets: [apiKey],
-        invoker: Invoker.private(),
+        invoker: const Invoker.private(),
       ),
       (request) async {
         final key = apiKey.value();
