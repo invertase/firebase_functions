@@ -204,28 +204,29 @@ class EndpointSpec {
 
   /// Extracts Memory option value.
   Object? _extractMemory(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
     // Check if it's Memory.param() - generate CEL
-    if (expression.constructorName.name?.name == 'param') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'param') {
       return _extractParamReference(expression);
     }
 
     // Check if it's Memory.expression() - generate CEL from expression
-    if (expression.constructorName.name?.name == 'expression') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'expression') {
       return _extractCelExpression(
         expression.argumentList.arguments.firstOrNull,
       );
     }
 
     // Check if it's Memory.reset()
-    if (expression.constructorName.name?.name == 'reset') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'reset') {
       return null; // Reset means use default
     }
 
     // Extract literal value: Memory(MemoryOption.mb256) or Memory(.mb256)
-    final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final args = _extractCallArguments(expression);
+    final enumName = _extractEnumValueName(args?.firstOrNull);
     if (enumName != null) return _memoryOptionToInt(enumName);
 
     return null;
@@ -247,26 +248,27 @@ class EndpointSpec {
 
   /// Extracts CPU option value.
   Object? _extractCpu(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
     // Check if it's Cpu.gcfGen1()
-    if (expression.constructorName.name?.name == 'gcfGen1') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'gcfGen1') {
       return 'gcf_gen1';
     }
 
     // Check if it's Cpu.param() - generate CEL
-    if (expression.constructorName.name?.name == 'param') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'param') {
       return _extractParamReference(expression);
     }
 
     // Check if it's Cpu.reset()
-    if (expression.constructorName.name?.name == 'reset') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'reset') {
       return null;
     }
 
     // Extract literal double value: Cpu(1.0)
-    final args = expression.argumentList.arguments;
-    return switch (args.firstOrNull) {
+    final args = _extractCallArguments(expression);
+    return switch (args?.firstOrNull) {
       final DoubleLiteral d => d.value,
       final IntegerLiteral i => i.value,
       _ => null,
@@ -275,16 +277,20 @@ class EndpointSpec {
 
   /// Extracts Region option value.
   Object? _extractRegion(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
     // Check if it's Region.param() - generate CEL
-    if (expression.constructorName.name?.name == 'param') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'param') {
       return _extractParamReference(expression);
     }
 
     // Extract literal value: Region(SupportedRegion.usCentral1) or Region(.usCentral1)
-    final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final args = _extractCallArguments(expression);
+    return _extractRegionLiteral(args?.firstOrNull);
+  }
+
+  /// Extracts a literal region option from an enum expression.
+  Object? _extractRegionLiteral(Expression? expression) {
+    final enumName = _extractEnumValueName(expression);
     if (enumName != null) {
       final regionString = _regionEnumToString(enumName);
       return regionString != null ? [regionString] : null;
@@ -341,12 +347,12 @@ class EndpointSpec {
       if (expression.constructorName.name?.name == 'param') {
         return _extractParamReference(expression);
       }
+    }
 
-      // Extract literal: Option(123)
-      final args = expression.argumentList.arguments;
-      if (args.firstOrNull case final IntegerLiteral firstArg) {
-        return firstArg.value;
-      }
+    // Extract literal: Option(123)
+    final args = _extractCallArguments(expression);
+    if (args?.firstOrNull case final IntegerLiteral firstArg) {
+      return firstArg.value;
     }
 
     return null;
@@ -363,12 +369,12 @@ class EndpointSpec {
       if (expression.constructorName.name?.name == 'param') {
         return _extractParamReference(expression);
       }
+    }
 
-      // Extract literal: Option('value')
-      final args = expression.argumentList.arguments;
-      if (args.firstOrNull case final StringLiteral firstArg) {
-        return firstArg.stringValue;
-      }
+    // Extract literal: Option('value')
+    final args = _extractCallArguments(expression);
+    if (args?.firstOrNull case final StringLiteral firstArg) {
+      return firstArg.stringValue;
     }
 
     return null;
@@ -385,12 +391,12 @@ class EndpointSpec {
       if (expression.constructorName.name?.name == 'param') {
         return _extractParamReference(expression);
       }
+    }
 
-      // Extract literal: Option(true)
-      final args = expression.argumentList.arguments;
-      if (args.firstOrNull case final BooleanLiteral firstArg) {
-        return firstArg.value;
-      }
+    // Extract literal: Option(true)
+    final args = _extractCallArguments(expression);
+    if (args?.firstOrNull case final BooleanLiteral firstArg) {
+      return firstArg.value;
     }
 
     return null;
@@ -398,10 +404,8 @@ class EndpointSpec {
 
   /// Extracts VPC egress settings.
   Object? _extractVpcEgressSettings(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final args = _extractCallArguments(expression);
+    final enumName = _extractEnumValueName(args?.firstOrNull);
     if (enumName != null) {
       return switch (enumName) {
         'privateRangesOnly' => 'PRIVATE_RANGES_ONLY',
@@ -415,10 +419,8 @@ class EndpointSpec {
 
   /// Extracts ingress settings.
   Object? _extractIngressSettings(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
-    final args = expression.argumentList.arguments;
-    final enumName = _extractEnumValueName(args.firstOrNull);
+    final args = _extractCallArguments(expression);
+    final enumName = _extractEnumValueName(args?.firstOrNull);
     if (enumName != null) {
       return switch (enumName) {
         'allowAll' => 'ALLOW_ALL',
@@ -433,19 +435,19 @@ class EndpointSpec {
 
   /// Extracts invoker list.
   Object? _extractInvoker(Expression expression) {
-    if (expression is! InstanceCreationExpression) return null;
-
     // Check for special factories
-    if (expression.constructorName.name?.name == 'public') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'public') {
       return ['public'];
     }
-    if (expression.constructorName.name?.name == 'private') {
+    if (expression is InstanceCreationExpression &&
+        expression.constructorName.name?.name == 'private') {
       return ['private'];
     }
 
     // Extract literal list
-    final args = expression.argumentList.arguments;
-    if (args.firstOrNull case final ListLiteral firstArg) {
+    final args = _extractCallArguments(expression);
+    if (args?.firstOrNull case final ListLiteral firstArg) {
       return firstArg.elements
           .whereType<StringLiteral>()
           .map((e) => e.stringValue)
@@ -555,6 +557,19 @@ class EndpointSpec {
     _ => null,
   };
 
+  /// Extracts arguments from constructor-like calls. When code is unresolved,
+  /// wrappers such as `DeployOption(...)` can appear as invocations instead of
+  /// [InstanceCreationExpression] nodes.
+  NodeList<Expression>? _extractCallArguments(
+    Expression expression,
+  ) => switch (expression) {
+    InstanceCreationExpression(:final argumentList) => argumentList.arguments,
+    FunctionExpressionInvocation(:final argumentList) => argumentList.arguments,
+    MethodInvocation(target: null, :final argumentList) =>
+      argumentList.arguments,
+    _ => null,
+  };
+
   /// Extracts an enum value name from an expression, handling both
   /// fully-qualified (`SupportedRegion.europeWest3`) and shorthand
   /// (`.europeWest3`) syntax.
@@ -562,6 +577,7 @@ class EndpointSpec {
     PrefixedIdentifier() => expression.identifier.name,
     SimpleIdentifier() => expression.name,
     PropertyAccess() => expression.propertyName.name,
+    DotShorthandPropertyAccess() => expression.propertyName.name,
     _ => null,
   };
 }
