@@ -16,9 +16,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:google_cloud_shelf/google_cloud_shelf.dart';
 import 'package:meta/meta.dart';
 import 'package:shelf/shelf.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:stack_trace/stack_trace.dart' show Trace;
 
 import 'common/cloud_run_id.dart';
@@ -69,34 +69,31 @@ Future<void> runFunctions(FunctionsRunner runner) async {
   final env = firebase.$env;
   final projectId = env.projectId;
 
-  await runZoned(zoneValues: {projectIdZoneKey: projectId}, () async {
-    // Run user's function registration code
-    await runner(firebase);
+  // Run user's function registration code
+  await runner(firebase);
 
-    // Build request handler with middleware pipeline
-    var middleware = const Pipeline().middleware;
+  // Build request handler with middleware pipeline
+  var middleware = const Pipeline().middleware;
 
-    final env = firebase.$env;
-    if (env.enableCors) {
-      middleware = middleware.addMiddleware(_corsMiddleware);
-    }
+  if (env.enableCors) {
+    middleware = middleware.addMiddleware(_corsMiddleware);
+  }
 
-    // Build request handler with middleware pipeline
-    final handler = middleware.addHandler((request) {
-      final traceId = extractTraceId(request.headers[cloudTraceContextHeader]);
+  if (env.isEmulator) {
+    middleware = middleware.addMiddleware(logRequests());
+  }
 
-      if (traceId == null) {
-        return _routeRequest(request, firebase, env);
-      }
+  middleware = middleware.addMiddleware(
+    createLoggingMiddleware(projectId: projectId),
+  );
 
-      return runZoned(zoneValues: {traceIdZoneKey: traceId}, () {
-        return _routeRequest(request, firebase, env);
-      });
-    });
-
-    // Start HTTP server
-    await shelf_io.serve(handler, InternetAddress.anyIPv4, env.port);
+  // Build request handler with middleware pipeline
+  final handler = middleware.addHandler((request) {
+    return _routeRequest(request, firebase, env);
   });
+
+  // Start HTTP server
+  await serveHandler(handler);
 }
 
 /// CORS middleware for emulator mode.
@@ -525,7 +522,7 @@ Future<(Request, FirebaseFunctionDeclaration?)> _tryMatchCloudEventFunction(
     return (finalRequest, null);
   } catch (e, stackTrace) {
     // CloudEvent parsing failed - not a CloudEvent request
-    logger.warn(
+    logger.warning(
       'CloudEvent parsing failed: $e\n${Trace.from(stackTrace).terse}',
     );
     return (request, null);
@@ -738,20 +735,3 @@ bool _matchesRefPattern(String refPath, String pattern) {
   return true;
 }
 
-final _traceIdRegExp = RegExp(r'^[a-f0-9]{32}$', caseSensitive: false);
-
-/// Extracts the 32-character hexadecimal trace ID from an [x-cloud-trace-context] header.
-///
-/// Expected format: `TRACE_ID/SPAN_ID;o=TRACE_TRUE`
-@visibleForTesting
-String? extractTraceId(String? header) {
-  if (header == null || header.isEmpty) return null;
-  final parts = header.split('/');
-  if (parts.isNotEmpty) {
-    final traceId = parts[0];
-    if (_traceIdRegExp.hasMatch(traceId)) {
-      return traceId;
-    }
-  }
-  return null;
-}

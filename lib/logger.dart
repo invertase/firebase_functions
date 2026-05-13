@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// Structured logger for Cloud Logging, compatible with the Firebase
-/// Functions Node.js SDK `logger` namespace.
+/// Structured logger for Cloud Logging.
 ///
 /// ## Usage
 ///
@@ -21,26 +20,20 @@
 /// import 'package:firebase_functions/logger.dart';
 ///
 /// logger.info('Request received');
-/// logger.warn('Slow query', {'durationMs': 1200, 'query': 'SELECT ...'});
+/// logger.warning('Slow query', payload: {'durationMs': 1200, 'query': 'SELECT ...'});
 /// logger.error('Failed to process request');
 /// ```
 ///
 /// ## Structured Logging
 ///
-/// Pass a [Map<String, Object?>] as the second argument to include
+/// Pass a [Map<String, Object?>] using the named `payload:` argument to include
 /// structured data in the Cloud Logging `jsonPayload`:
 ///
 /// ```dart
-/// logger.info('User signed in', {
+/// logger.info('User signed in', payload: {
 ///   'userId': user.id,
 ///   'provider': 'google',
 /// });
-/// ```
-///
-/// Or pass a [Map] as the sole argument for structured-only entries:
-///
-/// ```dart
-/// logger.info({'message': 'Batch complete', 'processedCount': 42});
 /// ```
 ///
 /// ## Severity Routing
@@ -49,9 +42,4 @@
 /// - **stderr**: WARNING, ERROR, CRITICAL, ALERT, EMERGENCY
 library;
 
-export 'src/logger/logger.dart'
-    hide
-        cloudTraceContextHeader,
-        createLogger,
-        projectIdZoneKey,
-        traceIdZoneKey;
+export 'src/logger/logger.dart';
