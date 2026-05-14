@@ -89,6 +89,9 @@ Future<void> runFunctions(FunctionsRunner runner) async {
   });
 
   // Start HTTP server
+  // XXX respect `env.port`!
+  // What about the signal handling stuff? I think that should be fine
+  // locally.
   await serveHandler(handler);
 }
 
