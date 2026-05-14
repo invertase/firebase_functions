@@ -1,3 +1,8 @@
+## 0.7.0-wip
+
+- **BREAKING:** Replace logging implementation with
+  [`package:google_cloud_logging`](https://pub.dev/packages/google_cloud_logging).
+
 ## 0.6.0
 
 - Add `runFunctions` as the primary API.
