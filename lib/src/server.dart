@@ -79,10 +79,6 @@ Future<void> runFunctions(FunctionsRunner runner) async {
     middleware = middleware.addMiddleware(_corsMiddleware);
   }
 
-  if (env.isEmulator) {
-    middleware = middleware.addMiddleware(logRequests());
-  }
-
   middleware = middleware.addMiddleware(
     createLoggingMiddleware(projectId: projectId),
   );
