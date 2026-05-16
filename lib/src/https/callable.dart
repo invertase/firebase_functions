@@ -264,7 +264,10 @@ class CallableResponse<T extends Object> {
         unawaited(sendChunk(result.data));
       },
       onError: (Object error) {
-        logger.error('Error in data stream', {'error': error.toString()});
+        logger.error(
+          'Error in data stream',
+          payload: {'error': error.toString()},
+        );
         if (error is HttpsError) {
           writeSSE(error.toErrorResponse());
         } else {
